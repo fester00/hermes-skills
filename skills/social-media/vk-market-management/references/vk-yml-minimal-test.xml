@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<yml_catalog date="2026-05-03 15:50">
+  <shop>
+    <name>vk.com</name>
+    <company>vk.com</company>
+    <url>https://vk.com/</url>
+    <currencies>
+      <currency id="RUB" rate="1"/>
+    </currencies>
+    <categories>
+      <category id="1">Тестовая категория</category>
+    </categories>
+    <offers>
+      <offer id="999999" available="true">
+        <price>100</price>
+        <currencyId>RUB</currencyId>
+        <categoryId>1</categoryId>
+        <name>Тестовый товар для проверки импорта</name>
+        <description>Проверка работает ли импорт YML в VK</description>
+        <picture>https://vk.com/images/community_100.png</picture>
+      </offer>
+    </offers>
+  </shop>
+</yml_catalog>

@@ -1,0 +1,49 @@
+# Пример YML-фида для VK Market (из сессии 2025-05-03)
+# 85 offers, 57 group_id, 13 категорий
+
+yml_catalog date="2025-05-03 14:55"
+  shop
+    name Пента Юниор
+    company ООО Пента Юниор
+    url https://pentajunior.ru
+    currencies
+      currency id="RUB" rate="1"
+    categories
+      category id="1" Силиконовые компаунды
+      category id="2" Полиуретановые компаунды
+      category id="3" Смазки аэрозольные и разделительные
+      category id="4" Электроизоляционные компаунды
+      category id="5" Клей-герметики
+      category id="6" Химически стойкие уплотнители
+      category id="7" Силиконовые масла ПМС
+      category id="8" Силиконовые эмульсии
+      category id="9" Антипригарные материалы
+      category id="10" Защита рук
+      category id="11" Гигиена
+      category id="12" Спрей
+      category id="13" Прочее
+    offers
+      offer id="junisil_9110_1040" available="true" group_id="junisil_9110"
+        price 2809
+        currencyId RUB
+        categoryId 1
+        name Юнисил 9110 — 1.04 кг
+        description Двухкомпонентный силиконовый компаунд
+        param name="Вес/объём" 1.04 кг
+        picture
+      offer id="junisil_9110_5200" available="true" group_id="junisil_9110"
+        price 10807
+        currencyId RUB
+        categoryId 1
+        name Юнисил 9110 — 5.2 кг
+        description Двухкомпонентный силиконовый компаунд
+        param name="Вес/объём" 5.2 кг
+        picture
+      offer id="junisil_9110_20800" available="true" group_id="junisil_9110"
+        price 36360
+        currencyId RUB
+        categoryId 1
+        name Юнисил 9110 — 20.8 кг
+        description Двухкомпонентный силиконовый компаунд
+        param name="Вес/объём" 20.8 кг
+        picture

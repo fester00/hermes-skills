@@ -1,0 +1,52 @@
+/* CSS for admin modal forms that prevents scroll jump while typing. */
+
+.admin-modal-overlay {
+  z-index: 1200 !important;
+  padding: 1rem;
+}
+
+.admin-modal-dialog {
+  z-index: 1201 !important;
+  max-width: 960px;
+  width: 100%;
+  margin: 1.5rem auto 0; /* pin to top instead of vertical centering */
+  display: block;
+}
+
+.admin-modal-dialog .modal-content {
+  max-height: calc(100vh - 3rem);
+  display: flex;
+  flex-direction: column;
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+}
+
+.admin-modal-dialog .modal-header {
+  background: var(--admin-surface-hover);
+  border-bottom: 1px solid var(--admin-border);
+  border-radius: 12px 12px 0 0;
+  padding: 1rem 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.admin-modal-dialog .modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  flex: 1;
+  color: var(--admin-text);
+  scroll-behavior: auto;
+}
+
+.admin-modal-dialog .modal-footer {
+  background: var(--admin-surface-hover);
+  border-top: 1px solid var(--admin-border);
+  border-radius: 0 0 12px 12px;
+  padding: 1rem 1.5rem;
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+}
