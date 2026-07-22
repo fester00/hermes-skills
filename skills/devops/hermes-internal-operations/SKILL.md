@@ -23,11 +23,15 @@ triggers:
   - "hermes webui down"
   - "webui not responding"
   - "webui slow"
+  - "update webui"
+  - "hermes command not found"
+  - "hermes not found"
+  - "hash -r"
 ---
 
 # Hermes Internal Operations
 
-Use this skill when the task is about Hermes itself rather than an external project: skill counts look wrong, token usage seems unexplained, or the Hermes WebUI needs a restart or health check.
+Use this skill when the task is about Hermes itself rather than an external project: skill counts look wrong, token usage seems unexplained, the Hermes WebUI needs a restart or health check, or the `hermes` CLI stops resolving after an update.
 
 ## 1. State Audit: Reconciling Skills & Profiles
 
@@ -171,9 +175,9 @@ If Hermes logs show no matching activity but the provider keeps debiting:
 
 See `references/token-audit-checklist.md` for a copy-paste checklist.
 
-## 3. WebUI Maintenance: Restart & Health Check
+## 3. WebUI Maintenance: Restart, Update & Health Check
 
-Use this section when the Hermes WebUI is slow, unresponsive, needs a restart, or shows stale state (e.g. an old model name still displayed after config change).
+Use this section when the Hermes WebUI is slow, unresponsive, needs a restart, needs an update, or shows stale state (e.g. an old model name still displayed after config change).
 
 ### Current command: `hermes dashboard`
 
@@ -235,9 +239,130 @@ See `references/webui-separate-repo-power-outage-recovery.md` for a concise comm
 
 If the dashboard process is running but the port is not listening, check logs for a build or runtime error. The dashboard command builds the web UI on first start; set `--skip-build` only if `web/dist` already exists.
 
-### Legacy `~/hermes-webui` install
+### Legacy `~/hermes-webui` install — update procedure
 
-Older Hermes used a separate `hermes-webui` repository with `start.sh` / `server.py` on port 18789. If `hermes dashboard` is not available, fall back to the legacy path:
+Older Hermes uses a separate `hermes-webui` repository (often `~/hermes-webui`) with `start.sh` / `server.py` on port 18789. When updating this repository, the systemd unit may still point to an obsolete launcher script (`hwebui_start.sh`) that no longer exists, causing the service to fail with `203/EXEC` and a very high restart counter.
+
+Update recipe:
+
+```bash
+# 1. Stop the running service and any manual process
+systemctl --user stop hermes-webui.service
+systemctl --user disable hermes-webui.service
+pgrep -f "hermes-webui/server.py" | xargs -r kill
+
+# 2. Back up the repo
+cp -a /home/natan/hermes-webui /mnt/data/natan-storage/backups/hermes-webui-$(date +%Y%m%d-%H%M%S)
+
+# 3. Fetch and checkout the latest tag
+cd /home/natan/hermes-webui
+git fetch origin --tags
+latest=$(git ls-remote --tags origin \
+  | grep -v '\^{}' | grep 'refs/tags/v0\.51\.' \
+  | sed 's|.*refs/tags/v0.51.||' | sort -t. -k1 -n | tail -1 \
+  | sed 's|^|v0.51.|')
+git checkout "$latest"
+
+# 4. Update the systemd unit to use the repo's start.sh
+cat > /home/natan/.config/systemd/user/hermes-webui.service <<EOF
+[Unit]
+Description=Hermes Agent WebUI
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/natan/hermes-webui
+EnvironmentFile=-/home/natan/hermes-webui/.env
+ExecStart=/home/natan/hermes-webui/start.sh --host 127.0.0.1 18789 --no-browser
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
+EOF
+
+# 5. Reload and start
+systemctl --user daemon-reload
+systemctl --user enable hermes-webui.service
+systemctl --user start hermes-webui.service
+
+# 6. Verify
+curl -s http://127.0.0.1:18789/health
+systemctl --user status hermes-webui.service --no-pager
+```
+
+### Shell command cache after WebUI/CLI changes
+
+After an update or symlink change, an existing terminal may report `Command 'hermes' not found` even though `~/.local/bin/hermes` exists. The shell has cached the old "command not found" result. Fixes:
+
+```bash
+hash -r        # bash
+rehash         # zsh
+```
+
+To prevent this in new login shells, ensure `~/.profile` ends with `hash -r` after adding `~/.local/bin` to PATH:
+
+```bash
+if [ -d "$HOME/.local/bin" ] ; then
+    PATH="$HOME/.local/bin:$PATH"
+fi
+hash -r 2>/dev/null || true
+```
+
+**Important for zsh users:** Oh-My-Zsh and modern zsh setups may not source `~/.profile` in every new terminal (e.g. non-login interactive shells, remote agent sessions, or certain terminal emulators). Relying only on `~/.profile` leaves `hermes` unresolved in those cases. Add an explicit guard to `~/.zshrc` *after* `source $ZSH/oh-my-zsh.sh`:
+
+```zsh
+if [[ -d "$HOME/.local/bin" ]] && [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+    export PATH="$HOME/.local/bin:$PATH"
+fi
+```
+
+This guarantees `~/.local/bin` is in PATH for every zsh instance, regardless of whether the shell is a login shell. It also avoids the triple-duplication of `.local/bin` seen on systems where multiple startup files all prepend it.
+
+### Diagnosing "hermes not found" right after an update
+
+When the user says `hermes` stopped resolving after an update but works after `export PATH=...; hash -r`, check these three things in order:
+
+1. **The symlink is intact**
+   ```bash
+   ls -la ~/.local/bin/hermes
+   file ~/.local/bin/hermes
+   ls -la ~/.hermes/hermes-agent/venv/bin/hermes
+   ls -la ~/.hermes/hermes-agent/venv/bin/python
+   ```
+   If the chain of symlinks is broken, reinstall Hermes or recreate the symlink.
+
+2. **The shell sees the directory**
+   ```bash
+   echo $SHELL
+   echo $PATH
+   which hermes || echo "not in PATH"
+   zsh -lc 'which hermes; echo $PATH'
+   zsh -c 'which hermes; echo $PATH'
+   ```
+   If the non-login shell cannot find `hermes`, `~/.profile` is not being sourced — add the guard to `~/.zshrc`.
+
+3. **No stale command hash**
+   ```bash
+   hash -r        # bash
+   rehash         # zsh
+   ```
+   After the fix, test in a fresh terminal without any manual `export PATH`.
+
+### Cleanup: removing duplicate `.local/bin` entries
+
+If `echo $PATH` shows `$HOME/.local/bin` multiple times, the usual cause is several startup files (e.g. `~/.profile`, `~/.zshrc`, and a profile-specific init) all prepending the same directory. The guard above uses `[[ ":$PATH:" != *":$HOME/.local/bin:"* ]]` to prevent duplicates. To clean up existing duplicates, use:
+
+```zsh
+# In a zsh session — rewrites PATH with only the first occurrence
+export PATH=$(echo "$PATH" | tr ':' '\n' | awk '!seen[$0]++' | paste -sd: -)
+```
+
+Then reload your shell and verify with `echo $PATH | tr ':' '\n'`.
+
+### Legacy `~/hermes-webui` install — quick restart
+
+If `hermes dashboard` is not available, fall back to the legacy path:
 
 ```bash
 cd ~/hermes-webui
@@ -249,9 +374,23 @@ cd ~/hermes-webui
 
 Equivalent manual path (when `ctl.sh` is unavailable):
 ```bash
-cd ~/hermes-webui && ./start.sh --no-browser > /tmp/hermes-webui-restart.log 2>&1 &
+cd ~/hermes-webui && ./start.sh --host 127.0.0.1 18789 --no-browser > /tmp/hermes-webui-restart.log 2>&1 &
 ss -ltnp | grep 18789
 ```
+
+### Gateway platform proxy diagnostics
+
+When a gateway platform adapter (e.g. Telegram) repeatedly fails with `ConnectError` despite the gateway service being `active`, check whether a proxy is forcing traffic through a path that does not route the platform's endpoints.
+
+Quick test:
+```bash
+# Direct
+curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 https://api.telegram.org/botFAKE/getMe
+# Via configured proxy
+curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 -x socks5h://127.0.0.1:10808 https://api.telegram.org/botFAKE/getMe
+```
+
+If direct works but proxied returns `000`, the proxy is unsuitable for Telegram. Remove `TELEGRAM_PROXY` from `~/.hermes/.env` and restart the gateway. See `references/telegram-proxy-direct-vs-fallback.md` for the full recipe and pitfalls.
 
 ### Restarting the gateway itself
 
@@ -277,6 +416,10 @@ ss -tlnp | grep :18789
 pgrep -f "hermes-webui/server.py"
 ```
 If the port is still occupied, identify the surviving PID with `ps -eo pid,lstart,cmd | grep hermes-webui/server.py`, kill it manually (`kill -9 <PID>`), then restart the desired unit.
+
+### Chat is silent but `/health` is 200
+
+A healthy HTTP server does not guarantee the model provider is answering. If the UI loads but produces no assistant responses, read the WebUI server log for provider errors (`HTTP 429`, `401`, timeouts, `ConnectError`) before restarting anything. See `references/webui-provider-error-silent-chat.md` for a full diagnostic recipe and the Ollama 429 case.
 
 ### Common pitfalls
 
@@ -327,6 +470,48 @@ A separate `~/hermes-webui` repository is a common real-world install even when 
 
 See `references/webui-restart-recipe.md` for a concise command runbook.
 - `references/webui-update-and-port-cleanup.md` — full recovery after a WebUI update when duplicate systemd scopes or `Restart=always` stale processes fight for the port
+- `references/webui-update-v0.51.560-to-v0.51.866.md` — specific update from the session where `hwebui_start.sh` was missing and shell hash cache broke `hermes` resolution
+
+### Workspace file upload failures
+
+Use this subsection when a user says files (PDFs, archives, images) fail to upload through the WebUI workspace file tree.
+
+#### Common causes
+
+| Cause | Symptom | Quick check |
+|---|---|---|
+| **nginx `client_max_body_size`** default 1 MB | Uploads > 1 MB fail silently or with a browser network error | `grep client_max_body_size /etc/nginx/sites-enabled/*` |
+| **WebUI `MAX_UPLOAD_BYTES`** default 20 MB | JSON error: `File too large (max 20MB)` | `grep HERMES_WEBUI_MAX_UPLOAD_MB ~/hermes-webui/.env` |
+| **Wrong workspace / path model** | File lands in unexpected directory or upload is rejected | Confirm the UI target folder is under the active session workspace |
+| **Read-only workspace path** | UI toast: external link / read-only | Check whether the displayed path is a symlink outside the workspace |
+
+#### Fix recipe
+
+1. Raise nginx limit in the site config that proxies to WebUI:
+   ```nginx
+   location / {
+       proxy_pass http://127.0.0.1:18789;
+       proxy_http_version 1.1;
+       client_max_body_size 200M;   # <-- add/adjust to your needs
+       ...
+   }
+   ```
+   Then `sudo nginx -t && sudo systemctl reload nginx`.
+
+   **sudo pitfall:** if `SUDO_PASSWORD` is exported in the agent session, `sudo -A` may error with "the -A and -S options may not be used together". Unset it first: `env -u SUDO_PASSWORD SUDO_ASKPASS=/tmp/askpass.sh sudo -A nginx -t`.
+
+2. Raise WebUI limit in `~/hermes-webui/.env`:
+   ```bash
+   HERMES_WEBUI_MAX_UPLOAD_MB=200
+   ```
+   Then restart WebUI:
+   ```bash
+   cd ~/hermes-webui && ./ctl.sh restart
+   ```
+
+3. Confirm the target path is inside the session workspace. The upload endpoint (`/api/workspace/upload`) treats the `path` form field as **relative to the session workspace root**, not as an absolute filesystem path.
+
+For a worked example with sudo password handling, verification commands, and the relative-path model, see `references/webui-workspace-upload-pitfalls.md`.
 
 ## 4. Core Runtime Import Failures
 
@@ -456,11 +641,13 @@ cp ~/.hermes/.env ~/.hermes/profiles/shifu/.env
 
 **Use direct cloud API instead of local daemon:**
 ```bash
+hermes profile use shifu
 hermes config set model.provider ollama-cloud
 hermes config set model.base_url https://ollama.com/v1
 hermes config set model.default gemma4:27b
-# then start a new session
 ```
+
+Then restart the WebUI session.
 
 ### Pitfalls
 
@@ -551,7 +738,12 @@ See `references/webui-ollama-colon-model-revert-bug.md` for the full case study,
 - `references/session-2026-06-03-skills-reconciliation.md` — concrete state-reconciliation case study
 - `references/token-audit-checklist.md` — copy-paste token-diagnostic checklist
 - `references/webui-restart-recipe.md` — concise WebUI restart runbook
-- `references/webui-update-and-port-cleanup.md` — full recovery after a WebUI update when stale processes fight for the port
+- `references/webui-provider-error-silent-chat.md` — WebUI loads and `/health` is 200, but chat produces no answers; diagnosing provider-side 429/401/timeouts
+- `references/telegram-proxy-direct-vs-fallback.md` — Telegram gateway fails with `ConnectError` when a SOCKS5 proxy does not route Telegram API
+- `references/webui-update-and-port-cleanup.md` — full recovery after a WebUI update when duplicate systemd scopes or `Restart=always` stale processes fight for the port
+- `references/webui-update-v0.51.560-to-v0.51.866.md` — specific update from the session where `hwebui_start.sh` was missing and shell hash cache broke `hermes` resolution
 - `references/runtime-import-failure-recovery.md` — recovering from a core Hermes runtime ImportError that breaks tool calls
 - `references/ollama-provider-profile-auth.md` — diagnosing `HTTP 401` and model-tag mistakes when switching Ollama cloud models across Hermes profiles
 - `references/webui-ollama-colon-model-revert-bug.md` — WebUI model selection reverts to default after first response when Ollama model IDs contain `:`
+- `references/webui-workspace-upload-pitfalls.md` — Workspace upload fails, lands in wrong place, or nginx blocks files > 1 MB; covers relative-path model and upload limits
+- `references/hermes-cli-path-zsh-diagnosis.md` — Hermes CLI stops resolving in zsh: `~/.profile` not sourced, fix via idempotent PATH guard in `~/.zshrc`

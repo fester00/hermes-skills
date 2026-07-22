@@ -49,7 +49,207 @@ serif display type = luxury DNA before a single component is built.
 
 ## Standard Patterns
 
-### 0. next.config.js for External Images
+### 0. Vite Scaffolding (React SPA luxury sites)
+
+When the design brief specifies React + Vite + Tailwind (not Next.js), use this skeleton:
+
+```bash
+cd /mnt/data/natan-storage   # or user's target directory
+npm create vite@latest silicone-landing -- --template react-ts
+cd silicone-landing
+npm install gsap framer-motion hls.js react-router-dom tailwindcss-animate
+npm install -D tailwindcss@3.4.17 postcss@8.4.49 autoprefixer@10.4.20 @types/node
+./node_modules/.bin/tailwindcss init -p
+```
+
+**Pitfall: Tailwind v4 breaks `tailwindcss init`.** Vite's default `create-vite` may install Tailwind v4. The v4 CLI no longer creates config files the same way; `npx tailwindcss init` can fail with "could not determine executable". Pin Tailwind to v3.4.x and PostCSS 8.4.x for the classic config workflow:
+
+```bash
+npm uninstall tailwindcss autoprefixer postcss
+npm install -D tailwindcss@3.4.17 postcss@8.4.49 autoprefixer@10.4.20
+```
+
+Then configure `tailwind.config.js`, `postcss.config.js`, `src/index.css` with `@tailwind` directives, and `vite.config.ts` with `@/` alias to `src/`.
+
+### 0b. HLS Video Background
+
+Use `hls.js` for Mux-style `.m3u8` sources. Fall back to native HLS on Safari.
+Clean up thoroughly on unmount to prevent detached video elements from continuing
+to stream or throw after navigation.
+
+**Robust component (also supports `flipped` for mirrored sections):**
+
+```tsx
+import { useEffect, useRef } from "react";
+import Hls from "hls.js";
+
+interface HlsVideoProps {
+  src: string;
+  className?: string;
+  flipped?: boolean;
+}
+
+export default function HlsVideo({ src, className = "", flipped = false }: HlsVideoProps) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    let hls: Hls | null = null;
+    const onLoadedMetadata = () => {
+      video.play().catch(() => {
+        // autoplay may be blocked
+      });
+    };
+
+    if (Hls.isSupported()) {
+      hls = new Hls({ autoStartLoad: true, debug: false });
+      hls.loadSource(src);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        video.play().catch(() => {
+          // autoplay may be blocked
+        });
+      });
+    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = src;
+      video.addEventListener("loadedmetadata", onLoadedMetadata);
+    }
+
+    return () => {
+      hls?.destroy();
+      video.removeEventListener("loadedmetadata", onLoadedMetadata);
+      video.pause();
+      video.removeAttribute("src");
+      video.load();
+    };
+  }, [src]);
+
+  return (
+    <video
+      ref={videoRef}
+      autoPlay
+      muted
+      loop
+      playsInline
+      className={`${className} ${flipped ? "scale-y-[-1]" : ""}`}
+      style={{ willChange: "transform" }}
+    />
+  );
+}
+```
+
+**Key points:**
+- `flipped` applies `scale-y-[-1]` to mirror the video (e.g. footer background).
+- Always remove `loadedmetadata` listener in cleanup.
+- `video.pause(); video.removeAttribute("src"); video.load()` stops network activity on unmount.
+- In headless environments the video frame may not render; rely on dark overlays/gradients so the page still looks acceptable.
+
+**See `templates/HlsVideo.tsx` for a copy-paste starter.**
+
+### 0b-1. Gradient Border Hover Ring
+
+Common requirement for luxury buttons: a subtle accent-gradient ring appears on hover, often animated.
+
+```tsx
+<a className="group relative inline-flex items-center justify-center rounded-full px-7 py-3.5 ...">
+  <span className="absolute inset-[-2px] rounded-full accent-gradient opacity-0 group-hover:opacity-100 transition-opacity animate-gradient-shift" />
+  <span className="relative z-10 ...">Label</span>
+</a>
+```
+
+CSS:
+
+```css
+.accent-gradient {
+  background: linear-gradient(90deg, #89AACC 0%, #4E85BF 100%);
+}
+.animate-gradient-shift {
+  animation: gradient-shift 6s ease infinite;
+  background-size: 200% 200%;
+}
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+```
+
+For solid buttons that invert on hover, move the color inversion to the inner span (`group-hover:bg-bg group-hover:text-text-primary`) so the outer gradient ring stays visible.
+
+### 0b-2. Vite SPA Smooth Scroll with Lenis + GSAP ScrollTrigger
+
+For React + Vite luxury landings, use a `useLenis` hook instead of Next.js `PageShell`:
+
+```ts
+import Lenis from "lenis";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
+
+export function useLenis() {
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      orientation: "vertical",
+      smoothWheel: true,
+    });
+
+    lenis.on("scroll", ScrollTrigger.update);
+    gsap.ticker.add((time) => lenis.raf(time * 1000));
+    gsap.ticker.lagSmoothing(0);
+
+    return () => {
+      lenis.destroy();
+    };
+  }, []);
+}
+```
+
+In `index.css` disable native smooth scrolling so Lenis owns the physics:
+
+```css
+html { scroll-behavior: auto; }
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+```
+
+### 0c. TypeScript + Framer Motion variants
+
+When `verbatimModuleSyntax` is enabled (Vite React-TS default), import Framer Motion types with `type`:
+
+```tsx
+import { motion, type Variants } from "framer-motion";
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 40 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 1, ease: "easeInOut" as const },
+  },
+};
+```
+
+### 0d. Content adaptation from existing project
+
+When the user says "take products from category X and release Y", query the existing project database directly instead of guessing. Example for pentajunior-v2 SQLite:
+
+```bash
+cd /home/natan/pentajunior-v2
+python3 -c "
+import sqlite3
+c = sqlite3.connect('pentajunior.db').cursor()
+c.execute('SELECT id, name, title, price, price_unit, price_currency, image, features, meta_title, meta_description, keywords FROM products WHERE id IN (?, ?, ?)', ('si-m-aero','vs-m-aero','ks-m-aero'))
+for r in c.fetchall(): print(r)
+"
+```
+
+Copy referenced images into the new project's `public/` directory and adapt copy to the landing tone.
+
+### 0e. next.config.js for External Images (Next.js only)
 
 Next.js `<Image>` refuses external domains by default. `images.remotePatterns` is a **whitelist** of allowed hostnames. Without it, hotlinking from Unsplash or wallpaperscraft.ru throws a security error.
 
@@ -70,7 +270,7 @@ module.exports = nextConfig;
 
 For quick local testing with arbitrary URLs, `hostname: "**"` works but must be removed before production.
 
-### 0b. Motion.dev Install & Coexistence with GSAP
+### 1. Motion.dev Install & Coexistence with GSAP
 
 ```bash
 # Fresh project
@@ -739,6 +939,19 @@ npm install lucide-react@^0.487.0
 
 If an icon import fails with "Module not found" even though the package is installed, check the installed version first.
 
+### 0j. Quality Iteration Rule
+
+When the user instructs "do it until the design looks beautiful, animations are smooth, lines are sharp, and everything is in its place", treat that as a quality gate rather than a single implementation pass:
+
+1. Implement the prompt literally first — every size, spacing, color token, timing, and easing.
+2. Run `tsc --noEmit -p tsconfig.app.json` and `npm run build`. Fix all errors.
+3. Manually review hover states, z-index stacking, alignment, and contrast.
+4. Check asset paths and filenames for typos (including accidental Cyrillic characters in otherwise Latin paths).
+5. Tune parallax range, scrub values, and entrance delays until motion feels intentional, not mechanical.
+6. Stop when the build is clean and no obvious visual defects remain, or when the user approves.
+
+This rule is especially important for dark luxury landings where small misalignments and harsh transitions destroy the premium feel.
+
 ## Color Tokens (Luxury Dark)
 
 ```css
@@ -773,7 +986,7 @@ Batch resize for consistency:
 mogrify -resize 1920x1080^ -gravity center -extent 1920x1080 *.jpg
 ```
 
-## Next.js Scaffolding
+### Next.js Scaffolding
 
 ```bash
 cd /home/natan/projects
@@ -784,6 +997,10 @@ mkdir -p src/app src/components src/hooks
 npm install
 npx next dev -p 3001
 ```
+
+### Vite + React SPA Scaffolding
+
+When the brief asks for React + Vite + Tailwind + GSAP + Framer Motion (not Next.js), see **§0. Vite Scaffolding** at the top of Standard Patterns. The same luxury patterns apply; only the bundler and image handling differ.
 
 ### 10. Archive Merge & Yandex Disk Download
 
@@ -803,6 +1020,7 @@ See `references/yandex-disk-and-archive-patterns.md` for full workflow.
 Before declaring "done":
 
 - [ ] Site opens without console errors
+- [ ] `npm run build` passes and `tsc --noEmit` is clean
 - [ ] Smooth scroll works (no native scroll jerk)
 - [ ] Parallax elements move with scroll
 - [ ] 3D tilt responds on hover
@@ -810,9 +1028,10 @@ Before declaring "done":
 - [ ] Grain overlay is visible but not distracting
 - [ ] Mobile: horizontal sections stack vertically
 - [ ] Custom cursor hidden on mobile
-- [ ] Images load with `next/image` optimization
+- [ ] Images load with `next/image` optimization (Next.js) or correct `public/` paths (Vite)
 - [ ] Navigation appears on scroll (glassmorphism)
 - [ ] All sections from user's schema are represented
+- [ ] Headless screenshot verification skipped for RAF-heavy preloaders; user visually verifies in browser
 
 ## Pitfalls
 
@@ -831,6 +1050,8 @@ Before declaring "done":
 - **Motion inside GSAP preserve-3d scene:** When a `motion.div` lives inside a GSAP-driven CSS 3D container (`preserve-3d` + `perspective`), keep GSAP for the container/scroll/tilt and Motion for hover/entrance only. Mixing both on the *same* element causes conflicts — assign roles by element layer (parent = GSAP, child = Motion, or vice versa).
 - **Preloader with AnimatePresence exit:** Use a local `isExiting` state + `onExitComplete` callback instead of GSAP `onComplete`. Motion exits run after React rerender; GSAP callbacks fire inside RAF and may race React's unmount.
 - **npm / npx not in PATH on this host:** `npm` and `npx` are not available in default shell PATH. Use `./node_modules/.bin/next` directly or ensure node/npm are sourced from `.nvm` or `~/.bashrc` before build commands.
+- **Headless screenshots hang on RAF preloaders:** Chrome and Playwright headless often freeze or timeout when a loading screen uses a long `requestAnimationFrame` counter (e.g. 2700ms). Do not rely on headless screenshots to verify such pages. Validate with `npm run build` and `npm run preview`, then ask the user to visually verify in a real browser.
+- **Cyrillic typos in asset paths break images:** Filenames like `/images/smazки/КСМ.webp` (mixed Cyrillic/Latin) are invisible to the eye in code but fail to resolve. Review paths character-by-character when images don't load.
 
 ## Related Skills
 
@@ -841,15 +1062,21 @@ Before declaring "done":
 
 ## External Design Intelligence Reference
 
-- `references/ui-ux-pro-max-design-database.md` — 161 product-type design systems with colors, fonts, and anti-patterns from the UI/UX Pro Max open-source database. Cross-reference when starting a new luxury project to get industry-matched style, color, and typography recommendations before writing code.
+- `references/ui-ux-pro-max-design-database.md` — 161 product-type design systems with colors, fonts, and anti-patterns from the UI/UX Pro Max open-source database.
+
+## Templates
+
+- `templates/vite-react-tailwind-luxury-landing.md` — starter scaffolding for React + Vite + Tailwind + GSAP + hls.js dark luxury landing pages. Includes pinned dependency versions and TypeScript config with `verbatimModuleSyntax`.
+- `templates/HlsVideo.tsx` — robust hls.js video component with native fallback, cleanup, and optional `flipped` prop.
 
 ## Session References
 
 - `references/vidvis-project-session.md` — complete VIDVIS v3 project structure, PerspectiveScene, PostCSS config fix, Motion addition, plus archive merge workflow from 2026-06-03 session (Yandex.Disk download, RAR extraction, user src.zip selective merge, external URL replacement with local images)
 - `references/vidvis-v3-cursor-lerp-technologies-session.md` — VIDVIS v3 session: magnetic cursor lerp tuning (0.15 → 0.5), Technologies section with framer-motion, build verification, npm PATH workaround
-- `references/vidvis-catalog-links-preloader-session.md` — **NEW** this session: adding multi-page catalog to VIDVIS, homepage section links, preloader scoped to root only, accessibility refactor (prefers-reduced-motion, focus rings), and lucide-react version gotcha
-- `references/image-sourcing-russian-sites.md` — wallpaperscraft.ru batch download recipe
+- `references/vidvis-catalog-links-preloader-session.md` — adding multi-page catalog to VIDVIS, homepage section links, preloader scoped to root only, accessibility refactor (prefers-reduced-motion, focus rings), and lucide-react version gotcha
+- `references/silicone-landing-session.md` — Vite + React + Tailwind + GSAP + hls.js dark portfolio landing, content sourced from pentajunior-v2 SQLite; includes Tailwind v3 pinning and Framer Motion `type` imports
+- `references/silicone-landing-session-v2.md` — same stack rebuilt from a detailed design prompt; covers Lenis + GSAP ScrollTrigger integration, `verbatimModuleSyntax` type imports, headless screenshot hang with RAF preloaders, and verified build checklist
 - `references/motion-dev-patterns.md` — when to choose Motion vs GSAP, quick code snippets, integration pitfalls, import paths
 - `references/depth-card-patterns.md` — bottom overlay reveal, vignette overlay, index numbers for depth, radial gradient backgrounds, technologies showcase grid with 3D tilt + parallax float
 - `references/motion-gsap-hybrid-float-patterns.md` — hybrid architecture: declarative Motion floating cards + continuous loops INSIDE a GSAP-driven CSS 3D `preserve-3d` scene, role separation rule, spring parameters, preloader replacement, bundle impact
-- `references/lucide-react-versioning-gotcha.md` — **NEW** why `lucide-react@^1.22.0` is stale and `^0.487.0` is the current maintained line; how to fix "Can't resolve 'lucide-react'" / missing icon errors
+- `references/lucide-react-versioning-gotcha.md` — why `lucide-react@^1.22.0` is stale and `^0.487.0` is the current maintained line; how to fix "Can't resolve 'lucide-react'" / missing icon errors

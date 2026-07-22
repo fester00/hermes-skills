@@ -44,6 +44,17 @@ ls -la
 find . -maxdepth 3 -type f | sort | head -50
 ```
 
+**If GitHub / raw.githubusercontent.com is unreachable** (TLS handshake errors, connection refused, empty API responses):
+1. Check whether a local proxy/VPN client is running: `ss -tlnp | grep -E 'xray|v2ray|clash|sing-box'`.
+2. If a SOCKS5 proxy is listening (common: `127.0.0.1:10808`), route git/curl through it:
+   ```bash
+   export HTTPS_PROXY=socks5://127.0.0.1:10808
+   git config --global http.proxy socks5://127.0.0.1:10808
+   git config --global https.proxy socks5://127.0.0.1:10808
+   ```
+3. Re-try `git clone` and GitHub API calls with `--socks5 127.0.0.1:10808` for curl.
+4. Do **not** treat blocked GitHub as "repo does not exist" — it may just be regional/network filtering.
+
 Look for:
 - `package.json`, `Cargo.toml`, `pyproject.toml`, `go.mod` — tech stack
 - `README.md`, `CONTRIBUTING.md`, `CHANGELOG.md` — project health
@@ -130,3 +141,6 @@ Concrete next step: try / fork / avoid / use as reference.
 
 - `references/session-magic-mcp.md` — example evaluation of a young MCP generator (Magic-MCP)
 - `references/session-ui-ux-pro-max.md` — example evaluation of a popular design intelligence database (UI/UX Pro Max)
+- `references/session-mcp-sequential-thinking.md` — evaluation of `arben-adm/mcp-sequential-thinking`
+- `references/session-superpowers.md` — evaluation of `obra/superpowers` and how to adopt its methodology inside Hermes
+- `references/session-graphify.md` — evaluation of `Graphify-Labs/graphify` as a code-intelligence / knowledge-graph tool, including comparison with `codebase-memory-mcp`

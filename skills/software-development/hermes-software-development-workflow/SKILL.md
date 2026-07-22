@@ -22,7 +22,7 @@ This skill governs the full development lifecycle within Hermes: from initial de
 through parallel execution, verification, and completion. Use it whenever building
 or modifying software in a Hermes session.
 
-**Core principle:** Design before code. Verify before claims. Delegate when parallel.
+**Core principle:** Design before code. Verify before claims. Delegate when parallel. Think before coding — state assumptions, present interpretations, surface tradeoffs.
 
 ---
 
@@ -69,7 +69,50 @@ If a skill covers the territory:
 
 **Anti-pattern:** Jumping straight into design or code without checking whether a relevant skill exists. The user has explicitly signalled that skills should be applied first.
 
-### Step 0d -- Memory Discovery
+### Step 0d -- Optional codebase-memory-audit
+
+After confirming the project path and loading relevant skills, consider a project audit:
+
+- **Run if:** the user is asking about a project with **more than 5 files**,
+  asks architecture/refactoring/dependency questions, or this is the first
+  exploration of an unfamiliar codebase.
+- **Skip if:** single file / one-liner, throwaway prototype.
+
+**Workflow:**
+1. Load `codebase-memory-audit`.
+2. Ensure the project is indexed via the `codebase-memory` MCP server or CBM CLI
+   (`codebase-memory-mcp cli index_repository --repo-path <project-root>`).
+3. Call `get_architecture(aspects=['all'])` to get hotspots, layers, boundaries,
+   clusters, and entry points.
+4. Optionally run `trace_path`, `search_code`, or `query_graph` for specific questions.
+5. Save summary to `~/obsidian-memory/Projects/<project>/codebase-memory-audit.md`.
+6. Use findings in design and planning.
+
+> **Why CBM:** codebase-memory-mcp is a single static binary, supports 158 languages,
+> exposes 14 structural query tools, needs no LLM API key, and indexes projects in
+> milliseconds to seconds. The index persists in `~/.cache/codebase-memory-mcp` and
+> is refreshed incrementally.
+
+### Step 0d' -- Lazy-review mode
+
+If the user signals minimalism or over-engineering concerns ("be lazy", "shortest
+path", "what can we delete?", "simplify", "ponytail"), keep Master Ugwai persona
+unchanged and add a lazy lens rooted in the Karpathy principles:
+
+- **Think Before Coding:** explicitly name assumptions and tradeoffs before choosing the minimal path.
+- **Simplicity First:** design phase asks whether the change can be solved by deleting or reusing code; plan includes a deletion/simplification scan before adding files.
+- **Surgical Changes:** when touching a file, check nearby code for duplication, dead code, or stdlib/native alternatives, but touch only what the request requires.
+- **Goal-Driven Execution:** every simplification must still meet the success criteria defined for the task.
+
+**Lazy-review boundaries:**
+- Persona stays **Master Ugwai**. The lazy lens is a filter on solutions, not a second character.
+- Never cut input validation at trust boundaries, error handling that prevents data loss, security, accessibility, or anything explicitly requested by the user.
+- Never use laziness as a reason to skip design approval, verification, or TDD.
+- A deliberate shortcut with a known ceiling must be marked with a `ponytail:` comment:
+  `# ponytail: <ceiling>, <upgrade trigger>`.
+- Non-trivial logic still gets proper tests; a single `assert`-based self-check is only an acceptable smoke test, not a replacement for TDD.
+
+### Step 0e -- Memory Discovery
 4. Check `session_search` for past conversations on this topic
 5. Check `mcp_obsidian_search_vault` or `mcp_obsidian_list_vaults` for related notes
 6. Only ask the user a question when internal knowledge is insufficient
@@ -101,6 +144,7 @@ If internal knowledge is insufficient:
 ### Step 1: Ask Clarifying Questions
 
 After gathering context, identify gaps in the user's request. Ask **one at a time**:
+- State assumptions explicitly. If multiple interpretations exist, present them — don't pick silently.
 - Purpose and success criteria
 - Constraints (tech stack, time, budget)
 - Style preferences (for UI: landing vs multi-page, design system)
@@ -114,6 +158,16 @@ Do NOT invoke any implementation skill, write any code, scaffold any project,
 or take any implementation action until you have presented a design and the
 user has approved it.
 ```
+
+### Key Principles
+- **Knowledge first** -- always check memory/obsidian/skills before asking user
+- **One question at a time** -- don't overwhelm
+- **State assumptions explicitly** -- Karpathy principle; ambiguity hides rework
+- **Multiple choice preferred** -- easier to answer than open-ended
+- **YAGNI ruthlessly** -- remove unnecessary features
+- **Explore alternatives** -- always propose 2-3 approaches
+- **Incremental validation** -- present design, get approval before moving on
+- **Design for isolation** -- smaller units with clear interfaces
 
 ### Anti-Pattern
 "This is too simple to need a design." Every project goes through this process.
@@ -141,15 +195,6 @@ design review before continuing.
 6. **Spec self-review** -- check for placeholders, contradictions, ambiguity, scope
 7. **User reviews written spec** -- ask user to review before proceeding
 8. **Transition to planning** -- invoke `writing-plans` skill
-
-### Key Principles
-- **Knowledge first** -- always check memory/obsidian/skills before asking user
-- **One question at a time** -- don't overwhelm
-- **Multiple choice preferred** -- easier to answer than open-ended
-- **YAGNI ruthlessly** -- remove unnecessary features
-- **Explore alternatives** -- always propose 2-3 approaches
-- **Incremental validation** -- present design, get approval before moving on
-- **Design for isolation** -- smaller units with clear interfaces
 
 ---
 
@@ -335,12 +380,13 @@ NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE
 
 ### The Gate Function
 1. **Identify** -- What command proves this claim?
-2. **Run** -- Execute the FULL command (fresh, complete)
-3. **Read** -- Full output, check exit code, count failures
-4. **Verify** -- Does output confirm the claim?
+2. **Transform** -- State the success criterion in the Karpathy form: "Write tests for invalid inputs, then make them pass" rather than "Add validation".
+3. **Run** -- Execute the FULL command (fresh, complete)
+4. **Read** -- Full output, check exit code, count failures
+5. **Verify** -- Does output confirm the claim?
    - If NO: state actual status with evidence
    - If YES: state claim WITH evidence
-5. **ONLY THEN** -- Make the claim
+6. **ONLY THEN** -- Make the claim
 
 ### Common Failures
 - "Tests pass" -- requires output showing 0 failures
@@ -459,7 +505,7 @@ Reference working tests/code.
 
 ---
 
-## Subagent Timeout Reality
+### Subagent Timeout Reality
 
 `delegate_task` hard timeout = **1500 seconds (25 minutes)** per subagent.
 
@@ -468,6 +514,21 @@ Size tasks based on this real ceiling only.
 
 If a task legitimately exceeds 25 minutes, split into smaller independent chunks
 or run heavy work in the main session (no timeout ceiling).
+
+### Subagent Provider Limits
+
+`delegate_task` can fail before any work starts if the configured provider
+(e.g. ollama-cloud) hits a weekly/daily request cap. Typical symptom:
+`HTTP 429 from ollama.com — weekly usage limit`.
+
+When this happens:
+1. Do **not** keep retrying subagents — the pool is exhausted.
+2. Switch to **manual execution waves in the main session**.
+3. Use a `todo` list to track plan tasks.
+4. Run the same verification gates after each task.
+5. Commit after every task.
+
+See `references/subagent-api-fallback.md` for the full fallback workflow.
 
 ---
 
@@ -674,6 +735,8 @@ This user explicitly removed ALL role-based personas. When delegating, use direc
 - **Delegating web search / browsing to subagents** -- STRICT RULE for this user
 - **Relying on Obsidian skill registry as the single source of truth** -- Obsidian notes are documentation; the authoritative skill list is `skills_list()` plus `~/.hermes/skills/`. Obsidian registries may lag behind newly added skills.
 - **Redundant `patch` calls** -- after a file was already put into the desired state by `write_file` or a previous `patch`, do not issue another `patch` with identical `old_string` and `new_string`. It will trigger a `File-mutation verifier: ... old_string and new_string are identical` warning. See `references/patch-old-string-new-string-identical.md`.
+- **After any `patch` that changes Markdown structure, re-read the affected section** to confirm headings and paragraphs did not collapse or duplicate. Markdown patches can silently merge a new heading into the previous paragraph if the match boundary is off by one line.
+- **Forcing a subagent strategy when the provider is exhausted** -- if `delegate_task` fails with a 429/usage-limit error, switch to manual execution waves in the main session. See `references/subagent-api-fallback.md`.
 
 ## References
 
@@ -688,7 +751,11 @@ This user explicitly removed ALL role-based personas. When delegating, use direc
 - `references/project-context-retention.md` -- How to remember a project's exact name, path, and explored structure across Hermes sessions; avoid opening the wrong similarly-named directory
 - `references/subagent-task-to-skill-mapping.md` -- Validated task-to-skill routing map for subagent dispatch decisions
 - `references/vidvis-design-review-driven-refactor.md` -- **NEW** VIDVIS session: user corrected agent for not loading design skills first; corrected workflow for luxury/design-heavy tasks, preloader scoping, homepage section links, accessibility refactor
+- `references/evaluating-integrating-external-methodologies.md` — How to evaluate third-party agent skills/methodologies (Ponytail, Superpowers, Graphify, CBM, etc.) and integrate them safely as additive lenses
+- `references/karpathy-integration-example.md` — Worked example of option-B integration (Karpathy guidelines)
 - `references/yandex-quick-links-seo-audit.md` -- SEO audit for Yandex quick links («быстрые ссылки»): navigation ↔ URL mapping, sitemap, JSON-LD, BreadcrumbList, timeline expectations
+- `references/subagent-api-fallback.md` -- What to do when `delegate_task` fails due to provider request limits (e.g. ollama-cloud weekly cap)
+- `references/nextjs-google-fonts-build-flakiness.md` -- Handling `next/font/google` / `fonts.gstatic.com` build failures: wait/retry vs self-host vs temporary disable
 - `scripts/verify-static-site.py` -- Python script to verify static sites
 - `scripts/inline-assets.py` -- Script to inline assets into HTML
 - `scripts/verify-static-site.sh` -- Shell script to verify static sites

@@ -44,6 +44,16 @@ No production code without a failing test first.
 
 **See `references/test-driven-development.md` for full rationalization tables, exceptions checklist, and verification steps.**
 
+### TDD Regression Discovery
+A passing test suite can still hide implementation bugs. When extracting legacy
+helpers into shared `lib/*.ts` files, write unit tests for the real input shapes
+seen in production before trusting the existing behavior. Example: the
+`extractPrice` helper used a loose regex (`/[\d.]+/`) that matched a lone dot
+and returned `"0"` for formatted prices like `"1 250,50 ₽"`. Tests written after
+extraction immediately exposed the bug; the corrected regex (`/\d+(?:\.\d+)?/`)
+passed all cases. See `references/extracted-helper-tdd-regression-discovery.md`
+for the full pattern, decision tree, and verification steps.
+
 ---
 
 ## Gate 2: Systematic Debugging
@@ -115,6 +125,14 @@ git diff --cached | grep "^+" | grep -E "(cursor\.execute|f\".*SELECT|f\".*INSER
 
 **See `references/requesting-code-review.md` for full checklist, reviewer subagent prompt templates, and result evaluation criteria.**
 
+### ESLint + Next.js Hook Rule Pitfall
+`eslint-config-next` can emit `react-hooks/set-state-in-effect` errors for
+legitimate controlled state resets in client components (admin auth checks,
+form reset on record change). Don't blindly refactor working code; either
+derive state with `useMemo`/React `key`, or disable the over-strict rule while
+keeping `react-hooks/exhaustive-deps` as a warning. See
+`references/eslint-nextjs-hook-rules.md` for the decision tree and exact config.
+
 ---
 
 ## Gate 4: Runtime Debugging
@@ -165,6 +183,15 @@ TUI frontend (ui-tui/src/app/slash/)        ← local handlers + fallthrough
 4. Check gateway whitelist/routing mapping
 
 **See `references/debugging-hermes-tui-commands.md` for full 3-layer sync checklist and common mismatch patterns.**
+
+### TDD Regression Discovery
+A passing test suite can still hide implementation bugs. In one refactor, the
+`extractPrice` helper used a loose regex (`/[\d.]+/`) that matched a lone dot and
+returned `"0"` for formatted prices like `"1 250,50 ₽"`. Unit tests written
+*after* the function was extracted immediately caught the bug. The corrected
+regex (`/\d+(?:\.\d+)?/`) passed all tests. Lesson: when extracting legacy
+helpers, write tests for the real input shapes before trusting the existing
+behavior.
 
 ---
 

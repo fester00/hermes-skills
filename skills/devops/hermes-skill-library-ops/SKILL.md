@@ -83,6 +83,20 @@ After copying to another profile, the new skill is available there immediately.
 If the skill itself documents an Obsidian mirror, the target profile will use
 the same documentation reference.
 
+## Workflow: copy a skill from a non-default profile into the active profile
+
+Some skills live only in a secondary profile (e.g. `socratic-course-architect` in
+`~/.hermes/profiles/shifu/skills/education/`). When the user needs it outside that
+profile, either ask them to switch profiles or copy the skill over:
+
+```bash
+rsync -av --delete \
+  ~/.hermes/profiles/<source>/skills/<category>/<skill>/ \
+  ~/.hermes/skills/<category>/<skill>/
+```
+
+See `references/profile-isolated-skills.md` for the full policy and pitfalls.
+
 ## Workflow: document a skill in Obsidian
 
 Create/update `~/obsidian-memory/Operations/Skills/<skill-name>.md`:
@@ -145,8 +159,9 @@ Patch only agent-created skills living in `~/.hermes/skills/`.
 ## Verification
 
 - Skill file parses as valid YAML frontmatter + Markdown.
-- Obsidian mirror file exists and cross-links to MOC.
-- `git status` in vault is clean after push.
+- `references/sibling-skill-architecture.md` — when to split an umbrella into sibling skills
+- `references/profile-sync-commands.md` — copy-paste ready commands to sync skills across profiles
+- `references/skill-library-index.md` — current index of skills and their locations
 
 ## Related
 

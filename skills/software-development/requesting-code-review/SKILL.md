@@ -8,7 +8,7 @@ platforms: [linux, macos, windows]
 metadata:
   hermes:
     tags: [code-review, security, verification, quality, pre-commit, auto-fix]
-    related_skills: [subagent-driven-development, writing-plans, test-driven-development, github-code-review]
+    related_skills: [superpowers-workflow, subagent-driven-development, writing-plans, test-driven-development, github-code-review]
 ---
 
 # Pre-Commit Code Verification
@@ -17,6 +17,8 @@ Automated verification pipeline before code lands. Static scans, baseline-aware
 quality gates, an independent reviewer subagent, and an auto-fix loop.
 
 **Core principle:** No agent should verify its own work. Fresh context finds what you miss.
+
+**Announce at start:** "I'm using the requesting-code-review skill."
 
 ## When to Use
 
@@ -121,6 +123,12 @@ Quick scan before dispatching the reviewer:
 - [ ] No debug print/console.log left behind
 - [ ] No commented-out code
 - [ ] New code has tests (if test suite exists)
+- [ ] **Karpathy — Think Before Coding:** assumptions behind the change are stated; if multiple interpretations existed, the chosen one is documented
+- [ ] **Karpathy — Simplicity First:** no speculative abstractions; no single-use interface; no config for a value that never changes; every feature traces to the request
+- [ ] **Karpathy — Surgical Changes:** only files directly required by the request are touched; pre-existing dead code is mentioned, not deleted
+- [ ] **Karpathy — Goal-Driven Execution:** success criteria were defined before implementation and are now verified
+- [ ] **Lazy-review lens:** is there code that could be deleted, replaced with stdlib/native, or collapsed into one line without cutting validation, security, error handling, accessibility, or explicitly requested behavior?
+- [ ] **Deliberate shortcuts documented:** any `ponytail:` comment names the ceiling and the upgrade trigger
 
 ## Step 5 — Independent reviewer subagent
 
@@ -236,6 +244,38 @@ git add -A && git commit -m "[verified] <description>"
 The `[verified]` prefix indicates an independent reviewer approved this change.
 
 ## Reference: Common Patterns to Flag
+
+### Lazy-review findings format
+
+If you spot over-engineering during review, report it as one line per finding:
+
+```
+<file>:L<line>: <tag> <what>. <replacement>.
+```
+
+Tags:
+- `delete:` — dead code, unused flexibility, speculative feature. Replacement: nothing.
+- `stdlib:` — hand-rolled thing the standard library ships. Name the function.
+- `native:` — dependency or code doing what the platform already does. Name the feature.
+- `yagni:` — abstraction with one implementation, config nobody sets, layer with one caller.
+- `shrink:` — same logic, fewer lines. Show the shorter form.
+- `assume:` — hidden assumption surfaced by Karpathy principle. State what needs clarification.
+
+Example:
+```
+src/lib/validation.ts:L12-38: stdlib 27-line email validator. Use "@" check + 1 line; real validation is the confirmation mail.
+src/lib/validation.ts:L42: assume function assumes email is ASCII; clarify if IDN emails are required.
+```
+
+Lazy-review findings are **suggestions**, not blockers, unless they introduce real risk.
+
+### Reviewer focus (Karpathy)
+
+When reviewing, explicitly check the four Karpathy principles:
+1. **Think Before Coding** — are assumptions named and tradeoffs visible?
+2. **Simplicity First** — is there a smaller, equivalent solution?
+3. **Surgical Changes** — does every changed line trace to the request?
+4. **Goal-Driven Execution** — are success criteria stated and verified?
 
 ### Python
 ```python

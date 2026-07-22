@@ -1,14 +1,14 @@
 ---
 name: writing-plans
 description: "Write implementation plans: bite-sized tasks, paths, code."
-version: 1.1.0
+version: 1.2.0
 author: Hermes Agent (adapted from obra/superpowers)
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
     tags: [planning, design, implementation, workflow, documentation]
-    related_skills: [subagent-driven-development, test-driven-development, requesting-code-review]
+    related_skills: [superpowers-workflow, subagent-driven-development, test-driven-development, requesting-code-review]
 ---
 
 # Writing Implementation Plans
@@ -21,6 +21,8 @@ Assume the implementer is a skilled developer but knows almost nothing about the
 
 **Core principle:** A good plan makes implementation obvious. If someone has to guess, the plan is incomplete.
 
+**Announce at start:** "I'm using the writing-plans skill to create the implementation plan."
+
 ## When to Use
 
 **Always use before:**
@@ -28,8 +30,8 @@ Assume the implementer is a skilled developer but knows almost nothing about the
 - Breaking down complex requirements
 - Delegating to subagents via subagent-driven-development
 
-**Trigger threshold for self-implementation:**
-Use a plan whenever a task requires creating or modifying **2+ files** or has **2+ logical stages** (exploration → design → implementation → verification). This covers almost all real feature/refactor/extension work. One-file, one-stage fixes may be handled without a formal plan, but still benefit from a short mental checklist.
+**Trigger threshold:**
+Use a plan whenever a task requires creating or modifying **2+ files** or has **2+ logical stages**. This covers almost all real feature/refactor/extension work.
 
 **Don't skip when:**
 - Feature seems simple (assumptions cause bugs)
@@ -38,9 +40,8 @@ Use a plan whenever a task requires creating or modifying **2+ files** or has **
 
 ## Bite-Sized Task Granularity
 
-**Each task = 2-5 minutes of focused work.**
+**Each task = one action (2-5 minutes).**
 
-Every step is one action:
 - "Write the failing test" — step
 - "Run it to make sure it fails" — step
 - "Implement the minimal code to make the test pass" — step
@@ -56,25 +57,18 @@ Every step is one action:
 **Right size:**
 ```markdown
 ### Task 1: Create User model with email field
-[10 lines, 1 file]
-
 ### Task 2: Add password hash field to User
-[8 lines, 1 file]
-
 ### Task 3: Create password hashing utility
-[15 lines, 1 file]
 ```
 
 ## Plan Document Structure
 
 ### Header (Required)
 
-Every plan MUST start with:
-
 ```markdown
 # [Feature Name] Implementation Plan
 
-> **For Hermes:** Use subagent-driven-development skill to implement this plan task-by-task.
+> **For Hermes:** Use `superpowers-workflow` → `subagent-driven-development` to implement this plan task-by-task.
 
 **Goal:** [One sentence describing what this builds]
 
@@ -82,24 +76,28 @@ Every plan MUST start with:
 
 **Tech Stack:** [Key technologies/libraries]
 
+## Global Constraints
+
+[Project-wide requirements — version floors, dependency limits, naming rules, platform requirements — one line each, copied verbatim from the spec. Every task implicitly includes this section.]
+
 ---
 ```
 
 ### Task Structure
 
-Each task follows this format:
-
 ````markdown
 ### Task N: [Descriptive Name]
 
-**Objective:** What this task accomplishes (one sentence)
-
 **Files:**
 - Create: `exact/path/to/new_file.py`
-- Modify: `exact/path/to/existing.py:45-67` (line numbers if known)
+- Modify: `exact/path/to/existing.py:45-67`
 - Test: `tests/path/to/test_file.py`
 
-**Step 1: Write failing test**
+**Interfaces:**
+- Consumes: [what this task uses from earlier tasks — exact signatures]
+- Produces: [what later tasks rely on — exact function names, parameter and return types]
+
+- [ ] **Step 1: Write the failing test**
 
 ```python
 def test_specific_behavior():
@@ -107,24 +105,24 @@ def test_specific_behavior():
     assert result == expected
 ```
 
-**Step 2: Run test to verify failure**
+- [ ] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/path/test.py::test_specific_behavior -v`
 Expected: FAIL — "function not defined"
 
-**Step 3: Write minimal implementation**
+- [ ] **Step 3: Write minimal implementation**
 
 ```python
 def function(input):
     return expected
 ```
 
-**Step 4: Run test to verify pass**
+- [ ] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/path/test.py::test_specific_behavior -v`
 Expected: PASS
 
-**Step 5: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add tests/path/test.py src/path/file.py
@@ -132,168 +130,152 @@ git commit -m "feat: add specific feature"
 ```
 ````
 
+## No Placeholders
+
+Every step must contain the actual content an engineer needs. These are **plan failures** — never write them:
+- "TBD", "TODO", "implement later", "fill in details"
+- "Add appropriate error handling" / "add validation" / "handle edge cases"
+- "Write tests for the above" (without actual test code)
+- "Similar to Task N" (repeat the code — the engineer may read tasks out of order)
+- Steps that describe what to do without showing how (code blocks required for code steps)
+- References to types, functions, or methods not defined in any task
+
+## File Structure
+
+Before defining tasks, map out which files will be created or modified and what each one is responsible for.
+
+- Design units with clear boundaries and well-defined interfaces.
+- Prefer smaller, focused files over large ones that do too much.
+- Files that change together should live together.
+- In existing codebases, follow established patterns. If a file you're modifying has grown unwieldy, including a split in the plan is reasonable.
+
 ## Writing Process
 
-### Step 1: Understand Requirements
+1. **Understand requirements** — read specs, acceptance criteria, constraints.
+2. **Load right skills first** — call `skills_list()`, then `skill_view(name)` for the most specific skills.
+3. **Explore codebase** — project structure, similar features, existing tests.
+4. **Design approach** — architecture, file organization, dependencies, testing strategy.
+5. **Run a deletion/simplification scan** — check for dead code, duplication, or stdlib/native replacements before adding files.
+6. **Write tasks** — setup → core functionality (TDD each) → edge cases → integration → cleanup.
+7. **Add complete details** — exact paths, complete code, exact commands, verification steps.
+8. **Self-review the plan** — check for placeholders, contradictions, ambiguity, scope gaps.
+9. **Save the plan** — `docs/plans/YYYY-MM-DD-feature-name.md` or `.hermes/plans/YYYY-MM-DD_HHMMSS-feature-name.md`.
 
-Read and understand:
-- Feature requirements
-- Design documents or user description
-- Acceptance criteria
-- Constraints
+## Self-Review Checklist
 
-### Step 1.5: Load the right skills first
+After writing the plan:
 
-Before exploring the codebase, discover and load relevant Hermes skills:
-- Call `skills_list()` (optionally filtered by category) to find the most specific skills.
-- The system prompt skill list is only a hint; `skills_list()` is authoritative.
-- Load the most relevant skills via `skill_view(name)` before proposing architecture or writing the plan.
-- For software work, also load `hermes-software-development-workflow` and `code-quality-gates`.
+- [ ] **Spec coverage:** Can you point to a task for each requirement? List any gaps.
+- [ ] **Placeholder scan:** Search for red-flag patterns from the "No Placeholders" section.
+- [ ] **Assumption scan:** Karpathy principle — are assumptions stated and interpretations surfaced?
+- [ ] **Type consistency:** Do signatures and names match across tasks?
+- [ ] **Task sizing:** Is every task 2–5 minutes and independently testable?
+- [ ] **Verification:** Does every task end with a concrete command and expected output?
 
-This prevents rediscovering patterns that already exist in the skill library.
-
-### Step 2: Explore the Codebase
-
-Use Hermes tools to understand the project:
-
-```python
-# Understand project structure
-search_files("*.py", target="files", path="src/")
-
-# Look at similar features
-search_files("similar_pattern", path="src/", file_glob="*.py")
-
-# Check existing tests
-search_files("*.py", target="files", path="tests/")
-
-# Read key files
-read_file("src/app.py")
-```
-
-### Step 3: Design Approach
-
-Decide:
-- Architecture pattern
-- File organization
-- Dependencies needed
-- Testing strategy
-
-### Step 4: Write Tasks
-
-Create tasks in order:
-1. Setup/infrastructure
-2. Core functionality (TDD for each)
-3. Edge cases
-4. Integration
-5. Cleanup/documentation
-
-### Step 5: Add Complete Details
-
-For each task, include:
-- **Exact file paths** (not "the config file" but `src/config/settings.py`)
-- **Complete code examples** (not "add validation" but the actual code)
-- **Exact commands** with expected output
-- **Verification steps** that prove the task works
-
-### Step 6: Review the Plan
-
-Check:
-- [ ] Tasks are sequential and logical
-- [ ] Each task is bite-sized (2-5 min)
-- [ ] File paths are exact
-- [ ] Code examples are complete (copy-pasteable)
-- [ ] Commands are exact with expected output
-- [ ] No missing context
-- [ ] DRY, YAGNI, TDD principles applied
-
-### Step 7: Save the Plan
-
-```bash
-mkdir -p docs/plans
-# Save plan to docs/plans/YYYY-MM-DD-feature-name.md
-git add docs/plans/
-git commit -m "docs: add implementation plan for [feature]"
-```
-
-## Principles
-
-### DRY (Don't Repeat Yourself)
-
-**Bad:** Copy-paste validation in 3 places
-**Good:** Extract validation function, use everywhere
-
-### YAGNI (You Aren't Gonna Need It)
-
-**Bad:** Add "flexibility" for future requirements
-**Good:** Implement only what's needed now
-
-```python
-# Bad — YAGNI violation
-class User:
-    def __init__(self, name, email):
-        self.name = name
-        self.email = email
-        self.preferences = {}  # Not needed yet!
-        self.metadata = {}     # Not needed yet!
-
-# Good — YAGNI
-class User:
-    def __init__(self, name, email):
-        self.name = name
-        self.email = email
-```
-
-### TDD (Test-Driven Development)
-
-Every task that produces code should include the full TDD cycle:
-1. Write failing test
-2. Run to verify failure
-3. Write minimal code
-4. Run to verify pass
-
-See `test-driven-development` skill for details.
-
-### Frequent Commits
-
-Commit after every task:
-```bash
-git add [files]
-git commit -m "type: description"
-```
-
-## Common Mistakes
-
-### Vague Tasks
-
-**Bad:** "Add authentication"
-**Good:** "Create User model with email and password_hash fields"
-
-### Incomplete Code
-
-**Bad:** "Step 1: Add validation function"
-**Good:** "Step 1: Add validation function" followed by the complete function code
-
-### Missing Verification
-
-**Bad:** "Step 3: Test it works"
-**Good:** "Step 3: Run `pytest tests/test_auth.py -v`, expected: 3 passed"
-
-### Missing File Paths
-
-**Bad:** "Create the model file"
-**Good:** "Create: `src/models/user.py`"
+If you find issues, fix them inline.
 
 ## Execution Handoff
 
-After saving the plan, offer the execution approach:
+After saving the plan, offer:
 
-**"Plan complete and saved. Ready to execute using subagent-driven-development — I'll dispatch a fresh subagent per task with two-stage review (spec compliance then code quality). Shall I proceed?"**
+> "Plan complete and saved to `docs/plans/<filename>.md`. Two execution options:
+>
+> 1. **Subagent-Driven (recommended)** — fresh subagent per task, two-stage review.
+> 2. **Inline Execution** — execute in this session using `superpowers-workflow` → `executing-plans`.
+>
+> Which approach?"
 
-When executing, use the `subagent-driven-development` skill:
-- Fresh `delegate_task` per task with full context
-- Spec compliance review after each task
-- Code quality review after spec passes
-- Proceed only when both reviews approve
+## Principles
+
+### DRY
+**Bad:** Copy-paste validation in 3 places
+**Good:** Extract validation function, use everywhere
+
+### YAGNI
+**Bad:** Add flexibility for future requirements
+**Good:** Implement only what's needed now
+
+### Lazy first (Ponytail lens)
+
+Before writing new code in any task, run the ladder in this order and stop at the
+first rung that holds:
+
+1. **Does this need to exist at all?** (YAGNI) — speculative need → skip and say so.
+2. **Does it already exist in this codebase?** — reuse the helper, util, type, or pattern that's already here.
+3. **Does the standard library cover it?** — use stdlib.
+4. **Does a native platform feature cover it?** — browser APIs, DB constraints, OS features, CSS before JS.
+5. **Does an already-installed dependency cover it?** — use what's in `package.json` / `requirements.txt` / `Cargo.toml`.
+6. **Can it be one line?** — make it one line.
+7. **Only then:** write the minimum code that works.
+
+The ladder runs **after** you understand the problem: trace the real flow end-to-end
+before picking a rung. A small diff in the wrong place is a second bug, not laziness.
+
+When touching an existing file, scan nearby code for:
+- Duplication that can be merged
+- Dead code that can be deleted
+- Old helpers that can be generalized or removed
+- Hand-rolled logic replaceable by stdlib or native platform features
+
+If a deliberate simplification leaves a known ceiling (global lock, O(n²) scan,
+naive heuristic), mark it with a `ponytail:` comment naming the ceiling and upgrade
+path:
+
+```python
+# ponytail: global lock; per-account locks if throughput matters
+```
+
+The `ponytail:` comment format is:
+
+```
+# ponytail: <current ceiling>, <upgrade trigger>
+```
+
+Examples:
+- `# ponytail: global lock; per-account locks if throughput matters`
+- `# ponytail: O(n²) scan; optimize if n > 10_000`
+- `# ponytail: naive heuristic; replace with ML model if precision < 90%`
+
+Only mark real shortcuts. Trivial one-liners do not need a `ponytail:` comment.
+
+**Boundary:** the lazy lens never cuts input validation at trust boundaries, error
+handling that prevents data loss, security, accessibility, or anything explicitly
+requested by the user. It also never replaces TDD with a single assert.
+
+### When content comes from an existing project
+
+If the new landing/feature reuses data from another project (products, categories, contacts, media), the plan must include a **data discovery task** before design:
+
+- Query the source project's database/API/files for exact items to reuse.
+- List the IDs/names/paths of content to copy.
+- Include a verification step that confirms the copied assets exist in `public/`.
+
+Example for pentajunior-v2 SQLite:
+
+```bash
+cd /home/natan/pentajunior-v2
+python3 -c "
+import sqlite3
+c = sqlite3.connect('pentajunior.db').cursor()
+c.execute('SELECT id, name, title, price, price_unit, price_currency, image, features FROM products WHERE id IN (?, ?, ?)', ('si-m-aero','vs-m-aero','ks-m-aero'))
+for r in c.fetchall(): print(r)
+"
+```
+
+Do not guess product names or prices from memory; query the source of truth.
+
+### TDD
+Every task that produces code should include the full TDD cycle. See `test-driven-development`.
+
+### Frequent Commits
+Commit after every task.
+
+## Common Mistakes
+
+- **Vague tasks:** "Add authentication" → "Create User model with email field"
+- **Incomplete code:** "Add validation function" without the function
+- **Missing verification:** "Test it works" without exact command
+- **Missing file paths:** "Create the model file" → "Create: `src/models/user.py`"
 
 ## Remember
 
@@ -305,6 +287,7 @@ Exact commands with expected output
 Verification steps
 DRY, YAGNI, TDD
 Frequent commits
+No placeholders
 ```
 
 **A good plan makes implementation obvious.**

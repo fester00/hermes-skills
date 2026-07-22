@@ -69,7 +69,12 @@ For EACH task in the plan:
 
 #### Step 1: Dispatch Implementer Subagent
 
-Use `delegate_task` with complete context:
+Use `delegate_task` with complete context. Include:
+
+- Full task text from the plan (files, code, commands, expected output)
+- Scene-setting context (where this fits, dependencies, conventions)
+- Explicit instruction to ask questions before guessing
+- Expected report format
 
 ```python
 delegate_task(
@@ -94,6 +99,14 @@ delegate_task(
     - Existing models in src/models/
     - Tests use pytest, run from project root
     - bcrypt already in requirements.txt
+
+    BEFORE YOU BEGIN: If anything is unclear, ask now. Do not guess.
+
+    REPORT FORMAT:
+    - Status: DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT
+    - One-line test summary
+    - Files changed
+    - Any concerns
     """,
     toolsets=['terminal', 'file']
 )
@@ -112,6 +125,9 @@ delegate_task(
     - Fields: email (str), password_hash (str)
     - Use bcrypt for password hashing
     - Include __repr__
+
+    IMPLEMENTER CLAIMS:
+    [paste implementer summary here]
 
     CHECK:
     - [ ] All requirements from spec implemented?

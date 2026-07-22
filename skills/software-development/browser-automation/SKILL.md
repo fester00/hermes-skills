@@ -639,7 +639,7 @@ curl -sL -A "Mozilla/5.0" "https://citilink.ru/catalog/nakopiteli-m2/?text=ssd+1
 | DuckDuckGo HTML | ❌ CAPTCHA | ✅ | Primary search method |
 | Bing | ❌ CAPTCHA | ⚠️ | Sometimes works via browser |
 | Google | ❌ "Unusual traffic" | ✅ | Add `&gl=us` for EU skip |
-| Yandex | ❌ | ❌ | "Вы не робот?" almost always |
+| Yandex / Yandex Market | ❌ / CAPTCHA | ❌ / 403 | "Вы не робот?" or 403 even with persistent CDP profile and SOCKS5 proxy; cannot automate auth or search |
 | Wikipedia | ✅ | ✅ | curl always works |
 | GitHub | ✅ | ✅ | curl usually works |
 | Habr / Stack Overflow | ✅ | ✅ | curl works |
@@ -655,14 +655,59 @@ curl -sL -A "Mozilla/5.0" "https://citilink.ru/catalog/nakopiteli-m2/?text=ssd+1
 - Filter by `type: "page"` to get the main page target.
 - After Chrome restart, all `target_id` values change. Re-query `Target.getTargets`.
 
+## AI-Native Browser Agents (browser-use, Comet, etc.)
+
+**Problem:** Hermes' built-in `browser_*` tools run a fresh headless/anonymous Chromium profile. They cannot see the user's logged-in sessions, saved passwords, or cookies. This makes them unsuitable for tasks that require personal accounts on marketplaces, banks, social networks, or 2FA-protected services.
+
+**Solution class:** dedicated AI browser agents that drive the user's real browser (or a persistent copy of it) and can reuse an existing profile.
+
+| Tool | What it does | Integration with Hermes | When to mention |
+|---|---|---|---|
+| **browser-use** | Open-source Python library + CLI. Launches Chrome with `--user-data-dir`, lets an LLM navigate, click, fill forms, extract data. Has its own cloud option with stealth/proxy. | **Not integrated.** User installs it separately (`uv add browser-use` or `pip install browser-use`) and runs it via Cursor/Codex/Claude Code. Hermes cannot call it directly. | When user asks "how do I search marketplaces while logged in?" or "can you control my real browser?" |
+| **Comet** | Commercial AI browser with built-in agent and persistent profile. | **Not integrated.** Standalone product. | Same as above; note it exists but Hermes cannot drive it. |
+| **Playwright / Selenium with persistent profile** | Scripting libraries. Can point to an existing `user-data-dir`. | Hermes can write the Python/Node script; user runs it. | When user needs automation they execute themselves. |
+| **Chrome remote debugging (`--remote-debugging-port=9222`)** | Connect CDP client to an already-running Chrome on the user's machine. | Hermes `browser_cdp` can connect if the port and origin allow-list are configured. | When user wants the cheapest bridge without installing new tools. |
+
+### Typical setup: Chrome CDP on user's own profile
+
+```bash
+# 1. Start Chrome with a persistent profile and remote debugging
+/path/to/google-chrome \
+  --user-data-dir="$HOME/.chrome-my-profile" \
+  --remote-debugging-port=9222 \
+  --remote-allow-origins='*' \
+  --no-sandbox
+
+# 2. Verify endpoint
+curl -s http://127.0.0.1:9222/json/version | grep webSocketDebuggerUrl
+
+# 3. Point Hermes browser_cdp at the page target, or use a direct WebSocket script
+```
+
+**Caveats:**
+- The CDP browser UUID changes on every Chrome restart — refresh the URL.
+- Anti-bot on marketplaces (Ozon, Wildberries, Yandex Market, DNS) may still challenge even a real browser from a data-center IP.
+- For true "log in once, reuse forever" experience, browser-use's local profile mode or a tool like Comet is usually simpler than hand-wiring CDP.
+
+### browser-use headless-server recipe
+
+For a concrete browser-use launch recipe on a headless Ubuntu server (Xvfb + persistent profile + sandbox flags) and the common `Invalid JSON` / `Field required` failures with non-strict LLMs, see `references/playwright-persistent-chrome-ozon-template.md`.
+
+### Recommended workflow for marketplace price/product search
+
+1. If user is fine with anonymous search → use Hermes `browser_*` / `browser_cdp`.
+2. If user needs to be logged in → recommend installing **browser-use** locally with their Chrome profile, or share screenshots/links with Hermes for analysis.
+3. Hermes should **not** attempt to drive browser-use itself; it can only explain how to set it up or review the script it produces.
+
 ## References
 - `references/text-field-extraction-patterns.md` — JavaScript snippets for extracting text from interactive elements via CDP
 - `references/server-ip-search-restrictions.md` — Search engine anti-bot behavior from data-center IPs
 - `references/web-bundlers-comparison.md` — Quick reference: Bun, Vite, esbuild, webpack, Parcel
 - `references/russian-retailers-probing-guide.md` — Early probing notes for Russian e-commerce sites
 - `references/russian-retailers-anti-bot-may2025.md` — **Session-tested matrix:** DNS (403), Citilink (SSR shell), Ozon/Yandex (CAPTCHA). Verified anti-bot patterns and recommended fallback workflow for price search tasks
-- `references/vk-messenger-cdp-scripts.md` — Session-tested Python scripts for VK IM automation via raw CDP WebSocket
+- `references/vk-messenger-cdp-scripts.md` — VK IM automation via raw CDP WebSocket
 - `references/vk-auth-flow.md` — VK ID auth flow: iframe architecture, cookies, QR-first design, API alternative
 - `references/vk-automation-cdp-patterns.md` — VK IM, marketplace, and community automation via raw CDP WebSocket
-- `references/search-engine-cdp-extraction.md` — Session-tested JS snippets for DuckDuckGo and Google result extraction via CDP
+- `references/playwright-persistent-chrome-ozon-template.md` — Proven Playwright script for Ozon product search on a headless server using Xvfb + persistent Chrome profile + viewport; also covers `browser-use` headless-server setup and LLM JSON pitfalls
+- `references/skill-hubs-directory.md` — Index of skill reference directories
 - `references/skill-hubs-directory.md` — Index of skill reference directories

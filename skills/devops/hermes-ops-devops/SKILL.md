@@ -114,6 +114,7 @@ sudo iptables -L -n | grep relevant_port
 | **I: CSRF 403 + SSE blocked behind nginx** | POST 403; chat hangs; Origin port mismatch | `proxy_set_header Host $http_host; proxy_buffering off;` |
 | **J: Missing module behind systemd** | `ModuleNotFoundError` via systemd but works manually | Use venv python path in `ExecStart=` |
 | **K: Git conflict markers → SyntaxError** | Process exists, high CPU, port not open, no logs | `grep -rn '<<<<<<<' --include="*.py"`, resolve conflict, recompile |
+| **L: WebUI workspace uploads fail or land in the wrong place** | File upload to `/mnt/data/.../books/js` fails silently, returns "Upload failed", or ends up in the session workspace instead | WebUI upload uses relative `path` inside the session workspace, not absolute filesystem paths. Also verify nginx `client_max_body_size` and `HERMES_WEBUI_MAX_UPLOAD_MB`. See `references/webui-workspace-upload-pitfalls.md`. |
 
 ### Repair Procedure
 1. Backup every config before editing
@@ -725,6 +726,9 @@ This requires no sudo — user-level systemd overrides live in `~/.config/system
 - `references/systemd-unit-template.md` — Template for creating user-level systemd units
 - `references/nginx-csrf-sse-fix.md` — nginx config snippet for CSRF + SSE behind reverse proxy
 - `references/disk-space-cleanup.md` — Freeing disk space on a small root filesystem when a large secondary disk exists; covers whole-repo deletion, incremental cleanup, and moving Hermes state to secondary storage.
+- `references/secondary-disk-archive-workflow.md` — Step-by-step archive and migration of heavy developer directories (npm/nvm/rustup caches, Chrome profiles, projects, workspace) to `/mnt/data/natan-storage`, including symlink pitfalls and active-port verification.
+- `references/secondary-disk-migration.md` — Step-by-step migration of heavy user directories (npm cache, nvm, rustup, Chrome profiles, projects) to a secondary disk using `rsync` + symlinks; includes safety checklist and pitfalls.
+- `references/browser-automation-options.md` — Choosing between Hermes' built-in CDP browser, `browser-use`, Comet, and remote-debugging when bot protection or persistent profiles are required.
 - `references/pm2-nodejs-service-config.md` — Full PM2 ecosystem config for Next.js/Node.js apps with production safeguards (memory limits, restart backoff, anti-npm-wrapper pattern)
 - `references/gateway-connectivity-diagnostic.md` — Gateway connectivity diagnostic
 - `references/pm2-multiversion-cwd-pitfall.md` — Detecting and fixing stale `cwd` in multi-version PM2 configs (copied ecosystem.config.js pointing to wrong project directory)

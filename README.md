@@ -48,6 +48,7 @@ skills/
 ├── productivity/
 ├── red-teaming/
 ├── research/
+├── shopping/
 ├── smart-home/
 ├── social-media/
 ├── software-development/
@@ -65,6 +66,14 @@ skills/<category>/<skill-name>/
 └── examples/          # примеры (опционально)
 ```
 
+## 📊 Статистика
+
+| Метрика | Значение |
+|---------|----------|
+| Всего активных навыков | 127 |
+| Категорий | 25 |
+| В архиве | ~56 (не входят в этот репозиторий) |
+
 ## 🔥 Ключевые навыки
 
 | Навык | Описание | Путь |
@@ -79,6 +88,10 @@ skills/<category>/<skill-name>/
 | `requesting-code-review` | Pre-commit review pipeline | `software-development/requesting-code-review/` |
 | `orchestrator-mode` | Режим оркестратора | `autonomous-ai-agents/orchestrator-mode/` |
 | `knowledge-first-protocol` | Порядок поиска информации | `knowledge-first-protocol/` |
+| `pentajunior-v2-nextjs-sqlite` | Класс-скилл для pentajunior-v2 | `software-development/pentajunior-v2-nextjs-sqlite/` |
+| `pentajunior-v2-seo` | SEO-оптимизация pentajunior-v2 | `software-development/pentajunior-v2-seo/` |
+| `yandex-seo-optimization` | SEO для Яндекса | `marketing/yandex-seo-optimization/` |
+| `selective-vpn-routing` | Маршрутизация сервисов через VPN/прокси | `devops/selective-vpn-routing/` |
 
 ## 📥 Как использовать навык
 
@@ -119,4 +132,5 @@ frontmatter каждого `SKILL.md`. Собственные навыки Maste
 
 - Obsidian knowledge base: https://github.com/fester00/obsidian-memory
 - MOC — Skills: https://github.com/fester00/obsidian-memory/blob/main/Operations/MOC%20%E2%80%94%20Skills.md
+- Hermes — Skills Registry: https://github.com/fester00/obsidian-memory/blob/main/Operations/Skills/Hermes%20%E2%80%94%20Skills%20Registry.md
 - Master Ugwai Operating Instructions: https://github.com/fester00/obsidian-memory/blob/main/Operations/Runbooks/Master%20Ugwai%20%E2%80%94%20Operating%20Instructions.md

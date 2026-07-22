@@ -71,11 +71,18 @@ Vacuum Hermes session store only after warning the user that history will be com
 
 If root is still tight, move large directories to the secondary disk and replace them with symlinks.
 
-Good candidates:
-- `~/projects`
-- `~/workspace`
-- `~/.hermes/profiles`
-- `~/.hermes/sessions`
+For a detailed, session-tested recipe covering `.npm`, `.nvm`, `.rustup`, project directories, browser profiles, and workspace, see `references/secondary-disk-archive-workflow.md`.
+
+Quick safe candidates:
+- `~/.npm`, `~/.nvm`, `~/.rustup` — toolchain caches; safe to symlink after verifying `node`, `npm`, `cargo` still work.
+- `~/projects` / `~/workspace` — project directories; symlink if services must keep starting from the old path.
+- `~/.hermes/profiles`, `~/.hermes/sessions` — Hermes state; symlink only after testing Hermes restart.
+
+Before deleting any project original, verify the real working directory of the listening process:
+```bash
+ss -tlnp | grep -E ':3000|:3001'
+readlink -f /proc/<PID>/cwd
+```
 
 Example:
 ```bash
@@ -105,3 +112,4 @@ On this user's host:
 - `/` is 57G, typically 86-88% used
 - `/mnt/data` is ~916G with ~870G free
 - The user is comfortable deleting whole obsolete repos (e.g., `~/pentajunior-v3`) after a quick process check.
+- In July 2026 the user archived `.hermes`, `.nvm`, `.npm`, `.chrome-vk-profile`, `.rustup`, `pentajunior-v2`, `vidvis`, `ligalink`, and `workspace` to `/mnt/data/natan-storage`, then symlinked `.npm`, `.nvm`, `.rustup` back and freed ~10 GB on `/`.
