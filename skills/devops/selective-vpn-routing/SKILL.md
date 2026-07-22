@@ -22,6 +22,7 @@ Run a local proxy (usually SOCKS5) on `127.0.0.1:<port>`. Point only the target 
 - Telegram/Viber/WhatsApp gateway needs to bypass a regional block.
 - A specific API or SaaS is unreachable from the host network.
 - You want VPN for one bot/app but not for the public web server on the same machine.
+- You want router-level transparent proxy: all LAN devices go through the tunnel for blocked resources, Russian/CIS/LAN traffic stays direct, and no per-device proxy configuration is required.
 
 ## Common tools
 
@@ -46,6 +47,38 @@ Nekobox on Windows is a sing-box/Xray GUI. For browser-only selective routing, p
 6. **Wire the target application.** For Hermes Telegram gateway: set `TELEGRAM_PROXY=socks5://127.0.0.1:10808` in `~/.hermes/.env` and `hermes gateway restart`.
 7. **Create a systemd user service** for the proxy so it survives reboots.
 8. **Verify end-to-end.** Check application logs, not just proxy connectivity.
+
+## Router-specific pitfalls (GL.iNet / OpenWrt 21.02)
+
+### For router-level transparent proxy, prefer v2rayA on stock firmware
+`v2raya` is the safest GUI path on stock GL.iNet SDK 4.x: it installs `xray-core`, exposes a web UI on port 2017, and manages its own transparent proxy + DNS rules. Do not attempt manual `iptables` TPROXY unless the user explicitly accepts the risk of breaking LAN internet and the web UI.
+
+### Manual TPROXY breaks internet and the GL.iNet web UI backend
+Manual `iptables -t mangle` TPROXY rules easily break internet for all LAN clients and can break the GL.iNet web UI backend (e.g. VPN tabs disappear). Prefer Passwall2/Nikki on community firmware, or use v2rayA on stock firmware, or keep Xray as SOCKS5/HTTP only.
+
+### DNS must also go through the tunnel
+TCP-only proxying is not enough: if DNS still resolves through the provider, blocked domains return fake/unreachable IPs. The solution must route DNS (UDP 53 or DNS-over-HTTPS/TLS) through the tunnel, or let v2rayA handle DNS transparently.
+
+### Stock firmware does not support VLESS/XRay natively
+GL.iNet SDK 4.x / OpenWrt 21.02 web UI only shows OpenVPN, WireGuard, Tor, and sometimes Shadowsocks. VLESS/VMess/Reality require community packages (`xray-core`, `luci-app-passwall2`, `luci-app-nikki`) that are not in stock GL.iNet repos. Do not promise the user a one-click GUI path on stock firmware.
+
+### Repo `xray-core` is too old for Reality
+Vendor OpenWrt 21.02 repositories may ship `xray-core` 1.5.x. Reality transport requires Xray >= 1.8.x. You must replace the binary manually with a current release.
+
+### Transfer binaries via LAN HTTP server, not SCP/GitHub
+- The router may not have `sftp-server`, so `scp` fails.
+- `wget`/`curl` from the router to GitHub often times out or uses an old `wget` without `--show-progress`.
+- `python3` is usually missing on the router.
+- **Working path:** download the ARM64 Xray zip on a LAN machine, unzip, then serve the files over the LAN with `python3 -m http.server 8000` and `wget` them from the router.
+
+### Update `geoip.dat`/`geosite.dat` together with xray-core
+The `xray-geodata` package bundled with old `xray-core` lacks list names used by current configs (e.g. `geosite:category-ru`). Copy `geoip.dat` and `geosite.dat` from the same Xray release zip that you install.
+
+### Remove sample configs
+`/etc/init.d/xray` loads all `*.json` in `/etc/xray`. Rename or remove `vpoint_socks_vmess.json` and `vpoint_vmess_freedom.json` from `xray-example` so they don't conflict.
+
+### Use outbound server IP to avoid bootstrap DNS loops
+When manually routing DNS through xray, configure the VLESS outbound with the VPN server IP instead of its domain. Otherwise xray must resolve the outbound domain before it can resolve anything, creating a bootstrap loop.
 
 ## Config pitfalls
 
@@ -129,12 +162,64 @@ curl -x socks5h://127.0.0.1:10808 -m 10 https://api.telegram.org
 # Public IP through proxy (compare with curl without -x)
 curl -x socks5h://127.0.0.1:10808 https://api.ipify.org
 
+# GitHub through proxy (when direct GitHub is blocked)
+curl -x socks5h://127.0.0.1:10808 -sL https://api.github.com/user
+
 # Gateway status
 hermes gateway status
 journalctl --user -u hermes-gateway -n 30 --no-pager
 ```
 
+## Application-specific proxy tips
+
+### git through a SOCKS5 proxy
+When GitHub is only reachable via the local proxy, configure git to use it:
+
+```bash
+git config --global http.proxy socks5://127.0.0.1:10808
+git config --global https.proxy socks5://127.0.0.1:10808
+```
+
+To scope it to one repo instead of global, run the same commands inside that repo without `--global`.
+
+### Large git pushes through SOCKS5
+HTTPS through a SOCKS proxy often hits GitHub's request/payload limits and fails with:
+
+```
+error: RPC failed; HTTP 408 curl 22 The requested URL returned error: 408
+send-pack: unexpected disconnect while reading sideband packet
+```
+
+This is especially common when pushing big commits (converted book libraries, bulk media, large Obsidian vault syncs). **Switch the remote from HTTPS to SSH:**
+
+```bash
+cd /path/to/repo
+OWNER_REPO=$(git remote get-url origin | sed -E 's|.*github\.com[:/]||; s|\.git$||')
+git remote set-url origin "git@github.com:${OWNER_REPO}.git"
+git push origin main
+```
+
+SSH tolerates large packs and long-running pushes far better than HTTPS tunneled through a SOCKS proxy. Ensure the host has a valid SSH key with GitHub (`ssh -T git@github.com`).
+
+## WireGuard on GL.iNet
+
+For users who rent their own VPS, WireGuard is often simpler and faster than Xray/VLESS. GL.iNet stock firmware has a built-in WireGuard Client, but split-tunnel policy routing has specific pitfalls:
+
+- `AllowedIPs = 0.0.0.0/0` does **not** mean global proxy in Policy mode; it only authorizes the peer to receive traffic for any destination.
+- The router uses DNS to learn the IP of each listed domain and injects host routes into routing table `1001`. If DNS is hidden (DoH/DoT on the client) or times out, policy routing breaks.
+- `table 1001` usually contains `blackhole default` intentionally; only resolved IPs of listed domains get routed through `wgclient1`.
+- The GL.iNet `vpn-failover` watchdog can cause `wgclient1` to flap up/down every 20-30 seconds if it misjudges the tunnel state. Disable failover monitoring or use Global Proxy for a stable baseline.
+- Xray/v2rayA and WireGuard fight over firewall rules, routing table 1001, and DNS. Use one tunnel solution at a time.
+
+See `references/glinet-wireguard-policy-routing.md` for the full setup, domain list, diagnostic commands, and troubleshooting steps.
+
 ## References
 
+- `references/glinet-wireguard-policy-routing.md` — GL-MT6000 WireGuard Client: Policy vs Global Proxy, UCI file locations, DNS visibility, tunnel flapping, nftables set verification, Ubuntu 24.04 HWE kernel bug, and coexistence with v2rayA/Xray.
+- `references/vless-subscription-parser.md` — parse JSON-style Xray/VLESS subscriptions into individual `vless://` URLs.
+- `references/glinet-v2raya-transparent-session.md` — GL.iNet + v2rayA transparent proxy session: safe router-level path, DNS through tunnel, binary transfer recipe, rollback.
 - `references/telegram-xray-session.md` — real session notes: okmulti.com VLESS/SS subscription, node selection, working Xray config, Hermes Telegram integration.
 - `references/windows-nekobox-browser-split-tunnel.md` — Windows Nekobox setup for browser-only selective routing to YouTube, Twitch, Discord, ChatGPT, Gemini, etc.
+- `templates/xray-router-socks5-only.json` — minimal router VLESS+Reality config (SOCKS5/HTTP only, no TPROXY).
+- `templates/xray-router-socks5-ru-direct.json` — same with Russian/CIS domains routed direct.
+- `scripts/xray-router-rollback.sh` — one-click rollback for broken TPROXY/Xray state.

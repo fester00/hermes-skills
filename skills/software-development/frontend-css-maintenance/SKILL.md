@@ -36,7 +36,18 @@ How to safely audit, shrink, and refactor large global stylesheets (typically `g
 
 - Note the file size, line count, rule count, duplicate selectors, and `!important` count.
 - Generate a candidate list of unused classes using static analysis (grep over `className=`).
-- Flag duplicate selectors that are **not** inside `@media` blocks — those are more likely accidental than intentional breakpoints.
+- **Use PurgeCSS as a fast, high-confidence first pass:**
+  ```bash
+  npx -y purgecss \
+    --css src/app/globals.css \
+    --content "src/**/*.{ts,tsx}" \
+    --output /tmp/globals-purged.css
+  ```
+  Compare line counts / selector counts. PurgeCSS removes rules whose selectors never appear in the scanned content, which is much more reliable than class-name grep alone.
+- **Cross-check PurgeCSS output with grep** for any class whose removal looks risky:
+  - classes assembled dynamically (`classNames(...)`, template literals, conditional arrays)
+  - classes injected by markdown content or third-party JS
+  - Bootstrap classes that might be referenced implicitly
 - Save the audit as a markdown file in the workspace for the user to review.
 
 Use the audit script: `references/css-audit-script.py`
@@ -98,6 +109,7 @@ If the user reports broken layout:
 ## Verification checklist
 
 - [ ] File size and line count recorded before and after.
+- [ ] PurgeCSS (or equivalent) run and diff reviewed.
 - [ ] Build passes (`tsc --noEmit && npm run build`).
 - [ ] No trailing commas or empty selector lists.
 - [ ] Deleted classes manually verified as unused.
@@ -109,6 +121,7 @@ If the user reports broken layout:
 - `references/css-audit-script.py` — static audit of duplicate and unused CSS classes.
 - `references/pentajunior-css-rollback-recipe.md` — real recovery recipe from a broken `globals.css` refactor.
 - `references/css-force-push-recovery.md` — when a broken CSS refactor has already been pushed to `origin/master`, how to reset local and remote state to the last known-good commit safely.
+- `references/purgecss-dead-code-recipe.md` — using PurgeCSS to remove unused rules from `globals.css` and verify the result.
 
 ## Related skills
 

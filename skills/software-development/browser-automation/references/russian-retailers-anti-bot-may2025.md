@@ -7,6 +7,7 @@
 - User profile: `~/.chrome-vk-profile` (persistent)
 - Xvfb :100 — virtual display for headful Chrome
 - Server IP: 130.255.9.9 (data center, heavily rate-limited)
+- SOCKS5 proxy on 127.0.0.1:10808 (xray)
 
 ---
 
@@ -21,7 +22,7 @@ DNS actively blocks all requests from data-center IPs. The block happens at CDN/
 - Response: HTTP 403, plain white page
 - Title: `HTTP 403`
 - Body: `Доступ к сайту www.dns-shop.ru запрещен`
-- Technical footer: `Guru meditation: c3hhbDkwb1VBT056bXlTYnBuOW5GN2w2cFhKNjY0ODc=` (Varnish/CloudFlare signature)
+- Technical footer: `Guru meditation: ...` (Varnish/CloudFlare signature)
 
 **curl result:**
 - Even with full browser User-Agent headers: empty response or 403
@@ -38,26 +39,12 @@ DNS actively blocks all requests from data-center IPs. The block happens at CDN/
 Citilink allows connection but serves Next.js shell without product data.
 
 **Browser/CDP result:**
-- Page loads: title is correct (`Kingston NV2 1TB - купить по низкой цене в Ситилинк`)
-- URL: `https://www.citilink.ru/search/?text=Kingston+NV2+1TB&available=1&order=price:asc`
+- Page loads: title is correct
+- URL: `https://www.citilink.ru/search/?text=...`
 - Screenshot: shows header, footer, but NO product cards
 - Product grid area is blank white space
 
-**HTML inspection:**
-- HTML ~300KB of Next.js CSS/JS chunks, no visible product data
-- `NV2` mentioned 258 times in minified JS bundles, not in rendered DOM
-- Scripts reference `data-meta-product-id` but no populated product cards
-
-**Root cause:** Citilink uses client-side hydration for search results. The SSR payload doesn't include product data — it's fetched via XHR after page load. In our headless Chrome environment, either:
-1. The XHR request failed (CORS, auth, or anti-bot)
-2. The hydration didn't complete before screenshot
-3. The page requires interaction (scroll, pagination click) to trigger lazy loading
-
-**Attempts tried:**
-- Scroll down 800px × 5 times → still blank product area
-- Full page screenshot (clip 1200×2000) → only footer visible
-- Wait 8 seconds after load → no improvement
-- Runtime.evaluate product extraction → returns 1 irrelevant result (PC build, not SSD)
+**Root cause:** Citilink uses client-side hydration for search results. The SSR payload doesn't include product data — it's fetched via XHR after page load. In our headless Chrome environment, either the XHR request failed, hydration didn't complete, or the page requires interaction.
 
 **Conclusion:** Citilink product search is not easily scrapeable via CDP without full browser session emulation. Use direct search URLs for user navigation instead.
 
@@ -68,33 +55,46 @@ Citilink allows connection but serves Next.js shell without product data.
 ### Status: ❌ BLOCKED (curl) / ❓ Untested (browser)
 
 **curl result:**
-- Returns redirect to `https://www.ozon.ru/search/?text=...&__rr=5`
+- Returns redirect to `https://www.ozon.ru/search/?text=...&__rr=...`
 - Exit code 47 (CURLE_TOO_MANY_REDIRECTS)
 - No product data accessible via raw HTTP
 
-**Browser/CDP:** Not tested in this session. Ozon is known to have heavy anti-bot (Yandex SmartCaptcha, behavioral analysis).
+**Browser/CDP:** Not tested in this session. Ozon is known to have heavy anti-bot.
 
 ---
 
 ## Yandex Market (market.yandex.ru)
 
-### Status: ❌ CAPTCHA (curl) / ❓ Untested (browser)
+### Status: ❌ BLOCKED — 403 and CAPTCHA even with persistent profile + proxy
 
-**curl result:**
-- Redirects to `showcaptcha` page with base64-encoded challenge
-- Full CAPTCHA gate — no search results accessible
+**Direct `browser_navigate` (no proxy):**
+- URL: `https://market.yandex.ru/`
+- Title: `403`
+- Body: `Доступ к сервису временно запрещён`
+- Reason: data-center IP blocked at edge
+
+**CDP with persistent Chrome profile (`~/.chrome-vk-profile`):**
+- Same result: `403`
+- Profile reuse does not bypass IP-based block
+
+**curl via SOCKS5 proxy (`127.0.0.1:10808`):**
+- ya.ru redirects to `showcaptcha` page with Yandex SmartCaptcha
+- market.yandex.ru returns the same CAPTCHA HTML: "Подтвердите, что запросы отправляли вы, а не робот"
+- No product/auth data accessible
+
+**Conclusion:** Yandex Market cannot be accessed automatically from this server. Auth state cannot be verified by the agent. User must check manually in their own browser. For automation, recommend browser-use with residential proxy or API-based alternatives.
 
 ---
 
-## Verified Matrix — Server Environment (May 2025)
+## Verified Matrix — Server Environment
 
 | Retailer | curl | Browser/CDP | Recommendation |
 |----------|------|-------------|----------------|
 | DNS | ❌ 403 | ❌ 403 | **Skip entirely** |
 | Citilink | ❌ shell | ⚠️ no products | Use for user links, not scraping |
-| Ozon | ❌ redirect | ❓ untested | Likely blocked, skip |
-| Я.Маркет | ❌ CAPTCHA | ❓ untested | Likely blocked, skip |
-| Wildberries | ❌ untested | ❓ untested | Likely blocked |
+| Ozon | ❌ redirect | ❓ likely blocked | Skip |
+| Я.Маркет | ❌ 403 / CAPTCHA | ❌ 403 / CAPTCHA | **Skip; user checks manually** |
+| Wildberries | ❌ untested | ❓ likely blocked | Likely blocked |
 
 ---
 
@@ -103,31 +103,18 @@ Citilink allows connection but serves Next.js shell without product data.
 When user asks "find prices for X on Russian market":
 
 1. **Acknowledge limitation immediately:** "Russian retailers block data-center IPs. I'll provide direct search links instead of live prices."
-
-2. **Build product knowledge via accessible sources:**
-   - Wikipedia / TechPowerUp for specs and MSRP
-   - DuckDuckGo cached search results
-   - Review sites (Tom's Hardware, AnandTech) for price tiers
-
-3. **Provide structured comparison table** with:
-   - Model names and specs
-   - Typical/approximate price ranges (from knowledge, not live data)
-   - Direct retailer search links (DNS, Citilink, Ozon, ЯМ)
-   - Honest flag: "Live pricing blocked by anti-bot"
-
+2. **Build product knowledge via accessible sources:** Wikipedia, TechPowerUp, DuckDuckGo cached results, review sites.
+3. **Provide structured comparison table** with specs, approximate price ranges, and direct retailer search links.
 4. **Never loop** through multiple retailers with the same technique after 2 failures.
 
 ---
 
 ## CDP Technical Notes from Session
 
-### Chrome launch sequence (correct order)
+### Chrome launch sequence
 ```bash
-# CRITICAL: Xvfb must start BEFORE Chrome
 Xvfb :100 -screen 0 1920x1080x24 -nolisten tcp &
-sleep 2  # Wait for Xvfb to be ready
-
-# CRITICAL: --remote-allow-origins=* required for WebSocket
+sleep 2
 display=:100 google-chrome \
   --no-sandbox --disable-gpu \
   --remote-debugging-port=9222 \
@@ -138,34 +125,16 @@ display=:100 google-chrome \
 
 ### WebSocket CDP access
 ```python
-import websocket, json
-
-# Create new tab
+import websocket, json, requests
 r = requests.put('http://127.0.0.1:9222/json/new?url=about:blank')
 page = r.json()
 ws_url = page['webSocketDebuggerUrl']
-
-# Connect
-ws = websocket.create_connection(ws_url)
-```
-
-### Screenshot via CDP
-```python
-ws.send(json.dumps({
-    "id": 1, "method": "Page.captureScreenshot",
-    "params": {"format": "png", "fromSurface": True}
-}))
-resp = json.loads(ws.recv())
-if "result" in resp:
-    data = base64.b64decode(resp["result"]["data"])
-    with open("/tmp/screenshot.png", "wb") as f:
-        f.write(data)
 ```
 
 ---
 
-## Session Reference
-- Date: 2025-05-09
-- User: Alexander (Natan), Russia-based
-- Task: SSD price comparison (Kingston NV2/NV3, Samsung 980/980 PRO, WD SN770)
-- Outcome: Anti-bot blocked all live pricing → provided direct search links + knowledge-based recommendations
+## Session References
+- Date: 2025-05-09 / 2026-07-05
+- User: natan (Russia-based)
+- Task: SSD price comparison; Yandex Market auth check
+- Outcome: Anti-bot blocked all live access → provided direct search links + knowledge-based recommendations

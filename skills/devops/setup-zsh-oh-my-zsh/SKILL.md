@@ -103,6 +103,13 @@ echo $ZSH_THEME  # should print chosen theme, e.g. fox
 - `chsh` cannot be run without the user's password; do not guess.
 - Hermes itself runs commands through bash regardless of user's default shell, so this install does not break terminal control.
 - Environment variables and aliases defined only in `.zshrc` are not visible to non-interactive commands Hermes runs. Put system-wide env vars in `~/.profile` or `~/.zshenv`.
+- **PATH for user-local tools (e.g. Hermes CLI in `~/.local/bin`)** must be added to `~/.zshrc` explicitly, not just `~/.profile`, because many terminals launch zsh as a non-login interactive shell and do not source `~/.profile`. Place the guard after `source $ZSH/oh-my-zsh.sh`:
+  ```zsh
+  if [[ -d "$HOME/.local/bin" ]] && [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+      export PATH="$HOME/.local/bin:$PATH"
+  fi
+  ```
+- `~/.profile` is fine for login shells and bash, but zsh on Ubuntu typically reads it only in specific login/compat paths. Do not rely on `~/.profile` alone to make `hermes` or other `~/.local/bin` tools available in every terminal.
 - Too many plugins slow down shell startup; keep the list focused.
 
 ## References
