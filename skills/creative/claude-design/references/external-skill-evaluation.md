@@ -30,11 +30,11 @@ Pitch: library of Agent Skills for Google Stitch, compatible with Codex, Gemini 
 | stitch-skill | Our equivalent | Coverage |
 |---|---|---|
 | design-md | `design-md` | Same Google spec, plus lint/export/WCAG |
-| taste-design | `ui-ux-pro-max`, `luxury-immersive-web`, `claude-design` | Better, no external service |
+| taste-design | `ui-ux-pro-max`, `popular-web-designs`, `claude-design` | Better, no external service |
 | popular-web-designs | `popular-web-designs` | 54 exact systems vs generic taste |
-| react-components / react-native | `nextjs-luxury-landing-to-catalog`, `pentajunior-v2-*` | Project-specific |
+| react-components / react-native | `react-vite-tailwind-landing-pages`, `frontend-css-maintenance` | General-purpose |
 | enhance-prompt | partially in `claude-design` Prompt Enhancement Pipeline | Covered |
-| stitch-loop | `claude-design` + `generative-widgets` | Covered |
+| stitch-loop | `claude-design` + `browser_vision` | Covered |
 | code-to-design / generate-design | — | Requires Stitch; do not adopt without Stitch access |
 
 ### Decision template

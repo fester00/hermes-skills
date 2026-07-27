@@ -169,7 +169,7 @@ trigger:
 - **Админка категории: форма редактирования показывает `seo_text`, но PUT не обновляет его.** При обновлении кода API категорий включать `seo_text` в параметры SQL. Проверить через `curl /api/admin/categories` после сохранения.
 - `openGraph.title` в категории раньше добавлял `| Пента Юниор` к `meta_title`, что давало дублирование. Исправлено: использовать `meta_title` как есть.
 - Description должен быть 160–170 символов (включая пробелы); page_description может быть длиннее, но лучше держать в том же диапазоне.
-- Для товаров без `image` используется fallback `/images/hero.webp`. Рассмотреть массовую конвертацию изображений в WebP — см. навык `pentajunior-v2-nextjs-sqlite`, раздел "Image optimization for performance".
+- Для товаров без `image` используется fallback `/images/hero.webp`. Рассмотреть массовую конвертацию изображений в WebP — см. `references/image-optimization-recipe.md` (внутри этого навыка).
 - `keywords` хранится как JSON-массив в SQLite.
 - **Проверка keywords:** убедиться, что они отражают предмет страницы, а не только общую тему подкатегории. Искать шаблонные наборы внутри подкатегории и дублирование слов в `name`/`title`/`meta_description`. См. `references/seo-audit-sqlite-keywords-checklist.md`.
 - **Пользователь предпочитает Yandex-навык.** Для SEO-аудита и правок pentajunior-v2 использовать `yandex-seo-optimization` как основной источник рекомендаций, а `pentajunior-v2-seo` — как проектный workflow (SQLite-аудит, JSON-LD, build gate, deploy).
@@ -200,7 +200,7 @@ python3 /home/natan/.hermes/skills/software-development/pentajunior-v2-seo/refer
 
 ## HTML-семантика и перелинковка
 
-См. `pentajunior-v2-nextjs-sqlite/references/html-semantics-seo-audit.md` для чек-листа:
+См. `references/html-semantics-seo-audit.md` (внутри `pentajunior-v2-seo`) для чек-листа:
 - единственный `<h1>` на странице,
 - структура `seo_text` (внешний `<h2>` + внутренние `<h2>` подразделов),
 - `BreadcrumbList` JSON-LD на всех целевых страницах,

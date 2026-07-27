@@ -1,7 +1,7 @@
 ---
 name: popular-web-designs
-description: 54 real design systems (Stripe, Linear, Vercel) as HTML/CSS.
-version: 1.0.0
+description: 74 real design systems (Stripe, Linear, Vercel, Apple, Notion) as HTML/CSS templates, sourced from VoltAgent/awesome-design-md.
+version: 2.0.0
 author: Hermes Agent + Teknium (design systems sourced from VoltAgent/awesome-design-md)
 license: MIT
 tags: [design, css, html, ui, web-development, design-systems, templates]
@@ -20,9 +20,11 @@ triggers:
 
 # Popular Web Designs
 
-54 real-world design systems ready for use when generating HTML/CSS. Each template captures a
+74 real-world design systems ready for use when generating HTML/CSS. Each template captures a
 site's complete visual language: color palette, typography hierarchy, component styles, spacing
 system, shadows, responsive behavior, and practical agent prompts with exact CSS values.
+
+**Source:** [VoltAgent/awesome-design-md](https://github.com/VoltAgent/awesome-design-md) — curated DESIGN.md analyses of popular websites.
 
 ## Related design skills
 
@@ -33,14 +35,15 @@ system, shadows, responsive behavior, and practical agent prompts with exact CSS
   the visual vocabulary.
 - **`design-md`** — use when the deliverable is a formal DESIGN.md token spec
   file, not a rendered artifact.
+- **`ui-ux-pro-max`** — use for industry-specific design briefs (colors, fonts,
+  anti-patterns) before picking a brand template from this skill.
 
 ## How to Use
 
 1. Pick a design from the catalog below
 2. Load it: `skill_view(name="popular-web-designs", file_path="templates/<site>.md")`
 3. Use the design tokens and component specs when generating HTML
-4. Pair with the `generative-widgets` skill to serve the result via cloudflared tunnel
-5. For vague user requests, see `examples/prompt-enhancement.md` for before/after briefs
+4. Verify the result with `browser_vision` to confirm visual accuracy
 
 Each template includes a **Hermes Implementation Notes** block at the top with:
 - CDN font substitute and Google Fonts `<link>` tag (ready to paste)
@@ -83,9 +86,6 @@ Each template includes a **Hermes Implementation Notes** block at the top with:
 </html>
 ```
 
-Write the file with `write_file`, serve with the `generative-widgets` workflow (cloudflared tunnel),
-and verify the result with `browser_vision` to confirm visual accuracy.
-
 ## Font Substitution Reference
 
 Most sites use proprietary fonts unavailable via CDN. Each template maps to a Google Fonts
@@ -108,11 +108,16 @@ substitute that preserves the design's character. Common mappings:
 | waldenburgNormal (Sanity) | Space Grotesk | Geometric, slightly condensed |
 | IBM Plex Sans/Mono | IBM Plex Sans/Mono | Available on Google Fonts |
 | Rubik (Sentry) | Rubik | Available on Google Fonts |
+| SoDoSans (Starbucks) | DM Sans / Source Sans 3 | Friendly, confident |
+| Manuka (The Verge) | Space Grotesk / Bebas Neue | Brutalist display |
 
 When a template's CDN font matches the original (Inter, IBM Plex, Rubik, Geist), no
 substitution loss occurs. When a substitute is used (DM Sans for Circular, Source Sans 3
 for sohne-var), follow the template's weight, size, and letter-spacing values closely —
 those carry more visual identity than the specific font face.
+
+> ⚠️ **Note:** Google Fonts CDN may be blocked in Russia. Prefer `next/font/google`
+> (Next.js self-hosts fonts) or download fonts to `/public/fonts/` and serve locally.
 
 ## Design Catalog
 
@@ -120,7 +125,7 @@ those carry more visual identity than the specific font face.
 
 | Template | Site | Style |
 |---|---|---|
-| `claude.md` | Anthropic Claude | Warm terracotta accent, clean editorial layout |
+| `claude.md` | Claude | Warm terracotta accent, clean editorial layout |
 | `cohere.md` | Cohere | Vibrant gradients, data-rich dashboard aesthetic |
 | `elevenlabs.md` | ElevenLabs | Dark cinematic UI, audio-waveform aesthetics |
 | `minimax.md` | Minimax | Bold dark interface with neon accents |
@@ -182,8 +187,10 @@ those carry more visual identity than the specific font face.
 
 | Template | Site | Style |
 |---|---|---|
+| `binance.md` | Binance | Crypto exchange, dark surfaces, gold accent |
 | `coinbase.md` | Coinbase | Clean blue identity, trust-focused, institutional feel |
 | `kraken.md` | Kraken | Purple-accented dark UI, data-dense dashboards |
+| `mastercard.md` | Mastercard | Warm stone, signal orange, stadium radii |
 | `revolut.md` | Revolut | Sleek dark interface, gradient cards, fintech precision |
 | `wise.md` | Wise | Bright green accent, friendly and clear |
 
@@ -194,11 +201,34 @@ those carry more visual identity than the specific font face.
 | `airbnb.md` | Airbnb | Warm coral accent, photography-driven, rounded UI |
 | `apple.md` | Apple | Premium white space, SF Pro, cinematic imagery |
 | `bmw.md` | BMW | Dark premium surfaces, precise engineering aesthetic |
+| `bmw-m.md` | BMW M | Motorsport dark, aggressive accent, performance aesthetic |
+| `bugatti.md` | Bugatti | Ultra-luxury black and gold, editorial automotive |
+| `dell-1996.md` | Dell 1996 | Nostalgic 90s tech blue, retro UI revival |
+| `ferrari.md` | Ferrari | Racing red, Italian luxury, cinematic dark |
+| `hp.md` | HP | Enterprise blue, clean product-forward layout |
 | `ibm.md` | IBM | Carbon design system, structured blue palette |
+| `lamborghini.md` | Lamborghini | True-black canvas, gold accent, full-viewport video |
+| `meta.md` | Meta | Social-tech blue, friendly gradients, clean surfaces |
+| `nike.md` | Nike | Bold athletic typography, high-contrast, dynamic layout |
+| `nintendo-2001.md` | Nintendo 2001 | Nostalgic gaming red, rounded hardware aesthetic |
 | `nvidia.md` | NVIDIA | Green-black energy, technical power aesthetic |
+| `playstation.md` | PlayStation | Gaming blue, cinematic dark, controller-centric |
+| `renault.md` | Renault | Warm automotive yellow, editorial layout |
+| `slack.md` | Slack | Friendly purple, playful illustrations, team UI |
 | `spacex.md` | SpaceX | Stark black and white, full-bleed imagery, futuristic |
 | `spotify.md` | Spotify | Vibrant green on dark, bold type, album-art-driven |
+| `starbucks.md` | Starbucks | Warm cream, Starbucks green, retail flagship |
+| `tesla.md` | Tesla | Radical subtraction, product photography, single blue CTA |
+| `theverge.md` | The Verge | Acid-mint and ultraviolet, heavy display, club-night tech |
 | `uber.md` | Uber | Bold black and white, tight type, urban energy |
+| `vodafone.md` | Vodafone | Telecom red, clean enterprise, accessible UI |
+| `wired.md` | Wired | Editorial tech magazine, high-contrast, bold typography |
+
+### E-commerce & Retail
+
+| Template | Site | Style |
+|---|---|---|
+| `shopify.md` | Shopify | Commerce green, friendly entrepreneur aesthetic |
 
 ## Choosing a Design
 
@@ -209,7 +239,16 @@ Match the design to the content:
 - **Marketing / landing pages:** Stripe, Framer, Apple, SpaceX
 - **Dark mode UIs:** Linear, Cursor, ElevenLabs, Warp, Superhuman
 - **Light / clean UIs:** Vercel, Stripe, Notion, Cal.com, Replicate
-- **Playful / friendly:** PostHog, Figma, Lovable, Zapier, Miro
-- **Premium / luxury:** Apple, BMW, Stripe, Superhuman, Revolut
+- **Playful / friendly:** PostHog, Figma, Lovable, Zapier, Miro, Slack
+- **Premium / luxury:** Apple, BMW, Stripe, Superhuman, Revolut, Bugatti, Ferrari
 - **Data-dense / dashboards:** Sentry, Kraken, Cohere, ClickHouse
 - **Monospace / terminal aesthetic:** Ollama, OpenCode, x.ai, VoltAgent
+- **Retail / e-commerce:** Shopify, Starbucks
+- **Media / editorial:** The Verge, Wired
+
+## Pitfalls
+
+- **Do not trust the system prompt skill list.** Always run `skills_list()` first; this catalog is authoritative.
+- **Font CDN blocking in Russia:** use `next/font/google` or self-host Google Fonts.
+- **Proprietary fonts:** never claim to use the original custom font; always use the template's CDN substitute.
+- **Templates are starting points, not clones:** extract general design principles, do not reproduce proprietary layouts or copyrighted content.

@@ -1,17 +1,17 @@
 ---
 name: ui-ux-pro-max
 description: |
-  AI-powered design intelligence database with 161 product-type design systems,
-  67 UI styles, 161 color palettes, 57 font pairings, 99 UX guidelines, and
-  25 chart types. Provides industry-specific design recommendations via Python
-  BM25 search or direct CSV lookup.
-version: 2.0.0
+  AI-powered design intelligence database with 192 product-type design systems,
+  84 UI styles, 192 color palettes, 74 font pairings, 99 UX guidelines, 16 motion
+  patterns, and 25 chart types across 22 tech stacks. Provides industry-specific
+  design recommendations via Python BM25 search or direct CSV lookup.
+version: 2.11.0
 author: NextLevelBuilder (integrated by Hermes)
 license: MIT
 metadata:
   hermes:
     tags: [design, ui, ux, design-system, color-palette, typography, style-guide, ai-skill]
-    related_skills: [luxury-immersive-web, claude-design, popular-web-designs, design-md]
+    related_skills: [claude-design, popular-web-designs, design-md]
 ---
 
 # UI/UX Pro Max — Design Intelligence
@@ -40,22 +40,25 @@ coding begins.
 
 1. User describes their project ("luxury art gallery", "corporate CRM", etc.)
 2. Skill searches the database → returns industry-matched design system
-3. Recommendations feed into `luxury-immersive-web` or `claude-design` for implementation
+3. Recommendations feed into `claude-design`, `popular-web-designs`, or the project-specific implementation skill for execution
 
 ## Database Contents
 
 | Domain | File | Count | What it contains |
 |--------|------|-------|------------------|
-| Products | `data/products.csv` | 161 | Product type → recommended style, pattern, colors |
-| Styles | `data/styles.csv` | 67 | UI style descriptions, CSS keywords, AI prompts |
-| Colors | `data/colors.csv` | 161 | Full 16-color design systems (primary/accent/bg/etc) |
-| Typography | `data/typography.csv` | 57 | Font pairings with Google Fonts URLs + Tailwind config |
+| Products | `data/products.csv` | 192 | Product type → recommended style, pattern, colors |
+| Styles | `data/styles.csv` | 84 | UI style descriptions, CSS keywords, AI prompts |
+| Colors | `data/colors.csv` | 192 | Full 16-color design systems (primary/accent/bg/etc) |
+| Typography | `data/typography.csv` | 74 | Font pairings with Google Fonts URLs + Tailwind config |
 | UX Guidelines | `data/ux-guidelines.csv` | 99 | Best practices, anti-patterns, accessibility rules |
+| Motion | `data/motion.csv` | 16 | Motion patterns and animation recipes |
 | Charts | `data/charts.csv` | 25 | Chart types + library recommendations |
-| Landing | `data/landing.csv` | 24 | Landing page patterns and CTA strategies |
-| Icons | `data/icons.csv` | — | Icon library recommendations |
-| App Interface | `data/app-interface.csv` | — | Mobile app UI patterns |
-| Stacks | `data/stacks/*.csv` | 15 | Framework-specific guidelines (Next.js, React, Vue, etc) |
+| Landing | `data/landing.csv` | 34 | Landing page patterns and CTA strategies |
+| Icons | `data/icons.csv` | 105 | Icon library recommendations |
+| App Interface | `data/app-interface.csv` | 30 | Mobile app UI patterns |
+| Stacks | `data/stacks/*.csv` | 22 | Framework-specific guidelines (Next.js, React, Vue, etc) |
+| UI Reasoning | `data/ui-reasoning.csv` | 161 | Design decision rationale per product type |
+| React Performance | `data/react-performance.csv` | 44 | React-specific optimization tips |
 
 ## Search Methods
 
@@ -126,22 +129,6 @@ Outputs a complete design system:
 - Pre-delivery checklist
 
 ## Integration with Other Skills
-
-### With `luxury-immersive-web`
-
-1. Use ui-ux-pro-max to get the design brief
-2. Apply luxury-immersive-web patterns for implementation
-
-Example workflow:
-```
-User: "Сделай сайт для VIDVIS — luxury art gallery"
-↓
-Search: "luxury art gallery" --design-system
-↓
-Result: Liquid Glass + Glassmorphism, Black+Gold, Cormorant/Montserrat
-↓
-Apply: PerspectiveScene, ParallaxDivider, 3D tilt cards, grain overlay
-```
 
 ### With `claude-design`
 
@@ -243,15 +230,15 @@ question before generating code.
 
 ## Vague → Professional Terminology Map
 
-Use this map when handing a brief from this skill to `claude-design`,
-`luxury-immersive-web`, or `popular-web-designs`. Translate vague aspiration
-words into concrete design decisions.
+Use this map when handing a brief from this skill to `claude-design` or
+`popular-web-designs`. Translate vague aspiration words into concrete design decisions.
 
 | User says | Means concretely | What to specify |
 |---|---|---|
 | "modern" | Minimal chrome, precise type, generous whitespace | type scale, grid, surface treatment |
 | "clean" | High contrast, clear hierarchy, reduced noise | color count, spacing scale, content order |
 | "premium" | Restrained palette, elevated type, subtle motion | font pairing, accent usage, animation posture |
+| "luxury" | Generous whitespace, single accent (gold/champagne), serif display, grain, smooth motion | color tokens, type pairing, motion posture |
 | "friendly" | Rounded shapes, warm neutrals, approachable type | radius values, palette temperature, weight |
 | "technical" | Mono accents, dense data, keyboard affordances | mono font, table density, focus states |
 | "futuristic" | Dark surfaces, geometric layout, glow/gradients sparingly | color mode, shape language, motion style |
@@ -285,13 +272,52 @@ original vague words.
 ## Obsidian Integration
 
 Cross-reference notes in Obsidian vault for quick manual lookup:
-- `Design/UI-UX Pro Max/Product Types.md` — all 161 types
+- `Design/UI-UX Pro Max/Product Types.md` — all 192 types
 - `Design/UI-UX Pro Max/VIDVIS Reference.md` — VIDVIS-specific brief
 - `Design/UI-UX Pro Max/Pentajunior Reference.md` — corporate brief
 - `Design/UI-UX Pro Max/htdata Reference.md` — dashboard brief
-- `Design/UI-UX Pro Max/Style Catalog.md` — 67 UI styles
+- `Design/UI-UX Pro Max/Style Catalog.md` — 84 UI styles
 - `Design/UI-UX Pro Max/Color Palettes.md` — key palettes
-- `Design/UI-UX Pro Max/Typography.md` — 57 font pairings
+- `Design/UI-UX Pro Max/Typography.md` — 74 font pairings
+- `Design/UI-UX Pro Max/Motion.md` — 16 motion patterns
+
+## Updating from Upstream
+
+This skill ships with a snapshot of the upstream `ui-ux-pro-max-skill` CSV data.
+Upstream evolves frequently; stale data silently degrades recommendations.
+
+When the user asks to refresh the database, or when you notice the local
+`version` in SKILL.md lags the upstream `skill.json`:
+
+1. Clone the upstream repo (shallow) to a temp directory:
+   ```bash
+   cd /tmp
+   https_proxy=http://127.0.0.1:1081 git clone --depth 1 \
+     https://github.com/nextlevelbuilder/ui-ux-pro-max-skill.git
+   ```
+2. Preserve local scripts (they are Hermes-specific):
+   ```bash
+   cp -r ~/.hermes/skills/creative/ui-ux-pro-max/scripts \
+         ~/.hermes/skills/creative/ui-ux-pro-max/scripts-backup
+   ```
+3. Replace `data/` and `data/stacks/` with upstream copies:
+   ```bash
+   cd ~/.hermes/skills/creative/ui-ux-pro-max
+   rm -rf data stacks
+   cp -r /tmp/ui-ux-pro-max-skill/src/ui-ux-pro-max/data data
+   cp -r /tmp/ui-ux-pro-max-skill/src/ui-ux-pro-max/data/stacks stacks
+   mv scripts-backup scripts
+   ```
+4. Update `version` and counts in SKILL.md to match upstream `skill.json`.
+5. Run a smoke test:
+   ```bash
+   python3 ~/.hermes/skills/creative/ui-ux-pro-max/scripts/search.py \
+     "luxury gallery" --domain product --max-results 3
+   ```
+6. Clean up the temp clone.
+
+Pitfall: upstream also has `scripts/` and `templates/`, but those are for the
+standalone CLI/plugin, not for Hermes. Copy only `data/` and `data/stacks/`.
 
 ## Verification
 

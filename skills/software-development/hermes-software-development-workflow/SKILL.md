@@ -37,17 +37,28 @@ or modifying software in a Hermes session.
 1. **ALWAYS start with `skills_list()`** (optionally filtered by category) to discover the most specific skill for the task. The system prompt skill list is a hint only; `skills_list()` is authoritative.
 2. Load the most relevant skill(s) via `skill_view(name)` and follow their instructions.
 3. **For visual / UI / design / front-end work, also load the relevant design skill(s) BEFORE coding.** Examples:
-   - Luxury/premium sites → `luxury-immersive-web`
    - Industry-matched design brief → `ui-ux-pro-max`
    - Real-brand visual vocabulary → `popular-web-designs`
    - One-off HTML artifact → `claude-design`
-   - Landing → product catalog → `nextjs-luxury-landing-to-catalog`
+   - Formal token spec → `design-md`
+   - Quick throwaway variants → `sketch`
 4. For software work in general, also load:
    - `writing-plans` when the task touches 2+ files or has 2+ stages
    - `code-quality-gates` for verification patterns
 5. Only fall back to generic workflow when no skill matches.
 
-**Pitfall (caught in session 2026-06-29):** Relying on the system prompt skill list or an Obsidian skill registry without calling `skills_list()` can miss newly added or profile-specific skills (e.g. `nextjs-luxury-landing-to-catalog` was not visible in the Obsidian registry). Obsidian indexes are documentation; `~/.hermes/skills/` is the source of truth.
+**Pitfall (caught in session 2026-06-29):** Relying on the system prompt skill list or an Obsidian skill registry without calling `skills_list()` can miss newly added or profile-specific skills. Obsidian indexes are documentation; `~/.hermes/skills/` is the source of truth.
+
+**Pitfall — Stale skill references (2026-07-27):** Deleted project-specific skills (`luxury-immersive-web`, `nextjs-luxury-landing-to-catalog`, `nextjs-product-catalog-admin`, `pentajunior-v2-nextjs-sqlite`) linger in `related_skills`, runbooks, and MOCs. After deleting a skill, always grep Hermes skills + Obsidian vault for the old name and remove broken references so other agents do not try to load a missing skill.
+
+**Skill deletion + cleanup recipe:**
+1. Delete the skill via `skill_manage(action='delete', name=...)` or remove its directory.
+2. Search `~/.hermes/skills/`: `rg -n '<skill-name>' ~/.hermes/skills/`.
+3. Search Obsidian vault: `rg -n '<skill-name>' ~/obsidian-memory/`.
+4. Remove or replace every occurrence. For example references, substitute a current umbrella skill (`popular-web-designs`, `ui-ux-pro-max`, `react-vite-tailwind-landing-pages`).
+5. Commit and push both the skills tree and Obsidian vault.
+
+**Upstream skill synchronization:** Some skills mirror external repos (e.g., `popular-web-designs` tracks `VoltAgent/awesome-design-md`, `ui-ux-pro-max` tracks `nextlevelbuilder/ui-ux-pro-max-skill`). Refresh them periodically: check upstream version, backup local skill, update data/templates, update `version` frontmatter, test primary entry point. If upstream changes format significantly, decide whether to adapt the skill or convert upstream files into the existing format — do not blindly overwrite a working format.
 
 ### Step 0b -- Confirm the Exact Project Path
 **Trigger:** User asks to study, explore, refactor, or modify an existing project.
@@ -60,7 +71,7 @@ or modifying software in a Hermes session.
 
 ### Step 0c -- Load Skills Before Acting (User Requirement)
 
-This user expects skills to be loaded **before** implementation begins. After confirming the project path, scan `skills_list` for any skill covering the tech stack or task type (e.g. `luxury-immersive-web`, `expo-tanstack-backend`, `pentajunior-v2-seo`).
+This user expects skills to be loaded **before** implementation begins. After confirming the project path, scan `skills_list` for any skill covering the tech stack or task type (e.g. `react-vite-tailwind-landing-pages`, `expo-tanstack-backend`, `pentajunior-v2-seo`).
 
 If a skill covers the territory:
 1. Load it with `skill_view(name)`.
@@ -152,6 +163,29 @@ After gathering context, identify gaps in the user's request. Ask **one at a tim
 
 Use **multiple choice preferred** -- easier to answer than open-ended.
 
+#### Design-polish and bugfix requests need explicit framing
+
+When the user asks to "improve the design", "fix bugs", "make scrolling smooth",
+or "fix mobile" on an existing project, do not start editing files immediately.
+The user often has an implicit workflow in mind. Surface it explicitly by
+proposing a default sequence and asking for confirmation:
+
+1. **Audit** — inspect current state and list concrete bugs / design gaps.
+2. **Design contract** — agree on what will change and what will stay the same.
+3. **Plan** — write implementation steps with verification commands.
+4. **Execute** — make the changes in small, verifiable increments.
+5. **Verify** — run build, lint, tests, and visual checks.
+6. **Finish** — present evidence and next options.
+
+If the user says "just do it" or "start with the audit", adapt, but never skip
+the audit step: it prevents rework and gives both sides the same picture of the
+starting point. For visual work, also load design skills (`ui-ux-pro-max`, `popular-web-designs`) before the audit so the recommendations
+are grounded in a real design vocabulary.
+
+See `references/vidvis-design-review-driven-refactor.md` for a worked example of
+this workflow applied to a luxury landing-page refactor, including the corrected
+sequence after the user intervened.
+
 ### Hard Gate
 ```
 Do NOT invoke any implementation skill, write any code, scaffold any project,
@@ -179,8 +213,7 @@ and get approval.
 When the user asks for visual expansion of an existing site -- new pages, new
 sections, new components, style refresh -- do NOT start writing components
 from intuition. Load the relevant design skills first (e.g. `ui-ux-pro-max` for
-industry-matched design systems, `luxury-immersive-web` for premium animation
-patterns) and use their guidance before producing code. If the user later asks
+industry-matched design systems) and use their guidance before producing code. If the user later asks
 "did you use design skills?" and the answer is no, stop, load them, and do a
 design review before continuing.
 
@@ -731,12 +764,13 @@ This user explicitly removed ALL role-based personas. When delegating, use direc
 - **Cleaning up worktree for PR option** -- user loses iteration workspace
 - **Performative agreement on code review** -- skip to action or technical acknowledgment
 - **Blind implementation of review feedback** -- verify against codebase first
-- **Jumping to execution before loading skills** -- user explicitly expects skills to be applied first. For design-heavy work, this includes `luxury-immersive-web`, `ui-ux-pro-max`, `popular-web-designs`, `claude-design`, or domain-specific skills such as `nextjs-luxury-landing-to-catalog`.
+- **Jumping to execution before loading skills** -- user explicitly expects skills to be applied first. For design-heavy work, this includes `ui-ux-pro-max`, `popular-web-designs`, `claude-design`, or domain-specific skills such as `react-vite-tailwind-landing-pages`.
 - **Delegating web search / browsing to subagents** -- STRICT RULE for this user
 - **Relying on Obsidian skill registry as the single source of truth** -- Obsidian notes are documentation; the authoritative skill list is `skills_list()` plus `~/.hermes/skills/`. Obsidian registries may lag behind newly added skills.
 - **Redundant `patch` calls** -- after a file was already put into the desired state by `write_file` or a previous `patch`, do not issue another `patch` with identical `old_string` and `new_string`. It will trigger a `File-mutation verifier: ... old_string and new_string are identical` warning. See `references/patch-old-string-new-string-identical.md`.
 - **After any `patch` that changes Markdown structure, re-read the affected section** to confirm headings and paragraphs did not collapse or duplicate. Markdown patches can silently merge a new heading into the previous paragraph if the match boundary is off by one line.
 - **Forcing a subagent strategy when the provider is exhausted** -- if `delegate_task` fails with a 429/usage-limit error, switch to manual execution waves in the main session. See `references/subagent-api-fallback.md`.
+- **Trusting `read_file` immediately after heavy edits** -- the tool can return stale cached content after rapid `write_file`/`patch` bursts. Use `terminal` (`cat`/`grep`) or Python direct reads for ground truth. See `references/hermes-read-file-caching-pitfall.md`.
 
 ## References
 
@@ -755,6 +789,7 @@ This user explicitly removed ALL role-based personas. When delegating, use direc
 - `references/karpathy-integration-example.md` — Worked example of option-B integration (Karpathy guidelines)
 - `references/yandex-quick-links-seo-audit.md` -- SEO audit for Yandex quick links («быстрые ссылки»): navigation ↔ URL mapping, sitemap, JSON-LD, BreadcrumbList, timeline expectations
 - `references/subagent-api-fallback.md` -- What to do when `delegate_task` fails due to provider request limits (e.g. ollama-cloud weekly cap)
+- `references/hermes-read-file-caching-pitfall.md` -- Why `read_file` can return stale content after rapid edits and how to verify with `terminal` or Python
 - `references/nextjs-google-fonts-build-flakiness.md` -- Handling `next/font/google` / `fonts.gstatic.com` build failures: wait/retry vs self-host vs temporary disable
 - `scripts/verify-static-site.py` -- Python script to verify static sites
 - `scripts/inline-assets.py` -- Script to inline assets into HTML

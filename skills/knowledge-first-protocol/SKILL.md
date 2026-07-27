@@ -27,7 +27,7 @@ metadata:
      - `hermes-software-development-workflow` — полный lifecycle
      - `writing-plans` — если задача требует создания/изменения 2+ файлов или имеет 2+ этапа
      - `code-quality-gates` — для verification gates
-     - доменные навыки (например, `nextjs-luxury-landing-to-catalog`)
+     - доменные навыки (например, `react-vite-tailwind-landing-pages`, `frontend-css-maintenance`)
 
 **Шаг 2 — Обсидиан — основная база знаний и навыков (если шаг 1 недостаточно):**
 3. `mcp_obsidian_search_vault(vault="obsidian-memory", query="<тема>")` — поиск по базе знаний
@@ -151,6 +151,16 @@ When external search engines or sites block automated access during research:
 6. Record date, URL, and 2-4 key takeaways per source.
 
 See `references/web-research-under-blocks-pattern.md` for full pattern and recommended Russian-language SEO research sources.
+
+## Tool pitfall: `search_files` regex vs glob
+
+`search_files` uses ripgrep and expects a **regex** pattern, not a shell glob.
+Passing `pattern='*.md'` with `target='content'` fails with a regex parse error.
+
+- Use `target='files'` + `pattern='*.md'` when finding files by name (glob mode).
+- Use `pattern=r'\.md$'` with `target='content'` only when searching inside files.
+- For directory inventories, prefer `terminal` (`ls /path` / `find ...`).
+- For known file sets, read them directly with `read_file` instead of searching.
 
 ## References
 

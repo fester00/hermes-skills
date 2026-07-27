@@ -22,10 +22,10 @@ Without it, every skill is dead weight.
 | stitch-skill | Local equivalent | Coverage |
 |---|---|---|
 | `design-md` | `design-md` | Same Google spec, plus lint/export/diff |
-| `taste-design` | `ui-ux-pro-max`, `luxury-immersive-web`, `claude-design` | Already covered with data-driven + process + premium |
-| `popular-web-designs` | `popular-web-designs` | 54 real systems with exact tokens |
-| `react-components` / `react-native` | project-specific skills | More precise for active repos |
-| `stitch-loop` | `claude-design` + `generative-widgets` | Multi-page from prompt already possible |
+| `taste-design` | `ui-ux-pro-max`, `popular-web-designs`, `claude-design` | Already covered with data-driven + real-brand vocabulary + process |
+| `popular-web-designs` | `popular-web-designs` | Already stronger (74 exact systems) |
+| `react-components` / `react-native` | `react-vite-tailwind-landing-pages`, `frontend-css-maintenance` | General-purpose replacement available |
+| `stitch-loop` | `claude-design` + `browser_vision` | Multi-page from prompt already possible |
 | `enhance-prompt` | partial in `ui-ux-pro-max` | Could be strengthened |
 
 ## What we adapted

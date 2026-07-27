@@ -9,9 +9,8 @@ a new class-level skill is created or when an existing skill changes scope.
 |---|---|---|
 | `claude-design` | One-off HTML artifacts: landing, deck, prototype | `Operations/Skills/claude-design.md` |
 | `ui-ux-pro-max` | Data-driven design briefs and anti-generic checks | `Operations/Skills/ui-ux-pro-max.md` |
-| `popular-web-designs` | 54 real brand design systems | `Operations/Skills/popular-web-designs.md` |
+| `popular-web-designs` | 74 real brand design systems | `Operations/Skills/popular-web-designs.md` |
 | `design-md` | Google DESIGN.md token specs | `Operations/Skills/design-md.md` |
-| `luxury-immersive-web` | Luxury animated landing pages | `Operations/Skills/luxury-immersive-web.md` |
 
 ## DevOps / Operations
 

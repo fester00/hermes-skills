@@ -105,6 +105,7 @@ If the user reports broken layout:
 - **Deleting `.footer`, `.navbar-collapse`, `.product-detail-*` classes** can break shared components even if a quick grep says they are unused in `className=` (they may be used by Bootstrap, by JS state toggles, or by child components).
 - **Combining redesign + cleanup in one commit** makes rollback harder. Always separate them.
 - **`git push --force-with-lease` on shared branches** is acceptable only when recovering from a broken pushed state and after confirming no one else pushed in the meantime.
+- **"Broken icon background" is often the icon silhouette fighting the container shape**, not a CSS background/opacity bug. Verify computed styles and the SVG viewBox before rewriting CSS. See `references/diagnosing-broken-icon-backgrounds.md`.
 
 ## Verification checklist
 
@@ -122,8 +123,11 @@ If the user reports broken layout:
 - `references/pentajunior-css-rollback-recipe.md` — real recovery recipe from a broken `globals.css` refactor.
 - `references/css-force-push-recovery.md` — when a broken CSS refactor has already been pushed to `origin/master`, how to reset local and remote state to the last known-good commit safely.
 - `references/purgecss-dead-code-recipe.md` — using PurgeCSS to remove unused rules from `globals.css` and verify the result.
+- `references/diagnosing-broken-icon-backgrounds.md` — when icons appear to have broken/artifacted backgrounds, verify the icon silhouette against the container shape before editing CSS.
+- `references/silicone-landing-contacts-redesign.md` — example of redesigning contact-card icon wells from small circles to squircle wells for non-square Lucide icons.
 
 ## Related skills
 
-- `pentajunior-v2-nextjs-sqlite` — project-specific conventions for pentajunior-v2.
+- `react-vite-tailwind-landing-pages` — landing page implementation with Tailwind.
 - `code-quality-gates` — build gates and verification workflows.
+- `frontend-efficiency-audit` — performance review and optimization.

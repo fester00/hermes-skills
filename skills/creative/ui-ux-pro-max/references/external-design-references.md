@@ -26,10 +26,10 @@ Rule of thumb: **internal skills first** for strategy and tokens; **external lib
 | **Screenlane** | https://screenlane.com/ | Freemium | UI screenshots, components, email flows | `claude-design`, `sketch` |
 | **SaaS Interface** | https://saasinterface.com/ | Paid | SaaS dashboard/component patterns | `ui-ux-pro-max`, `popular-web-designs` |
 | **UX Archive** | https://uxarchive.com/ | Free | Mobile user flows, task completion | `sketch`, `claude-design` |
-| **Godly** | https://godly.website/ | Free | Awwwards-style web design showcase | `luxury-immersive-web`, `claude-design` |
-| **Awwwards** | https://www.awwwards.com/ | Freemium | Award-winning sites, trends, portfolios | `luxury-immersive-web`, `claude-design` |
+| **Godly** | https://godly.website/ | Free | Awwwards-style web design showcase | `popular-web-designs`, `claude-design` |
+| **Awwwards** | https://www.awwwards.com/ | Freemium | Award-winning sites, trends, portfolios | `popular-web-designs`, `claude-design` |
 | **UI Patterns** | https://ui-patterns.com/ | Free | Pattern definitions and usage rules | `ui-ux-pro-max` |
-| **Little Big Details** | https://littlebigdetails.com/ | Free | Micro-interaction inspiration | `claude-design`, `luxury-immersive-web` |
+| **Little Big Details** | https://littlebigdetails.com/ | Free | Micro-interaction inspiration | `claude-design`, `popular-web-designs` |
 
 ## Refero — Quick Reference
 

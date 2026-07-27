@@ -171,6 +171,33 @@ git commit -m "sync skills from ~/.hermes/skills"
 git push origin main
 ```
 
+## Workflow: Sync a Skill with Its Upstream Source Repo
+
+When a skill is mirrored from an external repo (e.g., `ui-ux-pro-max` from
+`nextlevelbuilder/ui-ux-pro-max-skill`, `popular-web-designs` from
+`VoltAgent/awesome-design-md`) and the user asks to update it:
+
+1. **Clone upstream with git** (avoids GitHub API rate limits):
+   ```bash
+   cd /tmp
+   https_proxy=http://127.0.0.1:1081 git clone --depth 1 <repo-url>.git
+   ```
+2. **Compare version/counts** via `skill.json` or upstream `README.md`.
+3. **Backup local skill:** `cp -r ~/.hermes/skills/<cat>/<skill> ~/.hermes/skills/<cat>/<skill>-backup-v<old>`.
+4. **Sync data**
+   - CSV-driven skills: replace `data/` (and `data/stacks/`) from upstream.
+   - Template-driven skills: convert each upstream `DESIGN.md` to the local
+     narrative template shape, delete obsolete templates, add new ones, and
+     update the SKILL.md catalog.
+5. **Update SKILL.md frontmatter** with new version, description, and counts.
+6. **Clean stale references** across the library (deleted skills, dead tools like
+   `generative-widgets`) using `rg`.
+7. **Verify** with the skill's own scripts and with `rg` for dead references.
+8. **Commit** Obsidian updates first, then the skill repo if tracked.
+
+See `references/upstream-skill-sync-workflow.md` for the full recipe and
+verification commands.
+
 ## Workflow: Cross-Link Skills with Obsidian
 
 Obsidian should remain the human-readable knowledge base; the GitHub repo
@@ -186,6 +213,36 @@ should remain the machine-readable skill store.
    - `hermes-skills/README.md` points to the Obsidian repo URL
 
 3. Commit and push Obsidian changes.
+
+## Workflow: Combined Obsidian + hermes-skills Maintenance Session
+
+Use this workflow when the user asks to keep the Obsidian vault and the public
+skill repository in sync, or when making a repository public.
+
+1. **Inspect state** of both repos:
+   - `git status --short`, `git log --oneline -5`, `git remote -v`
+   - Check visibility with `gh repo view <repo> --json isPrivate,visibility`
+
+2. **Sync skill files** to `~/hermes-skills` using the rsync recipe above and
+   remove any runtime artefacts (e.g., `__pycache__`).
+
+3. **Update `README.md`** in `~/hermes-skills` to match the actual tree:
+   categories, active skill count, key skills, cross-links.
+
+4. **Audit Obsidian skill indices** against the real `~/.hermes/skills/` tree:
+   - `Operations/MOC — Skills.md`
+   - `Operations/Skills/Hermes — Skills Registry.md`
+   - `Operations/Skills/Hermes Skills Repository.md`
+   - Fix stale links, missing categories, duplicate rows, and count mismatches.
+
+5. **Commit and push** `hermes-skills`, then `obsidian-memory`.
+
+6. **Change visibility** if requested:
+   - `gh api repos/<owner>/<repo> -X PATCH -f visibility=public`
+   - Verify with `gh repo view`.
+
+See `references/obsidian-skills-repo-sync.md` for the full command-by-command
+recipe and verification checklist.
 
 ## Pitfalls
 
@@ -223,6 +280,16 @@ Before declaring a sync or publish done:
   tool and choosing a local docs mirror instead.
 - `references/graphify-evaluation.md` — evaluating a local code intelligence
   tool and wrapping it in a read-only audit skill.
+- `references/obsidian-skills-repo-sync.md` — combined end-to-end sync of the
+  Obsidian vault and the public `hermes-skills` GitHub repository with
+  visibility changes and verification checklist.
+- `references/converting-design-md-to-templates.md` — converting a batch of
+  `DESIGN.md` teardowns (YAML+narrative or pure narrative) into the narrative
+  Markdown templates used by the `popular-web-designs` skill, including font
+  substitution mappings and verification steps.
+- `references/upstream-skill-sync-workflow.md` — full recipe for syncing a
+  user-local skill with its upstream source repository (version comparison,
+  format drift, stale-reference cleanup, verification).
 ## License
 
 MIT. Skills inside the library carry their own licenses in their frontmatter.

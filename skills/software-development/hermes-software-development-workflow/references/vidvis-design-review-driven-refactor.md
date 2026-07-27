@@ -7,7 +7,7 @@
 **Lesson:** For software tasks, especially design-heavy Next.js work, the agent must call `skills_list()` **before** `skill_view()` and **before** proposing architecture. The system prompt skill list is not exhaustive, and Obsidian skill registries may lag behind `~/.hermes/skills/`.
 
 **Correct workflow for VIDVIS-class tasks:**
-1. `skills_list()` → discover `nextjs-luxury-landing-to-catalog`, `luxury-immersive-web`, `ui-ux-pro-max`, `hermes-software-development-workflow`, `writing-plans`, `code-quality-gates`
+1. `skills_list()` → discover `react-vite-tailwind-landing-pages`, `frontend-css-maintenance`, `frontend-efficiency-audit`, `ui-ux-pro-max`, `popular-web-designs`, `claude-design`, `hermes-software-development-workflow`, `writing-plans`, `code-quality-gates`
 2. `skill_view()` on the most specific skills
 3. Explore codebase
 4. Propose architecture and get approval
