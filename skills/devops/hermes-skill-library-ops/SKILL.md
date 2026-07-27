@@ -45,6 +45,42 @@ between the active Hermes profile, other profiles, and the Obsidian vault.
 4. **Sync across profiles when asked.** Use `rsync --delete` with backups.
 5. **Git push the vault.** After vault changes, commit and push to `origin/main`.
 
+## Workflow: sync active skills to a public GitHub skills repository
+
+When the user keeps a machine-readable skills mirror at `~/hermes-skills` (or another path) and wants it to stay in sync with `~/.hermes/skills/`:
+
+```bash
+cd ~/hermes-skills
+
+# Sync active skills, excluding local-only metadata
+rsync -av --delete \
+  --exclude='.archive' \
+  --exclude='.curator_backups' \
+  --exclude='.hub' \
+  --exclude='__pycache__' \
+  --exclude='.usage.json' \
+  --exclude='.usage.json.lock' \
+  --exclude='.curator_state' \
+  --exclude='.bundled_manifest' \
+  ~/.hermes/skills/ skills/
+
+# Remove any pycache that slipped through
+find skills -type d -name '__pycache__' -exec rm -rf {} +
+
+# Update README structure if categories changed (manual review recommended)
+git add -A
+git status --short
+git commit -m "sync: update skills from ~/.hermes/skills ($(date +%F))"
+git push origin main
+```
+
+If the repository is new or empty, create a `README.md` that explains:
+
+- this is a machine-readable mirror of `~/.hermes/skills/`
+- primary documentation lives in the Obsidian vault
+- sync command and exclude list
+- license note (skills may carry their own licenses in frontmatter)
+
 ## Workflow: update a skill from a session learning
 
 1. Identify the signal:
@@ -57,8 +93,8 @@ between the active Hermes profile, other profiles, and the Obsidian vault.
 5. If no umbrella exists, create a new **class-level skill**.
 6. Update `~/obsidian-memory/Operations/Skills/` and `MOC — Skills.md`.
 7. Commit and push the vault.
-8. If the user maintains multiple Hermes profiles, copy the updated skill to
-   those profiles too.
+8. If the user maintains a public GitHub skills repository (`~/hermes-skills` or similar), sync the active skill files there too. Use `rsync --delete` with excludes for `.archive`, `.curator_backups`, `.hub`, `__pycache__`, and hidden metadata files. See `hermes-webui-operations` for service-level sync patterns.
+9. If the user maintains multiple Hermes profiles, copy the updated skill to those profiles too.
 
 ## Workflow: copy skills to another profile
 

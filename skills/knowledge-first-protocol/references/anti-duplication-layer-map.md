@@ -36,7 +36,7 @@ Is it detailed reference about a project/topic?     → Obsidian note
 
 ## Session example: "Use design skills first"
 
-- Memory: "For visual work, load `ui-ux-pro-max` or `luxury-immersive-web` before coding."
+- Memory: "For visual work, load `ui-ux-pro-max`, `popular-web-designs`, or `claude-design` before coding."
 - Skill `hermes-software-development-workflow`: full Phase 0 skill-discovery rules.
 - `AGENTS.md`: working rule "Skills discovery is mandatory — `skills_list()` before `skill_view()`."
 - Obsidian: `Operations/MOC — Skills.md` index of all design/dev skills.

@@ -66,4 +66,4 @@ for lvl, text in headings:
 ## Related
 
 - `references/seo_jsonld_audit.py` — run before validating HTML.
-- `pentajunior-v2-nextjs-sqlite` skill for project build gate rules.
+- `pentajunior-v2-seo` skill for project build gate rules and SQLite/JSON-LD workflow.

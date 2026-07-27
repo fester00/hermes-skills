@@ -133,6 +133,15 @@ derive state with `useMemo`/React `key`, or disable the over-strict rule while
 keeping `react-hooks/exhaustive-deps` as a warning. See
 `references/eslint-nextjs-hook-rules.md` for the decision tree and exact config.
 
+### React/TypeScript Animation Quality Review
+When reviewing a React/TypeScript frontend that uses GSAP, Framer Motion, Lenis,
+or custom DOM-driven animations, run the dedicated checklist to catch lifecycle
+leaks, stringly-typed animation ids, copy-paste tilt logic, redundant state,
+and accessibility gaps. See
+`references/react-typescript-animation-quality-review.md` for the full checklist
+and verification commands, including Vite/React SPA smooth-scroll integration
+and single-page landing ScrollTrigger scoping.
+
 ---
 
 ## Gate 4: Runtime Debugging
@@ -204,3 +213,4 @@ behavior.
 | Code ready, about to commit | **Gate 3: Pre-Commit Verification** |
 | Can't see why a value is wrong at runtime | **Gate 4: Runtime Debugging** |
 | Slash command missing from TUI | **Gate 4.3: Hermes TUI Debugging** |
+| React/TS frontend animation review | **React/TypeScript Animation Quality Review** (Pre-Commit gate add-on) |

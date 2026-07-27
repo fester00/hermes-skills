@@ -25,12 +25,11 @@ broken tool expectations.
 | stitch-skill | Our existing skill | Decision |
 |---|---|---|
 | `design-md` | `design-md` | Already covered. No action. |
-| `taste-design` | `ui-ux-pro-max`, `luxury-immersive-web`, `claude-design` | Partially covered; extracted anti-generic checklist + vague→professional map into `ui-ux-pro-max`. |
-| `popular-web-designs` | `popular-web-designs` | Already stronger (54 real design systems). Added `examples/prompt-enhancement.md` for before/after briefs. |
-| `react-components` / `react-native` | `nextjs-*`, `pentajunior-v2-*` | Project-specific; no generic replacement needed. |
-| `code-to-design` | — | Requires Stitch; not portable. Skipped. |
+| `taste-design` | `ui-ux-pro-max`, `popular-web-designs`, `claude-design` | Partially covered; extracted anti-generic checklist + vague→professional map into `ui-ux-pro-max`. |
+| `popular-web-designs` | `popular-web-designs` | Already stronger (74 real design systems). Added `examples/prompt-enhancement.md` for before/after briefs. |
+| `react-components` / `react-native` | `react-vite-tailwind-landing-pages`, `frontend-css-maintenance` | General-purpose replacement available. |
+| `stitch-loop` | `claude-design` + `browser_vision` | Covered by existing workflow. |
 | `generate-design` | — | Requires Stitch; not portable. Skipped. |
-| `stitch-loop` | `claude-design` + `generative-widgets` | Covered by existing workflow. |
 | `enhance-prompt` | `ui-ux-pro-max` (partially) | Extracted terminology map and checklist. |
 
 ## Portable ideas extracted

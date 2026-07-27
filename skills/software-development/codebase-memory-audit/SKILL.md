@@ -149,7 +149,7 @@ Use the template from `references/cbm-audit-template.md`.
 This skill runs in **Phase 0: Knowledge Discovery**, before design.
 
 After the audit:
-1. Load project-specific skill (e.g. `pentajunior-v2-nextjs-sqlite`).
+1. Load project-specific skill if one exists (e.g. `pentajunior-v2-seo` for pentajunior-v2).
 2. Ask clarifying questions informed by hotspots and boundaries.
 3. Proceed to design.
 
