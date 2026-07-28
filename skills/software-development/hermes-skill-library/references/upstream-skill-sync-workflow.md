@@ -30,11 +30,13 @@ Use when the user asks to "check for updates" or "sync" skills that are mirrored
    cp -r ~/.hermes/skills/<category>/<skill> ~/.hermes/skills/<category>/<skill>-backup-v<old-version>
    ```
 
-5. **Sync data files**
+5. **Sync data (minimal scope)**
+   - Only copy the skills actually being updated; do NOT bulk-copy the entire
+     `~/.hermes/skills/` tree to avoid 300+ unrelated diffs.
    - For CSV-driven skills (`ui-ux-pro-max`): replace `data/` and `data/stacks/` from upstream `src/<skill>/data/`.
    - Preserve local-only helper scripts (`scripts/*.py`) and SKILL.md prose.
    - Update `version`, `description`, and counts in frontmatter.
-
+6. **For narrative template skills (`popular-web-designs`)**
 6. **For narrative template skills (`popular-web-designs`)**
    - Upstream may switch format. In this session upstream moved from narrative markdown to YAML-frontmatter `DESIGN.md`.
    - Convert each upstream `DESIGN.md` back into the local narrative template shape used by the skill.

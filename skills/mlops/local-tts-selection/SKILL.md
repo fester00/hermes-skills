@@ -33,6 +33,8 @@ Class-level guide for choosing and running local text-to-speech models.
 | Lightweight, fast, CPU-only, English + major languages | **Kokoro** | 82M params, pip install, runs on CPU |
 | Quality Russian voice, local, low resource | **Silero / Piper** | Russian voices out of the box |
 | Voice cloning / prosody control, English only, has GPU | **MARS5-TTS / Matcha-TTS** | Research quality, needs VRAM |
+| High-quality multilingual TTS, zero-shot voice cloning, production deployment, GPU available | **CosyVoice / Fish Speech / XTTS** | LLM-based neural TTS; see `references/neural-tts-cosyvoice-evaluation.md` |
+| High-quality neural TTS, no GPU, patient batch use | **CosyVoice-300M** (CPU) | Works on CPU but RTF ~3.5; see `references/cosyvoice-cpu-install-recipe.md` |
 | Real-time voice agent platform | **LiveKit Agents / Rapida** | Not a TTS engine; needs cloud providers |
 | Music / sound effects generation | **AudioCraft / HeartMuLa** | Different domain; see related skills |
 
@@ -52,10 +54,20 @@ When user links a TTS repo, answer these questions:
 
 - **Languages**: What languages are pretrained models trained on?
 - **Parameters / model size**: Can the model fit in RAM/VRAM?
+- **VRAM estimate**: For LLM-based TTS (CosyVoice, XTTS, Fish Speech), use HuggingFace tree API to sum `*.pt` / `*.safetensors` / `*.onnx` sizes and add ~2–4 GB overhead for activations.
 - **Dependencies**: PyTorch version, espeak-ng, special build steps?
 - **License**: AGPL / Apache / GPL / commercial?
 - **CPU support**: Does README mention CPU inference or require GPU?
+- **Deployment modes**: local script, web UI, FastAPI/gRPC server, Docker?
 - **Installation path**: pip install vs Docker vs build from source?
+
+### Quick model-size probe
+
+```bash
+# HuggingFace model repo file sizes (no full clone needed)
+curl -sL --max-time 30 "https://huggingface.co/api/models/<namespace>/<model>/tree/main" | \
+  python3 -c "import sys,json; d=json.load(sys.stdin); total=sum(n.get('size',0) for n in d if n.get('type')=='file'); [print(f'{n.get('size',0)/1024/1024:8.1f} MB  {n['path']}') for n in d if n.get('type')=='file']; print(f'TOTAL: {total/1024/1024:.1f} MB')"
+```
 
 ## Models
 
@@ -135,10 +147,13 @@ For a custom local TTS like Kokoro:
 
 1. **Language mismatch**: A model trained only on English will not produce intelligible Russian.
 2. **GPU requirement stated as "recommended" often means "unusable on CPU" for large models.**
-3. **espeak-ng dependency**: Many TTS tools need the system package, not just pip.
-4. **Disk space**: PyTorch + model weights can take 2–5 GB.
-5. **Python 3.12 compatibility**: Research repos often pin 3.10; test before promising.
-6. **Hermes Edge TTS Russian**: use `ru-RU-SvetlanaNeural` or `ru-RU-DmitryNeural`, not `en-US-AriaNeural`.
+3. **VRAM sizing**: Download size ≈ 30–50% of peak VRAM for fp32 inference. Add ~2–4 GB overhead. Example: CosyVoice3 weights are ~8.3 GB → comfortable at 16 GB VRAM, marginal at 12 GB.
+4. **Mirror repos**: A GitHub org may host a fork/mirror of the original project (e.g. `QwenAudio/CosyVoice` vs `FunAudioLLM/CosyVoice`). Code is identical but issue tracker and clone URLs differ.
+5. **espeak-ng dependency**: Many TTS tools need the system package, not just pip.
+6. **Disk space**: PyTorch + model weights can take 2–5 GB for lightweight models, 5–10 GB+ for neural LLM-based TTS.
+7. **Python 3.12 compatibility**: Research repos often pin 3.10; test before promising.
+8. **Hermes Edge TTS Russian**: use `ru-RU-SvetlanaNeural` or `ru-RU-DmitryNeural`, not `en-US-AriaNeural`.
+9. **CPU-only CosyVoice**: use CosyVoice-300M or 300M-SFT for smallest weights. Expect RTF ~3.5 (1 sec audio needs ~3.5 sec compute). CosyVoice2/3 are impractical on CPU. Always install `torch` CPU wheels and CPU ONNXRuntime to avoid pulling CUDA packages that fail to load.
 
 ## Verification steps
 
@@ -156,8 +171,30 @@ print('OK')
 PY
 ```
 
+For CosyVoice on CPU:
+
+```bash
+python - <<'PY'
+import sys, time
+sys.path.append('third_party/Matcha-TTS')
+from cosyvoice.cli.cosyvoice import AutoModel
+import torchaudio
+
+model_dir = 'pretrained_models/CosyVoice-300M-SFT'
+cosyvoice = AutoModel(model_dir=model_dir)
+print('speakers:', cosyvoice.list_available_spks())
+text = '你好，我是通义生成式语音大模型。'
+start = time.time()
+for i, output in enumerate(cosyvoice.inference_sft(text, '中文女', stream=False)):
+    torchaudio.save(f'cosy_{i}.wav', output['tts_speech'], cosyvoice.sample_rate)
+print(f'synthesis: {time.time()-start:.1f}s for {len(text)*0.3:.1f}s estimated audio')
+PY
+```
+
 Listen with `ffplay`, `aplay`, or attach to Telegram response.
 
 ## References
 
+- `references/neural-tts-cosyvoice-evaluation.md` — evaluation of CosyVoice as an example of a large LLM-based neural TTS: architecture, model sizes, VRAM requirements, deployment modes, and the fork-vs-original repo nuance.
 - `references/local-tts-project-evaluation.md` — worked example comparing Kokoro, MARS5-TTS, Rapida, LiveKit Agents for a CPU-only Linux box with 31GB RAM and a non-functional GeForce 210.
+- `references/cosyvoice-cpu-install-recipe.md` — exact CPU-only install steps for CosyVoice-300M-SFT on Ubuntu with `uv`, including PyTorch CPU wheels, dependency workarounds, and a smoke test.

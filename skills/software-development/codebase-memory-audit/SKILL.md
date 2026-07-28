@@ -178,6 +178,10 @@ codebase-memory-mcp cli trace_path --project <project-slug> --function-name <nam
 
 Project slug is derived from the path (e.g. `/home/natan/pentajunior-v2` → `home-natan-pentajunior-v2`).
 
+## Using codebase-memory-mcp with OpenCode
+
+OpenCode can consume the same `codebase-memory-mcp` server as an MCP tool, giving it access to the project knowledge graph during coding sessions. See `references/opencode-integration.md` for setup and prompt patterns.
+
 ---
 
 ## Detecting dead CSS

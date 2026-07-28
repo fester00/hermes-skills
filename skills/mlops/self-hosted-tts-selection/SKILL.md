@@ -67,15 +67,13 @@ Evaluate every TTS candidate against the same checklist:
 - **License:** Coqui Public Model License (research/personal); commercial license available.
 - **Best for:** Voice cloning and high-quality multilingual TTS when GPU is present.
 
-### MARS5-TTS
+### CosyVoice
 
-- **Size:** 1.2 B parameters (AR 750 M + NAR 450 M).
-- **Languages:** **English only**.
-- **Hardware:** Requires GPU with ~4 GB+ VRAM. CPU is impractical.
-- **License:** GNU AGPL 3.0.
-- **Verdict for low-end hardware:** Not suitable.
-
-## What not to choose
+- **Size:** 300M–0.5B parameters; download 2.5–8.3 GB depending on version.
+- **Languages:** Chinese, English, Japanese, Korean, German, Spanish, French, Italian, Russian.
+- **Hardware:** GPU strongly preferred. CPU fallback exists but RTF ~3.5 for CosyVoice-300M-SFT on a 6-core Intel CPU — impractical for real-time.
+- **Install:** PyTorch + ONNXRuntime + modelscope download. See `local-tts-selection` skill `references/cosyvoice-cpu-install-recipe.md`.
+- **Best for:** High-quality multilingual TTS, zero-shot voice cloning, instruct control when GPU is available. Acceptable on CPU only for patient batch generation of the smallest model.
 
 | Project | Why it is not a TTS engine for this use case |
 |---------|-----------------------------------------------|

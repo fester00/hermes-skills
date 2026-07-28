@@ -35,12 +35,35 @@ Runbook for operating the Hermes WebUI (https://github.com/nesquena/hermes-webui
 
 ## Process management
 
+First, determine how the WebUI is supervised on this host. Do **not** assume `ctl.sh` is the authority — check for a systemd user service first:
+
+```bash
+systemctl --user status hermes-webui.service --no-pager | head -5
+systemctl list-units --type=service --user | grep hermes-webui
+```
+
+### If a systemd user service exists
+
+Use systemd. `ctl.sh` is **not** a reliable supervisor when systemd already owns the process — it writes a PID file for the bootstrap shell, but the long-lived `server.py` may end up with a different PID (bootstrap `exec`s or systemd restarts it), making `ctl.sh status` lie and creating duplicate-process races. Running `ctl.sh start` in this state produces `FATAL: Another server is already responding` and orphan bootstrap processes.
+
+```bash
+systemctl --user restart hermes-webui.service
+systemctl --user stop    hermes-webui.service
+systemctl --user status  hermes-webui.service --no-pager | head -10
+```
+
+After a `git pull` update of `~/hermes-webui/`, a systemd restart is sufficient: the unit's `WorkingDirectory=/home/natan/hermes-webui` means the service will load the freshly checked-out code. See `references/webui-update-workflow.md` for the full safe-update checklist and `references/ctl-sh-vs-systemd-conflict.md` for the double-supervisor pitfall.
+
+### If there is no systemd unit
+
+Use the repo's launcher:
+
 ```bash
 cd ~/hermes-webui
 ./ctl.sh status
 ./ctl.sh restart   # stop + start
 ./ctl.sh stop
-./ctl.sh start
+./ctl.sh start --no-browser
 ```
 
 The server binds `127.0.0.1:HERMES_WEBUI_PORT` (default 18789).
@@ -109,12 +132,14 @@ Default values:
 1. `ss -tlnp | grep 18789` — is the server listening?
 2. `tail -n 50 ~/.hermes/webui.log` — any Python traceback?
 3. `sudo nginx -t` — nginx config valid?
-4. Check `~/hermes-webui/.env` for port, origins, upload size.
-5. Restart WebUI if `.env` changed.
+- `references/ctl-sh-vs-systemd-conflict.md` — when `ctl.sh` and a systemd user service both try to supervise the same port
+- `references/webui-upload-limits.md` — nginx + WebUI upload tuning
+- `references/webui-update-workflow.md` — safe `git pull` + `systemctl --user restart` update path
 
 ## Related
 
-- `references/webui-upload-limits.md` — session recipe from the upload-fix incident
+- `hermes-agent` skill for general Hermes CLI and gateway commands
+- `references/ctl-sh-vs-systemd-conflict.md` — when `ctl.sh` and a systemd user service both try to supervise the same port
 - `hermes-agent` skill for general Hermes CLI and gateway commands
 - `hermes-internal-operations` / `hermes-ops-devops` for broader Hermes ops
 

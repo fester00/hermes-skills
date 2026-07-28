@@ -332,6 +332,39 @@ mcp_servers:
     timeout: 300
 ```
 
+### OpenCode MCP Servers
+
+OpenCode uses a separate MCP config in `~/.config/opencode/opencode.json`. It validates strictly:
+
+```json
+{
+  "mcp": {
+    "codebase-memory": {
+      "type": "local",
+      "enabled": true,
+      "command": ["/home/natan/.local/bin/codebase-memory-mcp"],
+      "timeout": 30000
+    },
+    "obsidian": {
+      "type": "local",
+      "enabled": true,
+      "command": [
+        "/home/natan/.nvm/versions/node/v24.13.1/bin/node",
+        "/home/natan/.nvm/versions/node/v24.13.1/lib/node_modules/obsidian-mcp/build/main.js",
+        "/home/natan/obsidian-memory"
+      ],
+      "timeout": 30000
+    }
+  }
+}
+```
+
+**Critical rules for OpenCode MCP:**
+- `"type": "local"` is required
+- `"enabled": true` is required
+- `"command"` must be an array of strings, not a single string
+- Verify with `opencode mcp list`
+
 All tools from all servers are registered and available simultaneously. Each server's tools are prefixed with its name to avoid collisions.
 
 ## Sampling (Server-Initiated LLM Requests)

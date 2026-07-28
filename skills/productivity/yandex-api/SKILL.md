@@ -272,7 +272,44 @@ curl -s -H "Authorization: OAuth $TOKEN" https://login.yandex.ru/info?format=jso
 
 ---
 
-## 7. Питоны-скрипт (полная загрузка)
+## 7. Python: скачивание публичной папки целиком
+
+Публичная папка на Яндекс.Диске (`https://disk.yandex.ru/d/XXXX`) не всегда удобно скачать одним zip: прямая ссылка `downloader.disk.yandex.ru/zip/...` часто таймаутится на больших проектах, а API даёт рекурсивный обход с прямыми ссылками на каждый файл.
+
+**Решение:** `scripts/download-public-yandex-disk-folder.py` — resilient recursive downloader:
+- обходит дерево через `cloud-api.yandex.net/v1/disk/public/resources`
+- скачивает файлы через `/download` endpoint с retry
+- работает пачками (`--batch-size`) и сохраняет state (`--state`) для resume
+- 4 параллельных потока по умолчанию
+
+**Запуск:**
+```bash
+python ~/.hermes/skills/productivity/yandex-api/scripts/download-public-yandex-disk-folder.py \
+  "https://disk.yandex.ru/d/nD9JyCAGE4jJmQ" \
+  /mnt/data/natan-storage/silicone-landing
+```
+
+**Параметры:**
+| Флаг | Значение |
+|------|----------|
+| `--state` | путь к pickle-файлу для докачки (default: `.yandex-download-state.pkl`) |
+| `--batch-size` | сколько файлов скачать за один вызов (default: 700) |
+| `--workers` | потоков параллельно (default: 4) |
+| `--no-resume` | проигнорировать state и начать заново |
+
+**Почему не zip:**
+- `downloader.disk.yandex.ru/zip/...` таймаут на >120 с для папок с `node_modules`
+- API-обход стабилен, докачивает, не кладёт сеть
+
+### Питфоллы recursive download
+- Большие `node_modules` дают тысячи файлов — используйте `--batch-size` и state-файл
+- Сетевые таймауты случайны; скрипт делает 4 попытки с backoff
+- Не увеличивайте `--workers` сильно — Яндекс начинает рвать соединения при >6
+- State-файл перезаписывается после каждой пачки; при успешном завершении останется пустой список
+
+---
+
+## 8. Питоны-скрипт (полная загрузка на Диск)
 
 ```python
 import subprocess, json, os
@@ -463,4 +500,5 @@ npm run sync   # node scripts/sync-products.js
 - [[Himalaya — Loaded Skills Reference]] — выжимка по email CLI
 - `references/file-hosting-fallbacks.md` — tested file hosting fallbacks
 - `references/sqlite-to-xlsx-disk-roundtrip.md` — SQLite → multi-sheet xlsx → Yandex Disk upload/publish pattern
-- `scripts/upload-to-yandex-disk.py` — reusable Python script: reads `YANDEX_DISK_TOKEN` from `~/.hermes/.env`, uploads file to Disk, publishes it, returns public URL. Overwrites existing file on Disk (`overwrite=true`). Run with `python scripts/upload-to-yandex-disk.py` or import `upload_file_to_yandex_disk`.
+- `scripts/upload-to-yandex-disk.py` — reusable Python script: upload a file to Yandex Disk, publish it, return public URL
+- `scripts/download-public-yandex-disk-folder.py` — recursive downloader for public Yandex.Disk folders with resume, batching, and retry
