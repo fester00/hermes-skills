@@ -349,11 +349,21 @@ For static HTML/CSS/JS (no build step):
 **Core principle:** One agent per independent problem domain. Let them work concurrently.
 
 **Constraint:** `max_concurrent_children` defaults to 3. Do not exceed it. Check your `~/.hermes/config.yaml` for the current value (user's config: **3**).
-
-**User preference for this session:** Skills first, agents second. 
+## Routing guidance:
+- User preference for this session: Skills first, agents second. 
 Use `delegate_task` only when genuinely useful -- to parallelize independent work
 or get a fresh context on a well-scoped sub-task. Do NOT delegate as a default.
 Never delegate web search or browser tasks.
+
+**Updated routing (OpenCode-first for heavy coding):**
+- Quick question / one-liner → do directly
+- 1–3 files, ≤15 min → `delegate_task` subagent
+- 3–5 files, isolated → `delegate_task` subagent
+- >5 files, refactoring, website/project from scratch → **OpenCode**
+- Parallel independent heavy streams → **2 OpenCode agents in background**
+- Web search / browser / SEO → always main Hermes session (never OpenCode)
+
+**Why OpenCode for heavy tasks:** `delegate_task` has a hard 25-minute timeout per subagent and a practical limit of 2 concurrent heavy subagents. OpenCode runs in a background process without the 25-minute ceiling and survives Hermes session restarts, making it the right tool for multi-file refactoring or building a site from a plan.
 
 **Concurrency limits on this setup (verified 2026-06-13):**
 - Native Hermes `delegate_task` subagents: up to **3 in parallel**.

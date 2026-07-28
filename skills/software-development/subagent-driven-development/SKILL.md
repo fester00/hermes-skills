@@ -1,14 +1,14 @@
 ---
 name: subagent-driven-development
-description: "Execute plans via delegate_task subagents (2-stage review)."
-version: 1.1.0
+description: "Execute plans via delegate_task and OpenCode (2-stage review)."
+version: 1.2.0
 author: Hermes Agent (adapted from obra/superpowers)
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [delegation, subagent, implementation, workflow, parallel]
-    related_skills: [writing-plans, requesting-code-review, test-driven-development]
+    tags: [delegation, subagent, implementation, workflow, parallel, opencode]
+    related_skills: [writing-plans, requesting-code-review, test-driven-development, opencode, orchestrator-mode, hermes-software-development-workflow]
 ---
 
 # Subagent-Driven Development
@@ -47,169 +47,121 @@ Use this skill when:
 
 ### 1. Read and Parse Plan
 
-Read the plan file. Extract ALL tasks with their full text and context upfront. Create a todo list:
+Read the plan file. Extract ALL tasks with their full text and context upfront. Decide execution strategy per task:
 
-```python
-# Read the plan
-read_file("docs/plans/feature-plan.md")
-
-# Create todo list with all tasks
-todo([
-    {"id": "task-1", "content": "Create User model with email field", "status": "pending"},
-    {"id": "task-2", "content": "Add password hashing utility", "status": "pending"},
-    {"id": "task-3", "content": "Create login endpoint", "status": "pending"},
-])
-```
-
-**Key:** Read the plan ONCE. Extract everything. Don't make subagents read the plan file — provide the full task text directly in context.
+- **Lightweight tasks** (1–3 files, ≤15 min) → native `delegate_task`
+- **Medium tasks** (3–5 files) → native `delegate_task` if isolated
+- **Heavy tasks** (>5 files, refactoring, new site/project) → OpenCode heavy agent
+- **Parallel streams** → up to 2 OpenCode agents in background
+- **Web/SEO/browser tasks** → never OpenCode; keep in main session or use native subagents
 
 ### 2. Per-Task Workflow
 
-For EACH task in the plan:
+#### Path A: Native `delegate_task` (small/medium tasks)
 
-#### Step 1: Dispatch Implementer Subagent
+Use when task is isolated and fits within 25 minutes.
+
+##### Step 1: Dispatch Implementer Subagent
 
 Use `delegate_task` with complete context. Include:
 
 - Full task text from the plan (files, code, commands, expected output)
 - Scene-setting context (where this fits, dependencies, conventions)
+- Coding principles (TDD, code quality gates) quoted below
 - Explicit instruction to ask questions before guessing
 - Expected report format
 
+**Coding principles to include in every implementer context:**
+
+```
+CODE PRINCIPLES (follow strictly):
+1. TDD: write the failing test first, watch it fail, write minimal code, watch it pass, refactor.
+2. No production code without a failing test first.
+3. One behavior per test; clear descriptive names; test real code, not mocks when possible.
+4. After implementation, run the exact verification command from the plan.
+5. No hardcoded secrets, SQL injection, shell injection, eval/exec with user input, or path traversal.
+6. Validate user inputs; handle errors for I/O, network, DB calls.
+7. Keep changes surgical — only touch files required by the task.
+8. DRY and YAGNI: reuse existing helpers, prefer stdlib, no speculative abstractions.
+9. Commit after every task.
+10. If stuck, ask before guessing.
+```
+
+##### Step 2: Dispatch Spec Compliance Reviewer
+
+After the implementer completes, verify against the original spec.
+
+##### Step 3: Dispatch Code Quality Reviewer
+
+After spec compliance passes, review code quality.
+
+#### Path B: OpenCode heavy agent (heavy tasks)
+
+Use when task spans >5 files, requires refactoring, or builds a site/project from a written plan.
+
+##### Step 1: Prepare OpenCode Brief
+
+Use the template at `templates/opencode-brief.md` in this skill. Fill:
+
+- **Goal** — one sentence
+- **Plan** — copy-pasteable tasks from the written plan
+- **Project context** — tech stack, file structure, conventions
+- **Coding principles** — quoted from TDD / code-quality-gates / requesting-code-review
+- **Files to touch / not touch**
+- **Verification commands** per task
+- **Output format** — git status, test results, concerns
+
+##### Step 2: Launch OpenCode
+
+Use `terminal` with `background=true, notify_on_complete=true`:
+
 ```python
-delegate_task(
-    goal="Implement Task 1: Create User model with email and password_hash fields",
-    context="""
-    TASK FROM PLAN:
-    - Create: src/models/user.py
-    - Add User class with email (str) and password_hash (str) fields
-    - Use bcrypt for password hashing
-    - Include __repr__ for debugging
-
-    FOLLOW TDD:
-    1. Write failing test in tests/models/test_user.py
-    2. Run: pytest tests/models/test_user.py -v (verify FAIL)
-    3. Write minimal implementation
-    4. Run: pytest tests/models/test_user.py -v (verify PASS)
-    5. Run: pytest tests/ -q (verify no regressions)
-    6. Commit: git add -A && git commit -m "feat: add User model with password hashing"
-
-    PROJECT CONTEXT:
-    - Python 3.11, Flask app in src/app.py
-    - Existing models in src/models/
-    - Tests use pytest, run from project root
-    - bcrypt already in requirements.txt
-
-    BEFORE YOU BEGIN: If anything is unclear, ask now. Do not guess.
-
-    REPORT FORMAT:
-    - Status: DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT
-    - One-line test summary
-    - Files changed
-    - Any concerns
-    """,
-    toolsets=['terminal', 'file']
+terminal(
+    command="opencode run -f /tmp/brief.md 'Implement the attached plan task-by-task. Report status after each task.'",
+    workdir="/path/to/project",
+    background=True,
+    notify_on_complete=True
 )
 ```
 
-#### Step 2: Dispatch Spec Compliance Reviewer
+For interactive sessions requiring iteration, use `pty=True`.
 
-After the implementer completes, verify against the original spec:
-
-```python
-delegate_task(
-    goal="Review if implementation matches the spec from the plan",
-    context="""
-    ORIGINAL TASK SPEC:
-    - Create src/models/user.py with User class
-    - Fields: email (str), password_hash (str)
-    - Use bcrypt for password hashing
-    - Include __repr__
-
-    IMPLEMENTER CLAIMS:
-    [paste implementer summary here]
-
-    CHECK:
-    - [ ] All requirements from spec implemented?
-    - [ ] File paths match spec?
-    - [ ] Function signatures match spec?
-    - [ ] Behavior matches expected?
-    - [ ] Nothing extra added (no scope creep)?
-
-    OUTPUT: PASS or list of specific spec gaps to fix.
-    """,
-    toolsets=['file']
-)
-```
-
-**If spec issues found:** Fix gaps, then re-run spec review. Continue only when spec-compliant.
-
-#### Step 3: Dispatch Code Quality Reviewer
-
-After spec compliance passes:
+##### Step 3: Monitor
 
 ```python
-delegate_task(
-    goal="Review code quality for Task 1 implementation",
-    context="""
-    FILES TO REVIEW:
-    - src/models/user.py
-    - tests/models/test_user.py
-
-    CHECK:
-    - [ ] Follows project conventions and style?
-    - [ ] Proper error handling?
-    - [ ] Clear variable/function names?
-    - [ ] Adequate test coverage?
-    - [ ] No obvious bugs or missed edge cases?
-    - [ ] No security issues?
-
-    OUTPUT FORMAT:
-    - Critical Issues: [must fix before proceeding]
-    - Important Issues: [should fix]
-    - Minor Issues: [optional]
-    - Verdict: APPROVED or REQUEST_CHANGES
-    """,
-    toolsets=['file']
-)
+process(action="list")
+process(action="poll", session_id="<id>")
+process(action="log", session_id="<id>")
 ```
 
-**If quality issues found:** Fix issues, re-review. Continue only when approved.
+##### Step 4: Verify Results
 
-#### Step 4: Mark Complete
+After OpenCode reports completion:
+- `git status --short`
+- `git diff --stat`
+- Run full verification command (tests / lint / build)
+- Re-read modified files
 
-```python
-todo([{"id": "task-1", "content": "Create User model with email field", "status": "completed"}], merge=True)
-```
+##### Step 5: Iterate
 
-### 3. Final Review
+If gaps found, redispatch OpenCode with specific feedback or take over directly if partial state is broken.
 
-After ALL tasks are complete, dispatch a final integration reviewer:
+### 3. Parallel Execution
 
-```python
-delegate_task(
-    goal="Review the entire implementation for consistency and integration issues",
-    context="""
-    All tasks from the plan are complete. Review the full implementation:
-    - Do all components work together?
-    - Any inconsistencies between tasks?
-    - All tests passing?
-    - Ready for merge?
-    """,
-    toolsets=['terminal', 'file']
-)
-```
+- **Max 2 OpenCode agents concurrently** to avoid credential/model pool exhaustion.
+- Use isolated worktrees or separate workdirs for parallel agents.
+- Never let two agents edit the same files.
+- Web/SEO/browser tasks never run in OpenCode; they stay in the main Hermes session.
 
-### 4. Verify and Commit
+### 4. Final Review
+
+After all tasks complete, dispatch a final integration reviewer or run integration tests.
+
+### 5. Verify and Commit
 
 ```bash
-# Run full test suite
 pytest tests/ -q
-
-# Review all changes
 git diff --stat
-
-# Final commit if needed
 git add -A && git commit -m "feat: complete [feature name] implementation"
 ```
 
@@ -241,6 +193,10 @@ git add -A && git commit -m "feat: complete [feature name] implementation"
 - Let implementer self-review replace actual review (both are needed)
 - **Start code quality review before spec compliance is PASS** (wrong order)
 - Move to next task while either review has open issues
+- Dispatch a heavy OpenCode task without a written brief containing coding principles and verification steps
+- Let OpenCode perform web search, browser navigation, or SEO analysis
+- Run more than 2 OpenCode agents concurrently
+- Allow two parallel agents to edit the same files or share a workdir without isolation
 
 ## Handling Issues
 

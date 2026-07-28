@@ -1,12 +1,12 @@
 ---
 name: orchestrator-mode
 description: Default orchestration mode — delegate non-trivial tasks to agents, verify their work, iterate on errors. Do small tasks and consultations yourself.
-version: 1.0.0
+version: 1.1.0
 author: Master Ugwai
 metadata:
   hermes:
-    tags: [orchestration, delegation, agents, workflow, default-mode]
----
+    tags: [orchestration, delegation, agents, workflow, default-mode, opencode]
+    related_skills: [opencode, subagent-driven-development, hermes-software-development-workflow, writing-plans]
 
 # Orchestrator Mode
 
@@ -47,12 +47,15 @@ Only handle tasks directly if they are trivially simple or purely consultative.
 
 | Task Type | Agent Type | Notes |
 |-----------|-----------|-------|
-| Isolated, bounded, under ~15 min | Native `delegate_task` subagent | Fast, clean context, built-in tools |
-| Long coding session, large refactor, feature branch | Heavy CLI agent (OpenCode, Codex, Claude Code) | Survives interruptions, deeper work |
-| Parallel independent tasks | Multiple `delegate_task` subagents | Up to 3–4 in parallel |
-| Research or reasoning-heavy synthesis | `delegate_task` with reasoning tools | Keep main context free |
+| Quick question / one-liner | Do it directly | Fastest, no context setup |
+| Isolated, 1–3 files, under ~15 min | Native `delegate_task` subagent | Fast, clean context, built-in tools |
+| 3–5 files, well-defined, self-contained | Native `delegate_task` subagent | Up to 3 in parallel |
+| > 5 files, refactoring, website or project from scratch | Heavy CLI agent (OpenCode) | No hard timeout, survives interruptions, deeper work |
+| Parallel independent heavy streams | 2 OpenCode agents in background | True parallelism without delegate queue |
+| Research / SEO / browser / web search | Do it yourself or native `delegate_task` | Never delegate web tasks to OpenCode |
+| Code review of an entire branch | OpenCode or heavy CLI agent | Fresh context, deep review |
 
-Use judgment. Heavy agents are preferred when the task is complex and long-lived. Native subagents are preferred for quick, isolated work.
+**Hard rule:** OpenCode is the default agent for any coding task that spans more than 5 files, requires refactoring, or builds a website/project from a written plan. Native `delegate_task` is reserved for smaller, isolated subtasks. Web search, browser navigation, and SEO analysis are always handled in the main Hermes session or by native subagents with explicit tool access.
 
 ---
 
@@ -120,6 +123,17 @@ If a profile already contains delegation guidance, merge rather than overwrite: 
 
 ```
 Plan → Delegate → Verify → Iterate → Deliver
+
+Lightweight: do directly
+Small/isolated: delegate_task
+Heavy coding: OpenCode
+Parallel heavy: 2 OpenCode agents max
+Web/SEO/browser: main Hermes session
 ```
 
 The user prefers delegation for isolated code tasks. Subagents and heavy agents are tools, not personas. I am the orchestrator.
+
+## Template / References
+
+- For heavy OpenCode tasks, use the brief template in `subagent-driven-development/templates/opencode-brief.md`.
+- For MCP configuration patterns, see `native-mcp` skill and `opencode` skill references.
