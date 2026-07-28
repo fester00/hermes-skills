@@ -184,16 +184,18 @@ When a skill is mirrored from an external repo (e.g., `ui-ux-pro-max` from
    ```
 2. **Compare version/counts** via `skill.json` or upstream `README.md`.
 3. **Backup local skill:** `cp -r ~/.hermes/skills/<cat>/<skill> ~/.hermes/skills/<cat>/<skill>-backup-v<old>`.
-4. **Sync data**
+5. **Sync data (minimal scope)**
+   - Only copy the skills actually being updated; do NOT bulk-copy the entire
+     `~/.hermes/skills/` tree to avoid 300+ unrelated diffs.
    - CSV-driven skills: replace `data/` (and `data/stacks/`) from upstream.
    - Template-driven skills: convert each upstream `DESIGN.md` to the local
      narrative template shape, delete obsolete templates, add new ones, and
      update the SKILL.md catalog.
-5. **Update SKILL.md frontmatter** with new version, description, and counts.
-6. **Clean stale references** across the library (deleted skills, dead tools like
+6. **Update SKILL.md frontmatter** with new version, description, and counts.
+7. **Clean stale references** across the library (deleted skills, dead tools like
    `generative-widgets`) using `rg`.
-7. **Verify** with the skill's own scripts and with `rg` for dead references.
-8. **Commit** Obsidian updates first, then the skill repo if tracked.
+8. **Verify** with the skill's own scripts and with `rg` for dead references.
+9. **Commit** Obsidian updates first, then the skill repo if tracked.
 
 See `references/upstream-skill-sync-workflow.md` for the full recipe and
 verification commands.

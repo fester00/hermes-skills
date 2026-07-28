@@ -318,7 +318,7 @@ location.reload(true);
 | WebUI picker still shows old model after config edit | Browser cache / front-end state | Hard refresh or clear `localStorage` |
 | `get_available_models()` returns stale model | On-disk / in-memory cache | Call `invalidate_models_cache()` before reading |
 | `/api/health/agent` returns 401 | Password auth enabled | Expected; verify with status + port instead |
-| `systemctl restart` times out | Old process holds the port | See Section 1 pattern G / `references/port-zombie-post-update-recovery.md` |
+| **WebUI `systemctl restart` times out** | Old process holds the port | See `references/port-zombie-post-update-recovery.md`. Also check whether WebUI is actually supervised by a systemd user service — if so, use `systemctl --user restart hermes-webui.service` and avoid `./ctl.sh`, which creates a double-supervisor race. See `hermes-webui-operations/references/ctl-sh-vs-systemd-conflict.md`. |
 
 ---
 

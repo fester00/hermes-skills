@@ -62,6 +62,9 @@ TCP-only proxying is not enough: if DNS still resolves through the provider, blo
 ### Stock firmware does not support VLESS/XRay natively
 GL.iNet SDK 4.x / OpenWrt 21.02 web UI only shows OpenVPN, WireGuard, Tor, and sometimes Shadowsocks. VLESS/VMess/Reality require community packages (`xray-core`, `luci-app-passwall2`, `luci-app-nikki`) that are not in stock GL.iNet repos. Do not promise the user a one-click GUI path on stock firmware.
 
+### Modern OpenWrt feeds (24.10+) include current xray-core and v2rayA
+On routers running newer OpenWrt/GL.iNet firmware based on 24.10, `opkg update && opkg install xray-core v2raya` installs current Xray >= 1.8 and v2rayA with a web UI on port 2017. This is the safest router-level GUI path on such firmware: v2rayA manages its own transparent proxy, DNS, and routing rules without hand-written iptables. However, v2rayA's built-in protocol list may not include WireGuard; use Xray/VLESS/Reality or VMess instead.
+
 ### Repo `xray-core` is too old for Reality
 Vendor OpenWrt 21.02 repositories may ship `xray-core` 1.5.x. Reality transport requires Xray >= 1.8.x. You must replace the binary manually with a current release.
 
@@ -81,6 +84,23 @@ The `xray-geodata` package bundled with old `xray-core` lacks list names used by
 When manually routing DNS through xray, configure the VLESS outbound with the VPN server IP instead of its domain. Otherwise xray must resolve the outbound domain before it can resolve anything, creating a bootstrap loop.
 
 ## Config pitfalls
+
+### Router-side Reality through v2rayA (modern OpenWrt/GL.iNet)
+On routers where `v2raya` and `xray-core` are available from OpenWrt 24.10+ repos:
+
+1. `opkg install xray-core v2raya`
+2. `/etc/init.d/v2raya enable; /etc/init.d/v2raya start`
+3. Open `http://ROUTER_IP:2017`
+4. Import the VLESS share URL from the server setup.
+5. In **Settings → Transparent Proxy**, enable transparent proxy and choose a routing rule set that sends `geosite:category-ru-blocked` and common blocked domains to `proxy`, everything else `direct`.
+6. Apply and verify from a LAN client with `curl https://2ip.ru`.
+
+Caveats:
+- v2rayA may not offer WireGuard in its UI; use VLESS/VMess/Xray protocols.
+- If the router firmware is older (21.02-based), `opkg` may ship `xray-core` 1.5.x without Reality support; upgrade the binary manually or use a newer firmware.
+
+### `luci-app-v2raya` is only the UI
+`luci-app-v2raya` does not pull in `v2raya` or `xray-core`. Install both core packages explicitly.
 
 ### Reality `shortId`
 Xray expects `shortId` as a single hex string, e.g. `"shortId": "db04ce8bdb8900f1"`. Do not wrap it in an array (`"shortIds": [...]`) unless the specific Xray version requires the newer format. If you see `invalid "shortId"`, check length and hex encoding.
@@ -203,7 +223,7 @@ SSH tolerates large packs and long-running pushes far better than HTTPS tunneled
 
 ## WireGuard on GL.iNet
 
-For users who rent their own VPS, WireGuard is often simpler and faster than Xray/VLESS. GL.iNet stock firmware has a built-in WireGuard Client, but split-tunnel policy routing has specific pitfalls:
+For users who rent their own VPS, WireGuard is often simpler and faster than Xray/VLESS. GL.iNet stock firmware has a built-in WireGuard Client, but split-tunnel policy routing has specific pitfalls. If the stock UI becomes unstable (constant `wgclient1` flap), replace it with **sing-box + WireGuard outbound** instead of fighting GL.iNet scripts: see `references/glinet-sing-box-wireguard.md` and `templates/sing-box-router-wg-domain-routing.json`.
 
 - `AllowedIPs = 0.0.0.0/0` does **not** mean global proxy in Policy mode; it only authorizes the peer to receive traffic for any destination.
 - The router uses DNS to learn the IP of each listed domain and injects host routes into routing table `1001`. If DNS is hidden (DoH/DoT on the client) or times out, policy routing breaks.
@@ -211,15 +231,34 @@ For users who rent their own VPS, WireGuard is often simpler and faster than Xra
 - The GL.iNet `vpn-failover` watchdog can cause `wgclient1` to flap up/down every 20-30 seconds if it misjudges the tunnel state. Disable failover monitoring or use Global Proxy for a stable baseline.
 - Xray/v2rayA and WireGuard fight over firewall rules, routing table 1001, and DNS. Use one tunnel solution at a time.
 
-See `references/glinet-wireguard-policy-routing.md` for the full setup, domain list, diagnostic commands, and troubleshooting steps.
+### wg-easy quick fix from the session
+
+If you just set up `wg-easy` on a fresh VPS and the router can handshake but cannot reach the internet:
+
+1. On the VPS host, install `iptables-persistent` and save the forward rules:
+   ```bash
+   apt-get install -y iptables-persistent
+   iptables -A FORWARD -i br-<docker-net-id> -o <public-if> -j ACCEPT
+   iptables -A FORWARD -i <public-if> -o br-<docker-net-id> -m state --state RELATED,ESTABLISHED -j ACCEPT
+   netfilter-persistent save
+   ```
+2. Do not blame MTU or the router until this forwarding works.
+3. See `references/wg-easy-docker-host-forwarding.md` for the full script and `references/glinet-wireguard-policy-routing.md` for router-side policy routing.
 
 ## References
 
+- `references/glinet-sing-box-wireguard.md` — GL-MT6000 stock firmware: setting up **sing-box** with a WireGuard outbound as a stable replacement for the flaky GL.iNet WG Client policy engine, including domain-based routing, nftables TPROXY, dnsmasq integration, and autostart.
+- `templates/sing-box-router-wg-domain-routing.json` — known-good sing-box config template for a GL.iNet router with a WireGuard VPS, TPROXY inbound, and `geosite:category-ru-blocked` routing.
+- `scripts/glinet-sing-box-install.sh` — installs sing-box from OpenWrt repos, creates `/etc/sing-box/config.json` from the template, enables the service, and configures dnsmasq/nftables/TPROXY on a GL-MT6000-class device.
+- `references/wg-easy-docker-host-forwarding.md` — same problem as above, solved with `iptables-persistent` instead of a systemd service (simpler on Debian/Ubuntu hosts).
 - `references/glinet-wireguard-policy-routing.md` — GL-MT6000 WireGuard Client: Policy vs Global Proxy, UCI file locations, DNS visibility, tunnel flapping, nftables set verification, Ubuntu 24.04 HWE kernel bug, and coexistence with v2rayA/Xray.
+- `references/xray-vps-vless-reality.md` — installing a self-hosted Xray VLESS+Reality inbound on Ubuntu 24.04 alongside Docker/wg-easy, using port 8443 when nginx owns 443.
 - `references/vless-subscription-parser.md` — parse JSON-style Xray/VLESS subscriptions into individual `vless://` URLs.
 - `references/glinet-v2raya-transparent-session.md` — GL.iNet + v2rayA transparent proxy session: safe router-level path, DNS through tunnel, binary transfer recipe, rollback.
+- `references/glinet-v2raya-autostart.md` — make v2rayA/xray start automatically after a router reboot on stock GL.iNet / OpenWrt, including the autoconnect caveat.
 - `references/telegram-xray-session.md` — real session notes: okmulti.com VLESS/SS subscription, node selection, working Xray config, Hermes Telegram integration.
 - `references/windows-nekobox-browser-split-tunnel.md` — Windows Nekobox setup for browser-only selective routing to YouTube, Twitch, Discord, ChatGPT, Gemini, etc.
 - `templates/xray-router-socks5-only.json` — minimal router VLESS+Reality config (SOCKS5/HTTP only, no TPROXY).
 - `templates/xray-router-socks5-ru-direct.json` — same with Russian/CIS domains routed direct.
+- `scripts/wg-easy-forward.sh` — host-side script that adds/persists FORWARD rules for a Dockerized `wg-easy` server.
 - `scripts/xray-router-rollback.sh` — one-click rollback for broken TPROXY/Xray state.

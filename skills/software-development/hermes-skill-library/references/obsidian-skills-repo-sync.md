@@ -40,18 +40,41 @@ gh repo view fester00/obsidian-memory --json isPrivate,visibility,url,name
 gh repo view fester00/hermes-skills   --json isPrivate,visibility,url,name
 ```
 
-### 3. Sync skill files to hermes-skills
+### 3. Sync skill files to hermes-skills (targeted)
+
+Only copy the skills actually modified in this session. Do NOT bulk-sync the
+entire `~/.hermes/skills/` tree unless the user explicitly asked for a full
+mirror, because it produces hundreds of unrelated diffs and increases the risk
+of overwriting profile-specific or work-in-progress files.
 
 ```bash
 cd ~/hermes-skills
+# Example: update two design skills only
+for skill in creative/ui-ux-pro-max creative/popular-web-designs; do
+  rm -rf "skills/$skill"
+  cp -r "$HOME/.hermes/skills/$skill" "skills/$skill"
+done
+
+# Remove deleted skills explicitly
+rm -rf skills/creative/luxury-immersive-web
+rm -rf skills/software-development/nextjs-luxury-landing-to-catalog
+# ... etc
+```
+
+If the user did ask for a full sync, use rsync with care:
+
+```bash
 rsync -av --delete \
   --exclude='.archive' \
   --exclude='.curator_backups' \
   --exclude='.hub' \
   --exclude='.git' \
   ~/.hermes/skills/ skills/
+```
 
-# Remove runtime artefacts that should never be committed
+In either case, remove runtime artefacts that should never be committed:
+
+```bash
 find skills -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null
 
 # Verify counts

@@ -1,9 +1,9 @@
 {
-  "last_report_path": "/home/natan/.hermes/logs/curator/20260716-173347",
-  "last_run_at": "2026-07-16T17:33:47.818496+00:00",
-  "last_run_duration_seconds": 0.97345,
-  "last_run_summary": "auto: no changes; llm: skipped (consolidation off)",
+  "last_report_path": "/home/natan/.hermes/logs/curator/20260723-173422",
+  "last_run_at": "2026-07-23T17:34:22.872743+00:00",
+  "last_run_duration_seconds": 0.816866,
+  "last_run_summary": "auto: 2 marked stale; llm: skipped (consolidation off)",
   "last_run_summary_shown_at": "2026-07-09T16:57:40.729015+00:00",
   "paused": false,
-  "run_count": 12
+  "run_count": 13
 }

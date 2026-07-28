@@ -1,0 +1,86 @@
+{
+  "log": {
+    "level": "info",
+    "timestamp": true
+  },
+  "dns": {
+    "servers": [
+      {
+        "tag": "google",
+        "address": "tcp://8.8.8.8",
+        "detour": "wg-vps"
+      },
+      {
+        "tag": "local",
+        "address": "udp://192.168.0.1",
+        "detour": "direct"
+      }
+    ],
+    "rules": [
+      {
+        "rule_set": ["geosite-ru-blocked"],
+        "server": "google"
+      }
+    ],
+    "final": "local"
+  },
+  "inbounds": [
+    {
+      "type": "tproxy",
+      "tag": "tproxy-in",
+      "listen": "::",
+      "listen_port": 7893,
+      "sniff": true,
+      "domain_strategy": "prefer_ipv4"
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "wireguard",
+      "tag": "wg-vps",
+      "server": "189.74.120.227",
+      "server_port": 51820,
+      "system_interface": false,
+      "interface_name": "singwg0",
+      "local_address": ["192.168.101.2/24"],
+      "private_key": "YOUR_PRIVATE_KEY",
+      "peer_public_key": "YOUR_PEER_PUBLIC_KEY",
+      "pre_shared_key": "YOUR_PRESHARED_KEY",
+      "reserved": [0, 0, 0],
+      "mtu": 1420,
+      "persistent_keepalive_interval": 15
+    },
+    {
+      "type": "direct",
+      "tag": "direct"
+    },
+    {
+      "type": "block",
+      "tag": "block"
+    }
+  ],
+  "route": {
+    "rule_set": [
+      {
+        "tag": "geosite-ru-blocked",
+        "type": "local",
+        "format": "binary",
+        "path": "/etc/sing-box/geosite-category-ru-blocked.srs"
+      }
+    ],
+    "rules": [
+      {
+        "rule_set": ["geosite-ru-blocked"],
+        "outbound": "wg-vps"
+      }
+    ],
+    "final": "direct",
+    "auto_detect_interface": true,
+    "default_mark": 0
+  },
+  "experimental": {
+    "clash_api": {
+      "external_controller": "0.0.0.0:9090"
+    }
+  }
+}

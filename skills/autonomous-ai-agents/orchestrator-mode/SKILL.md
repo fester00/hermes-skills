@@ -114,10 +114,11 @@ If a profile already contains delegation guidance, merge rather than overwrite: 
 ## Safety and Exceptions
 
 - Never delegate fully autonomous security-sensitive actions without explicit user confirmation.
-- For production deployments, destructive operations, or irreversible changes, pause and confirm.
-- If agent output is suspicious or contradicts known facts, escalate to the user instead of silently accepting.
+## Template / References
 
----
+- For heavy OpenCode tasks, use the brief template in `subagent-driven-development/templates/opencode-brief.md`.
+- For a quick routing lookup, see `subagent-driven-development/references/agent-routing-decision-tree.md` (or reproduce the table above).
+- For MCP configuration patterns, see `subagent-driven-development/references/opencode-mcp-config-pattern.md` and the `native-mcp` skill.
 
 ## Remember
 

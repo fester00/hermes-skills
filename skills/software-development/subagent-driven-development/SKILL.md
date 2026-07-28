@@ -360,5 +360,7 @@ When the orchestration involves significant context usage, long review loops, or
 
 - **`references/context-budget-discipline.md`** — Four-tier context degradation model (PEAK / GOOD / DEGRADING / POOR), read-depth rules that scale with context window size, and early warning signs of silent degradation. Load when a run will clearly consume significant context (multi-phase plans, many subagents, large artifacts).
 - **`references/gates-taxonomy.md`** — The four canonical gate types (Pre-flight, Revision, Escalation, Abort) with behavior, recovery, and examples. Load when designing or reviewing any workflow that has validation checkpoints — use the vocabulary explicitly so each gate has defined entry, failure behavior, and resumption rules.
+- **`references/opencode-mcp-config-pattern.md`** — How to wire local MCP servers (`codebase-memory`, `obsidian-mcp`) into OpenCode so the heavy agent can query the project knowledge graph and the vault. Use when OpenCode is the chosen executor and the project relies on those MCP tools.
+- **`templates/opencode-brief.md`** — Starter brief for heavy OpenCode tasks. Copy and fill before launching.
 
-Both references adapted from gsd-build/get-shit-done (MIT © 2025 Lex Christopherson).
+Both `context-budget-discipline.md` and `gates-taxonomy.md` adapted from gsd-build/get-shit-done (MIT © 2025 Lex Christopherson).

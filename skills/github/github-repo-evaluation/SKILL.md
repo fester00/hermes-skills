@@ -36,7 +36,40 @@ Navigate to the repo page. Read:
 - **License** — MIT/Apache = good; GPL/AGPL = check compatibility
 - **README completeness** — does it explain WHAT and WHY clearly?
 
-### Step 2 — Deep Clone & Structure (1 minute)
+### Step 2 — Choose the Right Inspection Depth
+
+Not every evaluation needs a full clone. Pick the fastest route that answers the user's question:
+
+| User question | Best route |
+|---|---|
+| «What does this project do?» / «How does it work?» | Lightweight remote inspection: GitHub API + raw files |
+| «Should we use/adopt this?» | Full clone + source structure analysis |
+| «Is this safe to run?» | Full clone + dependency audit + red-flag check |
+
+#### Lightweight remote inspection (fast)
+
+Use when the user only wants a project overview or quick feasibility check, especially for large model repos (TTS, LLM, ASR) where a full clone would waste time and disk.
+
+```bash
+# repo metadata: stars, forks, last push, license, description
+curl -sL --max-time 30 "https://api.github.com/repos/<owner>/<repo>" | python3 -m json.tool
+
+# root file listing
+curl -sL --max-time 30 "https://api.github.com/repos/<owner>/<repo>/contents" | python3 -m json.tool
+
+# key files directly from raw.githubusercontent.com
+curl -sL --max-time 30 "https://raw.githubusercontent.com/<owner>/<repo>/main/README.md" | head -200
+curl -sL --max-time 30 "https://raw.githubusercontent.com/<owner>/<repo>/main/requirements.txt"
+curl -sL --max-time 30 "https://raw.githubusercontent.com/<owner>/<repo>/main/example.py" | head -100
+
+# model weights / sizes on HuggingFace (if mirrored there)
+curl -sL --max-time 30 "https://huggingface.co/api/models/<namespace>/<model>/tree/main" | \
+  python3 -c "import sys,json; [print(f'{n.get('size',0)/1024/1024:8.1f} MB  {n['path']}') for n in json.load(sys.stdin) if n.get('type')=='file']"
+```
+
+This route is especially useful for large model repos (TTS, LLM, ASR) where a full clone would waste time and disk.
+
+#### Deep Clone & Structure (1 minute)
 
 ```bash
 cd /tmp && git clone <url> repo-eval && cd repo-eval
