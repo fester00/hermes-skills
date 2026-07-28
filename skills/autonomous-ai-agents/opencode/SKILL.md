@@ -1,14 +1,14 @@
 ---
 name: opencode
 description: "Delegate coding to OpenCode CLI (features, PR review)."
-version: 1.3.0
+version: 1.4.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [Coding-Agent, OpenCode, Autonomous, Refactoring, Code-Review]
-    related_skills: [claude-code, codex, hermes-agent]
+    tags: [Coding-Agent, OpenCode, Autonomous, Refactoring, Code-Review, Orchestration]
+    related_skills: [claude-code, codex, hermes-agent, orchestrator-mode, subagent-driven-development, writing-plans, test-driven-development, code-quality-gates, requesting-code-review]
 ---
 
 # OpenCode CLI
@@ -178,12 +178,139 @@ terminal(command="opencode -s ses_abc123", workdir="~/project", background=true,
 | `--title <name>` | Name the session |
 | `--attach <url>` | Connect to a running opencode server |
 
-## ACP Delegation via Hermes (Experimental)
+## Orchestration Mode
 
-Hermes can spawn the **GitHub Copilot CLI in ACP mode** as an external subagent. That CLI behaves as an autonomous coding worker (the underlying agent is OpenCode/Copilot). Use `delegate_task(acp_command="copilot")` — **not** `acp_command="opencode"`:
+Use OpenCode as a heavy implementation agent for multi-step or parallel coding tasks.
+
+### When to use
+
+- Task spans >5 files
+- Refactoring a subsystem
+- Building a website or project from a written plan
+- Two independent heavy workstreams can run in parallel
+
+### When NOT to use
+
+- Web search, browser navigation, SEO analysis (Hermes handles these)
+- One-liners or single-file tweaks (overkill)
+- Tasks requiring constant user feedback and course correction
+
+### Routing (from orchestrator-mode skill)
+
+| Task Type | Agent |
+|-----------|-------|
+| Quick question / one-liner | Do directly |
+| 1–3 files, ≤15 min | `delegate_task` |
+| 3–5 files, isolated | `delegate_task` |
+| >5 files, refactoring, site/project from scratch | **OpenCode** |
+| Parallel heavy streams | **2 OpenCode agents** |
+| Web / SEO / browser | Main Hermes session only |
+
+### Preparing the brief
+
+Create a markdown brief with:
+
+1. **Goal** — one sentence
+2. **Plan** — copy-pasteable tasks from the written plan
+3. **Project context** — tech stack, file structure, conventions
+4. **Coding principles** — quoted below
+5. **Files to touch / not touch**
+6. **Verification commands** per task
+7. **Output format** — git status, test/lint/build output, concerns
+
+**Coding principles to quote in every OpenCode brief:**
+
+```
+CODE PRINCIPLES (follow strictly):
+1. TDD: write the failing test first, watch it fail, write minimal code, watch it pass, refactor.
+2. No production code without a failing test first.
+3. One behavior per test; clear descriptive names; test real code, not mocks when possible.
+4. Run the exact verification command after every task and report the result.
+5. No hardcoded secrets, SQL injection, shell injection, eval/exec with user input, or path traversal.
+6. Validate user inputs; handle errors for I/O, network, DB calls.
+7. Keep changes surgical — only touch files required by the task.
+8. DRY and YAGNI: reuse existing helpers, prefer stdlib, no speculative abstractions.
+9. Commit after every task.
+10. If a task is unclear, stop and state what is missing. Do not guess.
+11. No web search or browser navigation. Use only project files and tools.
+```
+
+### One-shot launch
 
 ```python
-delegate_task(
+terminal(
+    command="opencode run -f /tmp/brief.md 'Implement the attached plan task-by-task. Report status after each task.'",
+    workdir="/path/to/project",
+    background=True,
+    notify_on_complete=True
+)
+```
+
+### Interactive launch
+
+For tasks needing iteration:
+
+```python
+terminal(
+    command="opencode",
+    workdir="/path/to/project",
+    background=True,
+    pty=True
+)
+```
+
+Then use `process(action="submit", ...)` for prompts and `process(action="poll"/"log")` for progress.
+
+### Parallel agents
+
+```python
+# Agent 1
+terminal(
+    command="opencode run -f /tmp/brief-1.md 'Implement part A. Report status after each task.'",
+    workdir="/tmp/project-part-a",
+    background=True,
+    notify_on_complete=True
+)
+
+# Agent 2
+terminal(
+    command="opencode run -f /tmp/brief-2.md 'Implement part B. Report status after each task.'",
+    workdir="/tmp/project-part-b",
+    background=True,
+    notify_on_complete=True
+)
+```
+
+**Limits:** max 2 concurrent OpenCode agents to avoid model/credential pool exhaustion. Use separate workdirs or git worktrees.
+
+### Monitoring
+
+```python
+process(action="list")
+process(action="poll", session_id="<id>")
+process(action="log", session_id="<id>")
+```
+
+### Verification and iteration
+
+After OpenCode reports completion:
+
+1. `git status --short`
+2. `git diff --stat`
+3. Re-read modified files
+4. Run tests / lint / build
+5. If gaps found → redispatch OpenCode with specific feedback, or take over directly if state is broken
+
+### Exit
+
+Interactive sessions exit with Ctrl+C (`process(action="write", data="\x03")`) or `process(action="kill")`. Never use `/exit` — it opens an agent selector.
+
+## Procedure
+
+1. Verify tool readiness:
+   - `terminal(command="opencode --version")`
+   - `terminal(command="opencode auth list")`
+2. For bounded tasks, use `opencode run '...'` (no pty needed).
     acp_command="copilot",
     goal="Implement feature X",
     context="Full task description...",
@@ -247,10 +374,11 @@ The Hermes native subagent uses the same model/provider and has full access to t
    - `terminal(command="opencode auth list")`
 2. For bounded tasks, use `opencode run '...'` (no pty needed).
 3. For iterative tasks, start `opencode` with `background=true, pty=true`.
-4. Monitor long tasks with `process(action="poll"|"log")`.
-5. If OpenCode asks for input, respond via `process(action="submit", ...)`.
-6. Exit with `process(action="write", data="\x03")` or `process(action="kill")`.
-7. Summarize file changes, test results, and next steps back to user.
+4. For heavy coding tasks (>5 files, refactoring, site/project from scratch), use Orchestration Mode (see above).
+5. Monitor long tasks with `process(action="poll"|"log")`.
+6. If OpenCode asks for input, respond via `process(action="submit", ...)`.
+7. Exit with `process(action="write", data="\x03")` or `process(action="kill")`.
+8. Summarize file changes, test results, and next steps back to user.
 
 ## PR Review Workflow
 
