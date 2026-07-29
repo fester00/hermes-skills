@@ -29,11 +29,13 @@ Only handle tasks directly if they are trivially simple or purely consultative.
 
 **Delegate by default to agents for:**
 - Any coding, scripting, or refactoring task beyond a few lines.
-- Code review, architecture exploration, or design decisions.
-- Research, data gathering, or analysis that benefits from focused exploration.
+- Code review or design decisions **after** the codebase has been explored by the orchestrator.
+- Research, data gathering, or analysis **where the sources and questions are already framed**.
 - Multi-step tasks with clear deliverables.
 - Tasks that may pollute the main context window.
 - Parallel workstreams.
+
+**Important:** Agents should not be asked to "explore the project structure from scratch." Codebase exploration (architecture, hotspots, entry points) is the orchestrator's job via `codebase-memory-audit` and Obsidian. The results are then packaged into the agent's brief.
 
 **Handle directly when:**
 - The user asks a quick question requiring a short explanation.
@@ -67,10 +69,13 @@ Only handle tasks directly if they are trivially simple or purely consultative.
 - Break the goal into concrete, verifiable steps.
 - Create a TODO list.
 - **Verify the exact project path, repo, or workspace before exploration.** If the user names a project (e.g. `pentajunior-v2`), confirm the absolute path or repo root rather than assuming a sibling directory or a similarly named project. A wrong root causes wasted exploration and changes in the wrong codebase.
+- **Perform Knowledge Discovery in the main session before delegating code work.** For projects with more than 5 files, run `codebase-memory-audit`: index the repo, query architecture and hotspots, and save the summary to Obsidian (`~/obsidian-memory/Projects/<project>/`). Agents receive the prepared context in their brief; they do not explore the codebase blindly.
+- Frame research and data-gathering questions explicitly so an agent can answer them without open-ended exploration.
 
 ### 2. Delegate
 
 - Provide full context to the agent: goal, constraints, file paths, relevant errors, project conventions.
+- **Never send an agent to "explore the project."** The brief must already contain the discovered structure, specific files to touch, files NOT to touch, and verification commands.
 - Specify expected output and verification criteria.
 - For heavy agents, launch via `terminal(background=true, notify_on_complete=True)` where appropriate.
 

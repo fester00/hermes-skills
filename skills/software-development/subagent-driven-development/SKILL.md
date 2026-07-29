@@ -113,11 +113,26 @@ Use the template at `templates/opencode-brief.md` in this skill. Fill:
 
 ##### Step 2: Launch OpenCode
 
-Use `terminal` with `background=true, notify_on_complete=true`:
+Use `terminal` with `background=true, notify_on_complete=true`.
+
+**Always pipe the brief via stdin.** The form `opencode run -f /tmp/brief.md 'prompt'` is fragile: many OpenCode versions interpret the trailing quoted string as a second file path and fail immediately with `Error: File not found: ...`. Avoid it unless you have verified your local OpenCode build handles it.
+
+Preferred launch:
 
 ```python
 terminal(
-    command="opencode run -f /tmp/brief.md 'Implement the attached plan task-by-task. Report status after each task.'",
+    command="opencode run < /tmp/brief.md",
+    workdir="/path/to/project",
+    background=True,
+    notify_on_complete=True
+)
+```
+
+If you need additional context files alongside the brief, attach them with `-f` while still piping the brief:
+
+```python
+terminal(
+    command="opencode run -f /tmp/extra-context.md < /tmp/brief.md",
     workdir="/path/to/project",
     background=True,
     notify_on_complete=True
@@ -125,6 +140,8 @@ terminal(
 ```
 
 For interactive sessions requiring iteration, use `pty=True`.
+
+See `references/opencode-stdin-launch.md` for a concrete working smoke test and the exact error to avoid.
 
 ##### Step 3: Monitor
 
@@ -361,6 +378,7 @@ When the orchestration involves significant context usage, long review loops, or
 - **`references/context-budget-discipline.md`** — Four-tier context degradation model (PEAK / GOOD / DEGRADING / POOR), read-depth rules that scale with context window size, and early warning signs of silent degradation. Load when a run will clearly consume significant context (multi-phase plans, many subagents, large artifacts).
 - **`references/gates-taxonomy.md`** — The four canonical gate types (Pre-flight, Revision, Escalation, Abort) with behavior, recovery, and examples. Load when designing or reviewing any workflow that has validation checkpoints — use the vocabulary explicitly so each gate has defined entry, failure behavior, and resumption rules.
 - **`references/opencode-mcp-config-pattern.md`** — How to wire local MCP servers (`codebase-memory`, `obsidian-mcp`) into OpenCode so the heavy agent can query the project knowledge graph and the vault. Use when OpenCode is the chosen executor and the project relies on those MCP tools.
+- **`references/opencode-stdin-launch.md`** — Working recipe for launching OpenCode from Hermes with a brief piped via stdin, plus the exact trap to avoid (`-f /tmp/brief.md 'prompt'` being parsed as a file path) and a copy-paste smoke test. Load whenever you are about to launch OpenCode from a Hermes skill.
 - **`templates/opencode-brief.md`** — Starter brief for heavy OpenCode tasks. Copy and fill before launching.
 
 Both `context-budget-discipline.md` and `gates-taxonomy.md` adapted from gsd-build/get-shit-done (MIT © 2025 Lex Christopherson).

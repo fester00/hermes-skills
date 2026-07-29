@@ -61,7 +61,7 @@ rm -rf skills/software-development/nextjs-luxury-landing-to-catalog
 # ... etc
 ```
 
-If the user did ask for a full sync, use rsync with care:
+If the user did ask for a full sync, use rsync with care and then verify that the active skill count in the repo matches the local tree. Note that `~/.hermes/skills/` contains an `.archive/` directory and runtime directories (`.curator_backups/`, `.hub/`) that should stay local; never sync them to the public repo.
 
 ```bash
 rsync -av --delete \
@@ -70,6 +70,13 @@ rsync -av --delete \
   --exclude='.hub' \
   --exclude='.git' \
   ~/.hermes/skills/ skills/
+```
+
+After rsync, compare active SKILL.md counts to catch missed categories or sync errors:
+
+```bash
+find /home/natan/.hermes/skills -maxdepth 4 -type f -name 'SKILL.md' | wc -l
+find /home/natan/hermes-skills/skills -maxdepth 4 -type f -name 'SKILL.md' | wc -l
 ```
 
 In either case, remove runtime artefacts that should never be committed:
@@ -161,6 +168,8 @@ gh repo view <owner>/<repo> --json isPrivate,visibility,url,name
   double-check source vs destination before running.
 - `gh repo edit --visibility public --confirm` does not exist; use the API.
 - Counting skills only at depth 2 misses nested mlops subcategories; scan to
-  depth 3 or inspect the `.bundled_manifest`.
+  depth 3 or 4 to include nested categories like `mlops/training/` and `mlops/inference/`.
 - A clean `git status` in Obsidian does not mean indices are correct; always
   compare lists with the actual `~/.hermes/skills/` tree.
+- A full rsync may create unrelated diffs from skills not touched in the session.
+  Prefer targeted sync unless the user explicitly asks for a full mirror.

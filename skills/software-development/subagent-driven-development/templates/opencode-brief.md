@@ -1,19 +1,30 @@
 # OpenCode Agent Brief Template
 
-Copy this template into `/tmp/brief.md` and fill every section before launching OpenCode for a heavy coding task.
+Starter template for a markdown brief passed to OpenCode. Prefer piping the brief via stdin (`opencode run < /tmp/brief.md`) because the `-f file.md 'prompt'` form is fragile and may be interpreted as a missing file argument in some OpenCode versions.
+
+## Usage
+
+1. Copy this file to `/tmp/brief.md` (or `/tmp/brief-<part>.md` for parallel agents).
+2. Fill every placeholder.
+3. Launch from the target project directory.
+
+## Template
+
+```markdown
+# OpenCode Brief
 
 ## Goal
 
-One sentence describing what the agent must build or refactor.
+One sentence describing what to build or refactor.
 
 ## Project context
 
-- **Path:** `/absolute/path/to/project`
-- **Tech stack:** e.g. Next.js 14 + React + TypeScript + Tailwind + better-sqlite3
-- **Test command:** e.g. `npm run test` or `pytest tests/ -q`
-- **Build/lint command:** e.g. `npm run build && npx eslint .`
-- **Conventions:** existing file naming, import style, state-management patterns, where to place new components/utils/tests
-- **Files NOT to touch:** list explicitly to prevent scope creep
+- **Tech stack:** [e.g. React 19 + Vite + Tailwind v4 + better-sqlite3]
+- **Project root:** [absolute path]
+- **Test command:** [e.g. `npm test`, `pytest tests/ -q`]
+- **Lint command:** [e.g. `npx eslint .`, `ruff check .`]
+- **Build command:** [e.g. `npm run build`]
+- **Conventions:** [naming, file layout, style, state management, link to AGENTS.md if present]
 
 ## Plan
 
@@ -43,17 +54,38 @@ CODE PRINCIPLES (follow strictly):
 11. No web search or browser navigation. Use only project files and tools.
 ```
 
+## Files NOT to touch
+
+- [List protected files or directories]
+
 ## Output format
 
-After completing all tasks, report:
+After each task, report:
+- Status: DONE / DONE_WITH_CONCERNS / BLOCKED
+- Files changed
+- Verification result (command + output)
+- Concerns / next steps
 
-1. `git status --short`
-2. `git diff --stat`
-3. Test/lint/build output
-4. Any blockers or concerns
-5. Next steps you recommend
+At the end, run and report:
+- `git status --short`
+- `git diff --stat`
+- [Full test/lint/build command]
+```
 
 ## Launch command
+
+**Recommended:** pipe the brief via stdin to avoid the fragile `-f file.md 'prompt'` interpretation:
+
+```python
+terminal(
+    command="opencode run < /tmp/brief.md",
+    workdir="/absolute/path/to/project",
+    background=True,
+    notify_on_complete=True
+)
+```
+
+**Alternative** (only if your OpenCode version supports it):
 
 ```python
 terminal(
@@ -63,3 +95,9 @@ terminal(
     notify_on_complete=True
 )
 ```
+
+## See also
+
+- Skill `opencode` — full OpenCode orchestration guide
+- Skill `subagent-driven-development` — when to use OpenCode vs delegate_task
+- Skill `writing-plans` — how to write the plan this brief is based on
