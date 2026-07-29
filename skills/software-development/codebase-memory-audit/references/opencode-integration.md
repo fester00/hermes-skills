@@ -9,17 +9,14 @@ The same `codebase-memory-mcp` server used by Hermes `codebase-memory-audit` can
 
 ## Setup
 
-### 1. Index the project
-
-From the project root:
+### 1. Verify the binary
 
 ```bash
-codebase-memory-mcp cli index_repository --repo-path .
+which codebase-memory-mcp
+codebase-memory-mcp --version
 ```
 
-Project slug is derived from the path, e.g. `/home/natan/pentajunior-v2` → `home-natan-pentajunior-v2`.
-
-### 2. Add to OpenCode
+### 2. Add to OpenCode config
 
 Edit `~/.config/opencode/opencode.json`:
 
@@ -28,24 +25,22 @@ Edit `~/.config/opencode/opencode.json`:
   "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "codebase-memory": {
-      "command": "/home/natan/.local/bin/codebase-memory-mcp"
+      "type": "local",
+      "enabled": true,
+      "command": ["/home/natan/.local/bin/codebase-memory-mcp"],
+      "timeout": 30000
     }
   }
 }
 ```
 
-Or via CLI:
-
-```bash
-opencode mcp add codebase-memory
-```
-
-### 3. Verify
+### 3. Verify connection
 
 ```bash
 opencode mcp list
-opencode run "Show me the architecture overview of this project"
 ```
+
+Expected: `✓ codebase-memory connected`.
 
 ## Useful prompts for OpenCode
 
@@ -55,7 +50,7 @@ opencode run "Show me the architecture overview of this project"
 - "Find symbols matching `.*Controller.*`"
 - "List entry points and hotspots"
 
-## Limitations
+## Limits
 
 - OpenCode decides when to call the tool; explicit prompts work best.
 - The project must be indexed first; re-index after large refactors.
@@ -66,3 +61,4 @@ opencode run "Show me the architecture overview of this project"
 
 - `SKILL.md` in this skill for full `codebase-memory-audit` workflow.
 - `references/cbm-usage-notes.md` for exact CLI flags and query examples.
+- `hermes-skill-library/references/opencode-mcp-config-pattern.md` for the general MCP config schema.

@@ -37,6 +37,25 @@ Map the surface before changing code:
 7. Check navigation: `window.location.href` vs framework router (`next/link`, `react-router`, etc.).
 8. Check for inline style/animate/transition objects in motion components.
 9. Check for inline ref callbacks in mapped arrays.
+10. Check whether the SPA has prerendered/SSR content for SEO and whether the
+    build produces a populated `index.html`. A Vite SPA with a loading screen
+    often ships an empty `<div id="root"></div>`, which hurts search indexing.
+    Verify by inspecting `dist/index.html` after `npm run build`.
+
+### 7. Missing prerender / empty `index.html`
+
+- **Vite/React SPA serves an empty `index.html`**. If the project cares about
+  SEO, the build step must inject rendered content into the root element.
+- *Fix:* add a post-build prerender. Two proven approaches:
+  - `react-vite-tailwind-landing-pages/references/ssr-prerender-for-vite-spa.md`
+    — Playwright-based, executes the client bundle.
+  - `react-vite-tailwind-landing-pages/references/vite-react-ssr-prerender-without-playwright.md`
+    — lightweight `react-dom/server` via Vite SSR; pass a `prerender` prop to
+    `App` so the loading screen is skipped during the SSR pass.
+- *Verification:* `wc -c dist/index.html` should be 20–80 KB for a content-rich
+  landing page, and `grep` should find product names and headings.
+
+---
 
 ## Common anti-patterns and fixes
 
@@ -142,11 +161,12 @@ This removes ~10 lines per animated section, centralizes reduced-motion handling
 1. Read the diff and identify the changed client components.
 2. Read the broader component surface that shares patterns (event listeners, GSAP contexts, mapped refs, animation hooks).
 3. Run the audit checklist above and classify findings by severity:
-   - **CAREFUL** — memory leaks, broken cleanup, full-page reloads, silent animation failures.
+   - **CAREFUL** — memory leaks, broken cleanup, full-page reloads, silent animation failures, empty `index.html` for an SEO landing page.
    - **SAFE** — unnecessary re-renders, inline objects, repeated static work.
 4. Propose minimal, targeted fixes. Prefer stable references and explicit cleanup over premature optimization.
 5. Verify after fixes:
    - `npm run build` / `next build` passes.
+   - For Vite SPAs that need SEO, `dist/index.html` contains rendered body content.
    - Mount/unmount paths exercised (route changes, dialogs).
    - DevTools Performance / Memory shows no retained listeners or detached nodes.
    - Animations still respect `prefers-reduced-motion: reduce` if applicable.
@@ -158,16 +178,9 @@ This removes ~10 lines per animated section, centralizes reduced-motion handling
 - `references/frontend-efficiency-audit--vidvis-refactor-session.md` — follow-up refactor session that implemented the audit: centralized GSAP module, `useGsapContext`, `useTilt`, MagneticCursor rewrite, navigation fix, horizontal-scroll repair, `ProductCard` extraction, Tailwind tokens, and verification results.
 - `references/frontend-efficiency-audit--vidvis-smooth-scroll-session.md` — second follow-up focused on perceived smoothness: global `SmoothScrollProvider`, Lenis lifecycle, page transitions, throttled pointer transforms, GSAP vs Framer Motion ownership, and `useReducedMotion` SSR safety.
 
-## Reusable fixes (templates)
-
-When the audit surfaces duplicated mouse-tilt logic across mapped cards, extract a stable `useTilt` hook instead of inlining handlers. The hook owns its own listeners and GSAP cleanup, so `gsap.context` in the parent only manages scroll/reveal tweens. See `templates/useTilt.ts` for a drop-in starter.
-
-Similarly, when product-card JSX is duplicated between catalog sections, extract a `ProductCard` component and let the parent focus on data and layout.
-
-When several client components repeat the same `useReducedMotion` guard + `gsap.context` lifecycle, use the `useGsapContext` helper pattern. It centralizes cleanup and makes it impossible to forget `ctx.revert()`.
-
 ## Related skills
 
 - `systematic-debugging` — when a symptom already exists and you need root cause analysis.
 - `code-quality-gates` — when the audit is part of a pre-merge enforcement flow.
 - `requesting-code-review` — when the output needs to be packaged as review comments.
+- `react-vite-tailwind-landing-pages` — landing-page-specific build, prerender, modal, and form patterns.

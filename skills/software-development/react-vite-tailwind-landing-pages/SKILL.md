@@ -228,9 +228,9 @@ Show success state after opening the mail client.
 
 ---
 
-## Phase 7: Animation and Polish
+## Phase 6: Animation and Polish
 
-### 7A — CSS-only animation stack
+### 6A — CSS-only animation stack
 
 Use this when the user wants no animation frameworks.
 
@@ -244,7 +244,7 @@ Use this when the user wants no animation frameworks.
 
 See `references/no-framework-css-animations-for-react-landing.md` for exact code.
 
-### 7B — Library animation stack
+### 6B — Library animation stack
 
 Use when `framer-motion`, `GSAP`, and `Lenis` are allowed.
 
@@ -252,20 +252,7 @@ Use when `framer-motion`, `GSAP`, and `Lenis` are allowed.
 2. **Scroll-triggered reveals** — `whileInView` with `viewport={{ once: true }}`.
 3. **Hover states** — `whileHover`, `whileTap`.
 4. **Loading screen** — `AnimatePresence` with `motion.span`.
-5. **Smooth scroll** — Lenis with anchor-link handling.
-
-
----
-
-## Phase 6: Localization
-
-- Every UI string must be in the target language (e.g. Russian).
-- Meta tags, loading screen, buttons, labels, placeholders, error messages.
-- Keep a short glossary: Catalog → Каталог, Contact → Контакты, Order → Заказать.
-
----
-
-## Phase 7: SEO and HTML Structure
+## Phase 8: SEO and HTML Structure
 
 - `html lang="ru"`
 - Unique `<title>` with brand and keywords
@@ -276,12 +263,45 @@ Use when `framer-motion`, `GSAP`, and `Lenis` are allowed.
 - Proper heading hierarchy: one `h1` in Hero, `h2` per section, `h3` in cards
 - `robots.txt` and `sitemap.xml` in `public/` so they are copied to `dist/`
   for crawlers
-- Prerendered `index.html` body content for non-JS crawlers (see
-  `references/ssr-prerender-for-vite-spa.md`)
+- Prerendered `index.html` body content for non-JS crawlers. Two proven options:
+  - `references/ssr-prerender-for-vite-spa.md` — Playwright-based, fully executes
+    the client bundle; use when hydration state or client data matters.
+  - `references/vite-react-ssr-prerender-without-playwright.md` — lightweight
+    `react-dom/server` via Vite SSR; use when you want to avoid Chromium or when
+    a `requestAnimationFrame` loading screen blocks headless prerender.
 
 ---
 
-## Phase 8: Verification Gates
+## Phase 9: Data Integrity and Contacts
+
+### Source contacts from the canonical project
+
+When the landing page is a spin-off of an existing site (e.g. a product
+microsite for `pentajunior-v2`), do **not** leave placeholder phones or
+addresses. Read the main project's site config and use real values.
+
+Example from `pentajunior-v2/src/app/syte-config.ts`:
+
+```ts
+export const siteConfig = {
+  companyName: "ООО «Пента Юниор»",
+  email: "penta@penta-junior.ru",
+  phones: ["+7 (495) 644-46-16", "+7 (495) 730-58-51"],
+  address: "111123, г. Москва, Электродный проезд, д. 14, стр. 1",
+};
+```
+
+Import this config into the Contact section and footer, and render phone links
+with `tel:` and email links with `mailto:`.
+
+### Placeholder images
+
+Always provide a fallback image (`public/images/placeholder.svg`) so a missing
+product photo does not produce a broken layout or a 404.
+
+---
+
+## Phase 10: Verification Gates
 
 Before claiming completion, run:
 
@@ -291,7 +311,7 @@ npx oxlint         # 0 warnings, 0 errors
 ```
 
 Also verify interactively:
-- All product images load
+- All product images load (including placeholder fallback)
 - Product modals open and close
 - Modals scroll without scrolling background
 - Order form validates and prefills product
@@ -309,150 +329,27 @@ Add Playwright tests for critical interactions:
 This catches regressions that manual dev-server checks miss and documents
 expected behavior for the next developer.
 
+### Headless screenshot verification
+
+Hermes browser tools and headless Chrome can hang on loading screens that use
+`requestAnimationFrame` or `framer-motion` entrance animations. For automated
+visual checks:
+
+1. Render `App` with `prerender={true}` in a dedicated test entry.
+2. Or serve the prerendered `dist/index.html`, which already contains the final
+   DOM, and take screenshots of that static output.
+3. Avoid pointing headless Chrome at the dev server and waiting for the loading
+   screen to finish — it often does not in this environment.
+
 ### Visual artifact isolation checklist
 
 When a user reports broken backgrounds, clipping, or "glitchy" icons:
 
 1. Screenshot the area at 2× scale with Playwright `clip` to the element.
 2. Check computed styles: `background`, `border`, `border-radius`, `overflow`, `box-shadow`, `filter`, `transform`, plus `::before`/`::after` content.
-3. Hide the background layer (video/image/gradient) in DevTools to separate icon issues from background issues.
-4. If the icon still looks wrong, inspect the SVG `viewBox` and path — the icon shape may not fit the chosen container (e.g. `MapPin` in a small circle).
-5. Prefer a larger wrapper or a rounded-square shape (`rounded-xl`/`rounded-2xl`) over forcing non-square icons into tiny circles.
-
-See `frontend-css-maintenance/references/diagnosing-broken-icon-backgrounds.md` for the full recipe.
-expected behavior for the next developer.
-
-### Visual artifact isolation checklist
-
-When a user reports broken backgrounds, clipping, or "glitchy" icons:
-
-1. Screenshot the area at 2× scale with Playwright `clip` to the element.
-2. Check computed styles: `background`, `border`, `border-radius`, `overflow`, `box-shadow`, `filter`, `transform`, plus `::before`/`::after` content.
-3. Hide the background layer (video/image/gradient) in DevTools to separate icon issues from background issues.
-4. If the icon still looks wrong, inspect the SVG `viewBox` and path — the icon shape may not fit the chosen container (e.g. `MapPin` in a small circle).
-5. Prefer a larger wrapper or a rounded-square shape (`rounded-xl`/`rounded-2xl`) over forcing non-square icons into tiny circles.
-
-See `frontend-css-maintenance/references/diagnosing-broken-icon-backgrounds.md` for the full recipe.
-
-## Task Framing for Design Polish + Bugfix Work
-
-When the user wants to refine an existing landing page ("проработай дизайн", "убери баги", "сделай плавный скролл", "поправь мобильную версию"), they should not need to negotiate the workflow each time. Use this template as a default. It matches the user's preferred order: audit → design contract → plan → execute → verify → finish.
-
-### Default prompt template to return to the user
-
-```
-Проект: <project-name>
-Путь: <absolute-path>
-
-Задача:
-1. Проработать существующий дизайн — привести к полированному, целостному виду.
-2. Исправить баги в UI/UX и взаимодействиях.
-3. Сделать скроллинг плавным (CSS scroll-behavior: smooth, и при необходимости Lenis/GSAP).
-4. Использовать все подходящие навыки: frontend, design, code-quality-gates.
-
-Что нужно сделать:
-- Провести аудит текущего состояния (структура, стили, анимации, баги).
-- Определить конкретные баги (hover, модалки, формы, мобильное меню, скролл).
-- Предложить и согласовать правки по дизайну.
-- Реализовать правки.
-- Прогнать build + lint.
-- Проверить визуально (скриншоты / браузер).
-- Написать / обновить Playwright-тесты на критичные взаимодействия.
-
-Контрольные точки:
-- После аудита — отчёт.
-- После дизайн-правок — показать результат.
-- После багфикса — список исправленных багов.
-- Финал — build проходит, тесты проходят.
-
-Ограничения:
-- Не менять стек без согласования.
-- Сохранить текущую визуальную идентичность, улучшить полировку.
-- Все изменения в отдельной ветке / worktree.
-```
-
-### How the agent should respond
-
-1. Load relevant skills immediately (this skill, `frontend-css-maintenance`, `frontend-efficiency-audit`, `code-quality-gates`, plus design skills such as `ui-ux-pro-max` or `popular-web-designs` when visual polish is requested).
-2. Run a quick baseline: `tsc -b && npx oxlint && npm run build` if it is fast.
-3. Inspect project structure, package.json, tailwind.config, index.css, and the main sections/components.
-4. Present a short audit with concrete findings: bugs, typography issues, mobile risks, scroll behavior.
-5. Propose a design contract: what will change and what will not.
-6. After user approval, write an implementation plan with verification commands per step.
-7. Execute in small commits/gates; do not batch unrelated visual and structural changes.
-8. Finish only after fresh build, lint, and Playwright (or manual browser) verification evidence.
-
 ### Pitfall: accepting "make it beautiful" without constraints
 
 Vague requests invite rework. Always surface the concrete dimensions: typography, spacing, color, motion, mobile, accessibility. If the user does not specify the scroll strategy (CSS vs Lenis), default to CSS-only smooth scroll and ask for confirmation before adding dependencies.
-
----
-
-## Task Framing for Design Polish + Bugfix Work
-
-When the user wants to refine an existing landing page ("проработай дизайн",
-"убери баги", "сделай плавный скролл", "поправь мобильную версию"), they should
-not need to negotiate the workflow each time. Use this template as a default.
-It matches the user's preferred order: **audit → design contract → plan →
-execute → verify → finish**.
-
-### Default prompt template to return to the user
-
-```
-Проект: <project-name>
-Путь: <absolute-path>
-
-Задача:
-1. Проработать существующий дизайн — привести к полированному, целостному виду.
-2. Исправить баги в UI/UX и взаимодействиях.
-3. Сделать скроллинг плавным (CSS scroll-behavior: smooth, и при необходимости Lenis/GSAP).
-4. Использовать все подходящие навыки: frontend, design, code-quality-gates.
-
-Что нужно сделать:
-- Провести аудит текущего состояния (структура, стили, анимации, баги).
-- Определить конкретные баги (hover, модалки, формы, мобильное меню, скролл).
-- Предложить и согласовать правки по дизайну.
-- Реализовать правки.
-- Прогнать build + lint.
-- Проверить визуально (скриншоты / браузер).
-- Написать / обновить Playwright-тесты на критичные взаимодействия.
-
-Контрольные точки:
-- После аудита — отчёт.
-- После дизайн-правок — показать результат.
-- После багфикса — список исправленных багов.
-- Финал — build проходит, тесты проходят.
-
-Ограничения:
-- Не менять стек без согласования.
-- Сохранить текущую визуальную идентичность, улучшить полировку.
-- Все изменения в отдельной ветке / worktree.
-```
-
-### How the agent should respond
-
-1. Load relevant skills immediately (this skill, `frontend-css-maintenance`,
-   `frontend-efficiency-audit`, `code-quality-gates`, plus design skills such as
-   `ui-ux-pro-max` or `popular-web-designs` when visual polish is requested).
-2. Run a quick baseline: `tsc -b && npx oxlint && npm run build` if it is fast.
-3. Inspect project structure, package.json, tailwind.config, index.css, and the
-   main sections/components.
-4. Present a short audit with concrete findings: bugs, typography issues, mobile
-   risks, scroll behavior.
-5. Propose a design contract: what will change and what will not.
-6. After user approval, write an implementation plan with verification commands
-   per step.
-7. Execute in small commits/gates; do not batch unrelated visual and structural
-   changes.
-8. Finish only after fresh build, lint, and Playwright (or manual browser)
-   verification evidence.
-
-### Pitfall: accepting "make it beautiful" without constraints
-
-Vague requests invite rework. Always surface the concrete dimensions:
-typography, spacing, color, motion, mobile, accessibility. If the user does not
-specify the scroll strategy (CSS vs Lenis), default to CSS-only smooth scroll
-and ask for confirmation before adding dependencies.
 
 ---
 
@@ -469,8 +366,8 @@ and ask for confirmation before adding dependencies.
 - **Missing SEO meta tags** — add them to `index.html` and/or an SEO component
 - **Not running build/lint** — always verify before declaring done
 - **Manual-only verification** — write Playwright tests for modal and form behavior
+- **Browser tools block `localhost` / `file:` URLs** — fall back to Playwright CLI screenshots (`npx playwright screenshot`) to verify the built/previewed UI. See `references/verify-local-ui-with-playwright-cli.md`.
 - **Vague design/bugfix requests** — always translate into concrete audit + design contract + plan before coding
-- **Forcing non-square icons into tiny circles** — `MapPin`, `Phone`, and similar silhouettes look broken inside small `rounded-full` wells. Use a larger wrapper or `rounded-xl`/`rounded-2xl` instead. See `frontend-css-maintenance/references/diagnosing-broken-icon-backgrounds.md`.
 - **Forcing non-square icons into tiny circles** — `MapPin`, `Phone`, and similar silhouettes look broken inside small `rounded-full` wells. Use a larger wrapper or `rounded-xl`/`rounded-2xl` instead. See `frontend-css-maintenance/references/diagnosing-broken-icon-backgrounds.md`.
 
 ---
@@ -481,7 +378,10 @@ and ask for confirmation before adding dependencies.
 - `references/modal-scroll-lock-with-inside-scrolling.md` — body scroll lock that still allows the modal content itself to scroll (tested hook + Playwright snippets)
 - `references/modal-centering-flexbox.md` — center modals vertically and horizontally without absolute positioning bugs
 - `references/vite-seo-template.md` — SEO meta and JSON-LD template for Vite index.html
+- `references/verify-local-ui-with-playwright-cli.md` — verify built/previewed UI with Playwright CLI when browser tools block internal URLs
+- `references/vite-dev-server-network-access.md` — expose the Vite dev server to other machines on the local network with `--host <ip>`
 - `references/russian-landing-glossary.md` — common UI labels in Russian for landing pages
 - `references/ssr-prerender-for-vite-spa.md` — prerender a Vite SPA with Playwright so search bots see rendered content
+- `references/vite-react-ssr-prerender-without-playwright.md` — lightweight `react-dom/server` prerender with a `prerender` prop to skip the loading screen
 - `templates/playwright-modal-test.spec.ts` — starter Playwright spec for modal open/close, Escape, backdrop click, and scroll isolation
 
