@@ -10,7 +10,7 @@ license: MIT
 metadata:
   hermes:
     tags: [devops, ops, debugging, health-check, monitoring, systemd, nginx, ftp, deployment]
-    related_skills: []
+    related_skills: [hermes-internal-operations, hermes-webui-operations]
 ---
 
 # Hermes Ops & DevOps

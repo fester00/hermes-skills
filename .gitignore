@@ -1,0 +1,6 @@
+# Hermes local state — do not commit
+.bundled_manifest
+.curator_backups/
+.curator_state
+.archive/
+.usage.json

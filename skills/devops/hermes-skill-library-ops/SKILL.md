@@ -8,7 +8,7 @@ platforms: [linux, macos, windows]
 metadata:
   hermes:
     tags: [hermes, skills, library, ops, profiles, obsidian, git, sync]
-    related_skills: [hermes-agent, hermes-software-development-workflow, knowledge-first-protocol]
+    related_skills: [hermes-agent, superpowers-workflow, knowledge-first-protocol]
 ---
 
 # Hermes Skill Library Ops
@@ -203,7 +203,7 @@ Patch only agent-created skills living in `~/.hermes/skills/`.
 
 - `hermes-agent` — Hermes CLI operations
 - `knowledge-first-protocol` — search order and Obsidian fallback
-- `hermes-software-development-workflow` — build/verify conventions
+- `superpowers-workflow` — build/verify conventions
 - [[AGENTS.md]] — agent constitution in Obsidian
 - [[Operations/MOC — Skills]] — Obsidian skill index
 - [[Operations/Runbooks/Master Ugwai — Operating Instructions]] — agent working rules

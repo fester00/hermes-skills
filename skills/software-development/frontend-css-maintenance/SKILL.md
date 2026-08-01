@@ -8,7 +8,7 @@ platforms: [linux, macos, windows]
 metadata:
   hermes:
     tags: [CSS, Refactoring, Cleanup, Next.js, globals.css, Frontend]
-    related_skills: [hermes-software-development-workflow, code-quality-gates, simplify-code]
+    related_skills: [superpowers-workflow, code-quality-gates, simplify-code]
 ---
 
 # Frontend CSS Maintenance
@@ -51,6 +51,28 @@ How to safely audit, shrink, and refactor large global stylesheets (typically `g
 - Save the audit as a markdown file in the workspace for the user to review.
 
 Use the audit script: `references/css-audit-script.py`
+
+### 0. React 19 + TypeScript 5 return-type pitfall
+
+Before auditing, check whether the project uses React 19 with TypeScript 5 strict mode. If component return types are written as `JSX.Element`, `tsc --noEmit` will fail with:
+
+```
+error TS2503: Cannot find namespace 'JSX'.
+```
+
+React 19 removes the global `JSX` namespace. Replace `JSX.Element` with `React.JSX.Element` (or `React.ReactElement`, or omit the return type). See `references/nextjs15-react19-jsx-namespace.md` for the full recipe and verification command.
+
+### 0b. framer-motion variant typing under strict mode
+
+If the project uses framer-motion with `strict: true`, inline animation objects without type annotations will fail `tsc --noEmit` with errors like:
+
+```
+Type 'string' is not assignable to type 'AnimationGeneratorType | undefined'.
+Type 'number[]' is not assignable to type 'Easing[]'.
+Type '{ ... }' is not assignable to type 'Variants'.
+```
+
+Annotate the variant object as `Variants` (imported as a type from `framer-motion`) or cast string-literal easing values with `as const`. See `references/framer-motion-strict-variants.md` for the exact patterns and verification command.
 
 ### 2. First pass: only safe wins
 
@@ -125,9 +147,9 @@ If the user reports broken layout:
 - `references/purgecss-dead-code-recipe.md` — using PurgeCSS to remove unused rules from `globals.css` and verify the result.
 - `references/diagnosing-broken-icon-backgrounds.md` — when icons appear to have broken/artifacted backgrounds, verify the icon silhouette against the container shape before editing CSS.
 - `references/silicone-landing-contacts-redesign.md` — example of redesigning contact-card icon wells from small circles to squircle wells for non-square Lucide icons.
+- `references/framer-motion-strict-variants.md` — annotate framer-motion variants as `Variants` or use `as const` to avoid strict-mode `tsc` failures.
 
 ## Related skills
 
-- `react-vite-tailwind-landing-pages` — landing page implementation with Tailwind.
 - `code-quality-gates` — build gates and verification workflows.
 - `frontend-efficiency-audit` — performance review and optimization.

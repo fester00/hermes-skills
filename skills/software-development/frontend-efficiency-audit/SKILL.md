@@ -6,10 +6,8 @@ description: |
   missing useEffect cleanup, unbounded growth, and silent failures in animation stacks.
 category: software-development
 related_skills:
-  - systematic-debugging
   - code-quality-gates
-  - requesting-code-review
-  - hermes-software-development-workflow
+  - superpowers-workflow
 ---
 
 # frontend-efficiency-audit
@@ -46,14 +44,17 @@ Map the surface before changing code:
 
 - **Vite/React SPA serves an empty `index.html`**. If the project cares about
   SEO, the build step must inject rendered content into the root element.
-- *Fix:* add a post-build prerender. Two proven approaches:
-  - `react-vite-tailwind-landing-pages/references/ssr-prerender-for-vite-spa.md`
-    — Playwright-based, executes the client bundle.
-  - `react-vite-tailwind-landing-pages/references/vite-react-ssr-prerender-without-playwright.md`
+- *Fix:* migrate to Next.js 15 App Router for SSR/SSG, or add a post-build prerender.
+  Next.js App Router gives populated HTML automatically; for Vite SPA use one of:
+    — Playwright-based prerender that executes the client bundle.
     — lightweight `react-dom/server` via Vite SSR; pass a `prerender` prop to
-    `App` so the loading screen is skipped during the SSR pass.
-- *Verification:* `wc -c dist/index.html` should be 20–80 KB for a content-rich
-  landing page, and `grep` should find product names and headings.
+      `App` so the loading screen is skipped during the SSR pass.
+- *Verification for Next.js:* `curl -s http://localhost:3000 | grep -E '<title|<h1'`
+  should return values. For Vite: `wc -c dist/index.html` should be 20–80 KB
+  for a content-rich landing page, and `grep` should find product names and headings.
+- **Migrating from Vite SPA to Next.js 15 App Router:** see `superpowers-workflow`
+  → `references/nextjs-app-router-spa-migration.md` for a complete checklist
+  (client-component boundaries, metadata/JSON-LD, fonts, images, build verification).
 
 ---
 
@@ -72,7 +73,6 @@ Map the surface before changing code:
 
 - **Event listeners added inside `gsap.context` without explicit removal**. `ctx.revert()` kills tweens and ScrollTriggers, but it does **not** remove DOM event listeners you attached with `addEventListener`.
   - *Fix:* attach DOM listeners in a separate effect with an explicit cleanup function, or store the handler references and call `removeEventListener` in cleanup. Better: extract a reusable hook (e.g. `useTilt`) that owns its own listeners.
-  - *VIDVIS pitfall:* Calling `ctx.add(() => { ... })` inside the `gsap.context` setup callback throws `ReferenceError: Cannot access 'ctx' before initialization` because `ctx` is assigned only after the callback returns. Register listeners outside the context and clean them up in the effect cleanup.
 - **MutationObserver re-adding listeners on every mutation** (common in custom cursor components that track `a, button, [data-magnetic]`).
   - *Fix:* prefer event delegation on `document.body`, or diff the previous interactive set and remove stale listeners before adding new ones. If the component only enlarges the cursor on hover, rename the attribute from `data-magnetic` to `data-cursor-hover` so the intent is not misleading.
 - **Scroll/resize/mousemove handlers that call `setState`** on every event.
@@ -101,7 +101,6 @@ Map the surface before changing code:
 
 - Mousemove handlers firing `gsap.to()` on every event, creating overlapping tweens.
   - *Fix:* use `gsap.quickTo` for pointer-driven transforms, or throttle via a single `requestAnimationFrame` loop reading from a ref. For reusable card tilt, extract a `useTilt` hook (see `templates/useTilt.ts`) so the parent only manages reveal tweens.
-  - *VIDVIS follow-up:* For a full-scene mouse-tilt, place the hero text as a `translateZ(0px)` depth-layer **inside** the rotating `sceneRef`. A separate flat overlay keeps text horizontal but does not tilt with the scene; counter-rotating text inside the scene is fragile and leaves residual tilt. Remove any constant `rotateZ` ScrollTrigger on the scene so the text is horizontal at rest. Preserve the working mouse-tilt pattern in the project-specific Obsidian note for reference.
 - **Large static arrays/objects recreated in render** (`[...Array(N)]`, inline card data, particle configs, inline arrays of JSX descriptors).
   - *Fix:* hoist to module scope, or memoize once with `useMemo`.
 - **Components registering `gsap.registerPlugin(ScrollTrigger)` repeatedly**. GSAP tolerates it but it is noisy and unnecessary.
@@ -174,13 +173,11 @@ This removes ~10 lines per animated section, centralizes reduced-motion handling
 
 ## References
 
-- `references/frontend-efficiency-audit--vidvis-case-study.md` — concrete findings from an initial React + GSAP + Framer Motion audit, including ticker leaks, listener duplication, broken horizontal scroll, and hot-path bloat.
-- `references/frontend-efficiency-audit--vidvis-refactor-session.md` — follow-up refactor session that implemented the audit: centralized GSAP module, `useGsapContext`, `useTilt`, MagneticCursor rewrite, navigation fix, horizontal-scroll repair, `ProductCard` extraction, Tailwind tokens, and verification results.
-- `references/frontend-efficiency-audit--vidvis-smooth-scroll-session.md` — second follow-up focused on perceived smoothness: global `SmoothScrollProvider`, Lenis lifecycle, page transitions, throttled pointer transforms, GSAP vs Framer Motion ownership, and `useReducedMotion` SSR safety.
+- Project-specific case studies moved to Obsidian vault.
 
 ## Related skills
 
-- `systematic-debugging` — when a symptom already exists and you need root cause analysis.
-- `code-quality-gates` — when the audit is part of a pre-merge enforcement flow.
-- `requesting-code-review` — when the output needs to be packaged as review comments.
-- `react-vite-tailwind-landing-pages` — landing-page-specific build, prerender, modal, and form patterns.
+- `code-quality-gates` — when a symptom already exists and you need root cause analysis.
+- `superpowers-workflow` — umbrella for full project lifecycle.
+- `frontend-css-maintenance` — when the audit surfaces unused or risky CSS.
+- `simplify-code` — when the audit finds bloat to remove.

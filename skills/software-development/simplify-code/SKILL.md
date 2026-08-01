@@ -8,7 +8,7 @@ platforms: [linux, macos, windows]
 metadata:
   hermes:
     tags: [code-review, cleanup, refactor, delegation, subagent, parallel, simplify]
-    related_skills: [requesting-code-review, test-driven-development, plan]
+    related_skills: [code-quality-gates, superpowers-workflow, superpowers-test-driven-development]
 ---
 
 # Simplify Code — Parallel Review & Cleanup
@@ -206,7 +206,7 @@ Wait for all three to return (batch mode returns them together).
 
 ## Related
 
-If your install has the `subagent-driven-development` skill (optional), it
+If your install has the `superpowers-subagent-driven-development` skill (optional), it
 covers the complementary case: parallel review *during* implementation, per
 task. This skill is the standalone *after-the-fact* cleanup pass. Use
-`requesting-code-review` for the pre-commit security/quality gate.
+`code-quality-gates` for the pre-commit security/quality gate.
