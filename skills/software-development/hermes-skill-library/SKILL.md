@@ -12,7 +12,7 @@ license: MIT
 metadata:
   hermes:
     tags: [hermes, skills, library, maintenance, sync, github, obsidian, evaluation]
-    related_skills: [hermes-agent-skill-authoring, hermes-agent, hermes-software-development-workflow, orchestrator-mode]
+    related_skills: [hermes-agent-skill-authoring, hermes-agent, superpowers-workflow, hermes-skill-library]
 ---
 
 # Hermes Skill Library — Maintenance & Publication
@@ -36,9 +36,8 @@ can consume them.
 - `hermes-agent-skill-authoring` — how to write a single `SKILL.md` file
   correctly.
 - `hermes-agent` — Hermes CLI, config, and built-in skill mechanics.
-- `hermes-software-development-workflow` — build/verify/commit discipline.
-- `orchestrator-mode` — when the task spans evaluation + multiple file edits
-  + delegation.
+- `superpowers-workflow` — build/verify/commit discipline for software work.
+- `hermes-skill-library` — this skill, for complex multi-skill operations.
 
 ## Workflow: Evaluate External Skill Library
 
@@ -48,10 +47,19 @@ can consume them.
    - Identify the target runtime: Hermes, Stitch MCP, Codex, Cursor,
      Claude Code, or another agent platform.
 
-2. **Check prerequisites and lock-in**
-   - Does it require an external MCP server? (e.g., Google Stitch)
-   - Does it require a specific IDE/agent that the user does not use?
-   - Does it duplicate skills already in the local library?
+- **Check prerequisites and lock-in**
+  - Does it require an external MCP server? (e.g., Google Stitch)
+  - Does it require a specific IDE/agent that the user does not use?
+  - Does it duplicate skills already in the local library?
+
+- **Audit local skills for overlap and stale references before adopting.**
+  Run `skills_list()` and `skill_view(name)` on candidates. If an active skill
+  still references an archived skill in `related_skills`, patch the active skill
+  first; stale references are a sign the library has drifted.
+  When two skills overlap, compare **method and result on the output**, not
+  just coverage. Choose the one that gives the clearer, more actionable,
+  more Hermes-native path. Consolidate the best parts into a single
+  class-level skill rather than keeping two overlapping entries.
 
 3. **Compare with local skills**
    - Use `skills_list()` and `skill_view(name)` to map overlapping territory.
@@ -269,12 +277,21 @@ Before declaring a sync or publish done:
 
 ## References
 
+- `references/skill-consolidation-workflow.md` — how to audit the local
+  library, detect overlapping skills, and consolidate or archive them while
+  preserving canonical umbrellas and project-specific skills.
+- `references/project-specific-vs-class-level-skills.md` — when to keep,
+  archive, or delete a skill based on whether it is class-level or
+  project-specific.
 - `references/skill-sync-profile-only-files.md` — How to sync a skill into a
   Hermes profile without deleting profile-only files such as
   `references/hermes-profile-isolation.md`.
 - `references/stitch-skills-evaluation.md` — worked example of evaluating an
   external skill library (Google Stitch) and adapting ideas instead of
   adopting dependencies.
+- `references/skill-audit-pitfalls.md` — common drift patterns found when
+  auditing the local skill library: stale `related_skills`, class-level vs
+  session-artifact naming, duplicate umbrellas, and harness-specific imports.
 - `references/superpowers-evaluation.md` — worked example of evaluating the
   `obra/superpowers` agentic methodology and converting it into a local
   umbrella skill (`superpowers-workflow`).

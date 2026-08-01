@@ -8,7 +8,7 @@ platforms: [linux, macos, windows]
 metadata:
   hermes:
     tags: [skills, authoring, hermes-agent, conventions, skill-md]
-    related_skills: [writing-plans, requesting-code-review, adapting-external-skills]
+    related_skills: [superpowers-writing-plans, code-quality-gates, superpowers-workflow]
 ---
 
 # Authoring Hermes-Agent Skills (in-repo)

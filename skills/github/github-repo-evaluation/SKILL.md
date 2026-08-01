@@ -9,7 +9,7 @@ author: Master Ugwai
 metadata:
   hermes:
     tags: [github, evaluation, open-source, assessment, repository, adoption]
-    related_skills: [github-workflows, github-repo-management, systematic-debugging]
+    related_skills: [github-workflows, github-repo-management, superpowers-systematic-debugging]
 ---
 
 # GitHub Repo Evaluation

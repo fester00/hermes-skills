@@ -7,9 +7,8 @@ description: |
 category: software-development
 related_skills:
   - superpowers-workflow
-  - hermes-software-development-workflow
-  - writing-plans
-  - subagent-driven-development
+  - superpowers-writing-plans
+  - superpowers-subagent-driven-development
 ---
 
 # codebase-memory-audit

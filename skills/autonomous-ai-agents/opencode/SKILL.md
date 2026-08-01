@@ -8,7 +8,7 @@ platforms: [linux, macos, windows]
 metadata:
   hermes:
     tags: [Coding-Agent, OpenCode, Autonomous, Refactoring, Code-Review, Orchestration]
-    related_skills: [claude-code, codex, hermes-agent, orchestrator-mode, subagent-driven-development, writing-plans, test-driven-development, code-quality-gates, requesting-code-review]
+    related_skills: [claude-code, codex, hermes-agent, superpowers-workflow, superpowers-subagent-driven-development, superpowers-writing-plans, code-quality-gates]
 ---
 
 # OpenCode CLI
@@ -195,7 +195,7 @@ Use OpenCode as a heavy implementation agent for multi-step or parallel coding t
 - One-liners or single-file tweaks (overkill)
 - Tasks requiring constant user feedback and course correction
 
-### Routing (from orchestrator-mode skill)
+### Routing (from superpowers-workflow)
 
 | Task Type | Agent |
 |-----------|-------|

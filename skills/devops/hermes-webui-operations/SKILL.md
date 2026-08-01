@@ -8,7 +8,7 @@ platforms: [linux]
 metadata:
   hermes:
     tags: [hermes, webui, nginx, devops, troubleshooting, upload]
-    related_skills: [hermes-internal-operations, hermes-ops-devops, hermes-agent]
+    related_skills: [hermes-internal-operations, hermes-agent]
 ---
 
 # Hermes WebUI Operations

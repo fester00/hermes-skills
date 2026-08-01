@@ -10,7 +10,7 @@ license: MIT
 metadata:
   hermes:
     tags: [quality, testing, debugging, tdd, review, verification, code-review]
-    related_skills: [hermes-software-development-workflow, github-workflows]
+    related_skills: [superpowers-workflow, github-workflows]
 ---
 
 # Code Quality Gates
@@ -42,7 +42,7 @@ No production code without a failing test first.
 - Asserting on private state
 - Not watching the test fail first
 
-**See `references/test-driven-development.md` for full rationalization tables, exceptions checklist, and verification steps.**
+**See `references/test-driven-development.md` for full rationalization tables, exceptions checklist, and verification steps.** (Reference document; the operational checklist is in Gate 1 below.)
 
 ### TDD Regression Discovery
 A passing test suite can still hide implementation bugs. When extracting legacy
@@ -79,14 +79,14 @@ NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST
 - You've been debugging >30 min without progress
 - Multiple hypotheses rejected — need fresh eyes
 
-**See `references/systematic-debugging.md` for full red-flags table, common rationalizations, and escalation paths.**
+**See `references/systematic-debugging.md` for full red-flags table, common rationalizations, and escalation paths.** (Reference document; the operational checklist is in Gate 2 below.)
 
 ### CSS/UI Animation Bugs
 When a UI element animates unexpectedly during state changes (filtering, sorting, re-rendering), suspect `transition: all` on grid children. See `references/css-layout-transition-pitfall.md` for the exact pattern and fix.
 
 ---
 
-## Gate 3: Pre-Commit Verification
+### Gate 3: Pre-Commit Verification
 
 **Core principle:** No agent should verify its own work. Fresh context finds what you miss.
 
@@ -94,10 +94,23 @@ When a UI element animates unexpectedly during state changes (filtering, sorting
 1. **Get the diff** (`git diff --cached`)
 2. **Static security scan** (secrets, shell injection, eval, pickle, SQL injection)
 3. **Baseline-aware tests + lint**
-4. **Self-review checklist**
+4. **Self-review checklist** — include workflow-compliance check (see below)
 5. **Independent reviewer subagent** (2-stage: spec compliance, then code quality)
 6. **Auto-fix loop** (max 2 cycles)
 7. **Commit with `[verified]` prefix**
+
+### Self-review checklist
+
+- [ ] **Plan compliance** — diff matches approved plan, or deviations are deliberate
+- [ ] **No inline-controller bypass** — large builds/refactors/UI decisions were
+      not implemented in the main Hermes session without a written plan and
+      explicit approval. If they were, route back through
+      `superpowers-workflow` Phase 1–2 before declaring this gate complete.
+- [ ] **Security scan** — no secrets, eval/exec, shell injection, SQL injection
+- [ ] **Tests** — new behavior tested; existing tests pass
+- [ ] **Lint / typecheck** — clean
+- [ ] **Dead code / duplication** — removed or documented
+- [ ] **User-facing text** — reviewed, no placeholders
 
 ### Language-Specific Auto-Detection
 | Language | Test Command | Lint Command |
@@ -123,7 +136,7 @@ git diff --cached | grep "^+" | grep -E "eval\(|exec\(|compile\(|__import__\(|pi
 git diff --cached | grep "^+" | grep -E "(cursor\.execute|f\".*SELECT|f\".*INSERT|f\".*UPDATE)"
 ```
 
-**See `references/requesting-code-review.md` for full checklist, reviewer subagent prompt templates, and result evaluation criteria.**
+**See Gate 3 below for the full checklist, reviewer subagent prompt templates, and result evaluation criteria.**
 
 ### ESLint + Next.js Hook Rule Pitfall
 `eslint-config-next` can emit `react-hooks/set-state-in-effect` errors for
