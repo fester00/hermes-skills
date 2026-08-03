@@ -42,7 +42,7 @@ If you choose to use OpenCode headlessly, prepare the environment once:
      }
    }
    ```
-3. Always prepend the brief with:
+3. **Always prepend the brief with the anti-todo instruction. This is the only reliable way to avoid the `todowrite` SchemaError in headless mode:**
    ```markdown
    Do not use todo, planning, or task-tracking tools. Do not call todowrite or similar tools. Execute the work directly.
    ```
@@ -51,6 +51,9 @@ If you choose to use OpenCode headlessly, prepare the environment once:
    opencode run --auto --dir /mnt/data/natan-storage/project --title 'Task' < brief.md
    ```
 5. Verify immediately after it exits; do not assume it completed every file.
+   - For 1–3 file tasks, OpenCode usually succeeds.
+   - For 10+ file greenfield builds, OpenCode frequently truncates or omits files.
+   - For any task that involves planning, the anti-todo instruction is mandatory.
 
 - `opencode run --auto --dir /path/to/project` successfully passes permission
 decisions (no more `external_directory` auto-reject).
@@ -103,3 +106,10 @@ Only fall back to OpenCode for large work if you can run it interactively
   scroll-triggered animations. A key lesson: `initial={{ opacity: 0 }}` with
   `whileInView` makes SSR/SSG previews blank until scroll; set
   `initial={{ opacity: 1, y: 20 }}` for visible first paint.
+- 2026-08-01 (final): Confirmed on `silicone-lending-v3` that even with
+  `--auto --dir` and `--pure`, large redesign briefs (Drift-style adaptation)
+  truncated. Hermes `delegate_task` subagents (Groups A/B/C) completed tokens,
+  navbar/hero, about/sticky-products, stats/contact/footer/modal/form in parallel,
+  followed by controller integration, tsc, build, and screenshots. This validated
+  the rule: OpenCode headless is for 1–3 file tasks; multi-file design/dev work
+  flows through `delegate_task`.

@@ -40,6 +40,7 @@ trigger:
 - **Длины:** `meta_title` — **60–70 символов** (целиться в ~60; 70 — редкий потолок); `meta_description` — **160–170 символов (включая пробелы)**. H1 может быть длиннее title, главное — естественность и функциональный контекст.
 - **Семантическая связь:** title, description, keywords, H1 и видимый контент должны перекликаться по марке, типу и применению.
 - **Одобрение:** показывать черновик и получать «давай». После push говорить: «Деплой не делаю без разрешения — скажи «задеплой», когда будешь готов»; ждать именно эту команду.
+- **Dev-сервер не запускать без явного запроса пользователя.** Для SEO-правок достаточно `npx tsc --noEmit` (и `npm run build`, если пользователь одобрил). Пользователь может сам проверить внешний вид локально, особенно при работе с блог-статьями и статическими страницами.
 - **Build gate обязателен** перед каждым коммитом: `npx tsc --noEmit && npm run build`.
 - **Backup БД** перед правками: `pentajunior.db.seo-<cat>-backup-<YYYYMMDD-HHMMSS>`.
 - **Проверка продакшена** после deploy: `curl`/Python — title/description, HTTP 200, Яндекс.Метрика (если установлена).
@@ -65,46 +66,41 @@ trigger:
    - `src/data/blog/article-*.ts` — `metaTitle`/`metaDescription`.
    См. `references/static-pages-seo-audit-procedure.md`.
 7. **Проверить живой сайт** через `curl`/Python: title/description/H1, JSON-LD, robots, sitemap, 404, скорость.
-7. **Собрать отчёт** по чек-листу `yandex-seo-optimization`: техническое SEO, on-page, контент, коммерческие факторы, поведенческие, JSON-LD, AI-поиск/GEO.
-8. **Сохранить отчёт** в Obsidian `Projects/pentajunior-v2-yandex-seo-audit-YYYY-MM-DD.md` и обновить `Projects/MOC — Projects.md`. Удалить устаревшие SEO-аудиты по запросу пользователя.
+8. **Собрать отчёт** по чек-листу `yandex-seo-optimization`: техническое SEO, on-page, контент, коммерческие факторы, поведенческие, JSON-LD, AI-поиск/GEO.
+9. **Сохранить отчёт** в Obsidian `Projects/pentajunior-v2-yandex-seo-audit-YYYY-MM-DD.md` и обновить `Projects/MOC — Projects.md`. Удалить устаревшие SEO-аудиты по запросу пользователя.
 
 ### Режим 2: SEO-правки (когда пользователь одобрил изменения)
 
 1. **git pull** перед правками (пользователь может сам запушить изменения без предупреждения).
-2. **Начинать со статических страниц.** Сперва исправить `/`, `/production`, `/price`, `/contacts`, `/info/*`, `/news`, `/blog` и блог-статьи (`src/data/blog/article-*.ts`), если там есть проблемы: «от производителя», перебор длины, слабые OpenGraph/Twitter, H1 без функции. Эти источники не покрываются SQLite-аудитом.
-3. **Никогда не запускать `deploy.sh` без явного одобрения пользователя.** Пользователь прямо попросил: «не делай пожалуйста деплой без моего разрешения =) лучше спроси». После push сообщать: «Изменения запушены. Деплой не делаю без твоего разрешения — скажи «задеплой», когда будешь готов». Затем ждать именно команду «задеплой».
-### Режим 2: SEO-правки (когда пользователь одобрил изменения)
-
-1. **git pull** перед правками (пользователь может сам запушить изменения без предупреждения).
-2. **Начинать со статических страниц.** Сперва исправить `/`, `/production`, `/price`, `/contacts`, `/info/*`, `/news`, `/blog` и блог-статьи (`src/data/blog/article-*.ts`), если там есть проблемы: «от производителя», перебор длины, слабые OpenGraph/Twitter, H1 без функции. Эти источники не покрываются SQLite-аудитом.
+2. **Начинать со статических страниц.** Сперва исправить `/`, `/production`, `/price`, `/contacts`, `/info/*`, `/news`, `/blog` и блог-статьи (`src/data/blog/article-*.ts`), если там есть проблемы: «от производителя», перебор длины, слабые OpenGraph/Twitter, H1 без функции. Эти источники не покрываются SQLite-аудитом. Для добавления новой SEO-статьи в блог см. `references/blog-article-format-and-publishing-recipe.md`.
 3. **Никогда не запускать `deploy.sh` без явного одобрения пользователя.** Пользователь прямо попросил: «не делай пожалуйста деплой без моего разрешения =) лучше спроси». После push сообщать: «Изменения запушены. Деплой не делаю без твоего разрешения — скажи «задеплой», когда будешь готов». Затем ждать именно команду «задеплой».
 4. **Работать по одной категории за раз** (установленный в сессиях паттерн). Не делать массовый проход по всему каталогу без согласования. Последовательность внутри категории:
-  - категория (`meta_title`, `meta_description`, иногда `page_description`);
-  - каждая подкатегория (`meta_title`, `meta_description`, `page_description`);
-  - каждый товар (`meta_title`, `meta_description`, `keywords`).
-  См. `../marketing/yandex-seo-optimization/references/pentajunior-v2-category-optimization-recipe.md` и `references/category-seo-pass-recipe.md`.
+   - категория (`meta_title`, `meta_description`, иногда `page_description`);
+   - каждая подкатегория (`meta_title`, `meta_description`, `page_description`);
+   - каждый товар (`meta_title`, `meta_description`, `keywords`).
+   См. `../marketing/yandex-seo-optimization/references/pentajunior-v2-category-optimization-recipe.md` и `references/category-seo-pass-recipe.md`.
 5. **Уточнять scope с пользователем.** Если пользователь говорит «для этой категории просто title подправь, подкатегорию тоже можешь не исправлять» — применять правки только к категории и не трогать подкатегории/товары внутри неё без явного разрешения. Точно так же: если пользователь просит «сео текст не меняй пока что» — оставить `seo_text` неизменным, даже если в нём есть запрещённые обороты; исправлять только `meta_title`, `meta_description` и, по согласованию, `features`.
-5. **Составить черновик** мета-тегов по формуле из `references/keyword-formula-and-content-rules.md`:
+6. **Составить черновик** мета-тегов по формуле из `references/keyword-formula-and-content-rules.md`:
    - `meta_title` — **60–70 символов** (целиться в ~60; 70 — редкий потолок), акцент на марке и целевом применении, бренд-суффикс `| Пента Юниор` добавляем в БД;
    - `meta_description` — **160–170 символов (включая пробелы)**, целевое использование продукта, без технических спецификаций (Шор, сСт и т.п. — в карточку);
    - description должен усиливать семантическую связь с title, keywords и H1: повторяться марка/тип/основное применение, добавляться второстепенные применения и коммерческий CTA;
    - `keywords` — 5–7 запросов: `марка` + `тип/термин` + `целевое применение 1` + `целевое применение 2` + `коммерческий термин`.
-6. **Валидировать черновик до применения:** проверить длины всех `meta_title` (≤70) и `meta_description` (160–170). Особенно важно при обновлении `categories`: поле `title` используется как H1, и при массовом UPDATE легко затереть его вместе с мета-полями — всегда включать `title` в список обновляемых полей категории.
-6. **Показать черновик** и получить одобрение (одноразовое).
-7. **Создать backup БД** перед изменениями: `pentajunior.db.seo-<cat>-backup-<YYYYMMDD-HHMMSS>`.
-8. **Внести изменения** в `categories`, `subcategories`, `products` через Python `sqlite3`.
-9. **После массового UPDATE проверить длины.** Легко затереть `title` категории или выйти за лимит description при составлении черновика. Перезапустить `pentajunior-seo-sqlite-audit.py` или быструю проверку длин title/description.
-10. **Запустить аудит JSON-LD**:
+7. **Валидировать черновик до применения:** проверить длины всех `meta_title` (≤70) и `meta_description` (160–170). Особенно важно при обновлении `categories`: поле `title` используется как H1, и при массовом UPDATE легко затереть его вместе с мета-полями — всегда включать `title` в список обновляемых полей категории.
+8. **Показать черновик** и получить одобрение (одноразовое).
+9. **Создать backup БД** перед изменениями: `pentajunior.db.seo-<cat>-backup-<YYYYMMDD-HHMMSS>`.
+10. **Внести изменения** в `categories`, `subcategories`, `products` через Python `sqlite3`.
+11. **После массового UPDATE проверить длины.** Легко затереть `title` категории или выйти за лимит description при составлении черновика. Перезапустить `pentajunior-seo-sqlite-audit.py` или быструю проверку длин title/description.
+12. **Запустить аудит JSON-LD**:
     ```bash
     python3 /home/natan/.hermes/skills/software-development/pentajunior-v2-seo/references/seo_jsonld_audit.py
     ```
-11. **Проверить и собрать**:
+13. **Проверить и собрать**:
     ```bash
     cd /home/natan/pentajunior-v2 && npx tsc --noEmit && npm run build
     ```
     Build gate обязателен перед заявлением о завершении.
-12. **git add pentajunior.db**, commit, push в `master`.
-13. **Деплой только по команде пользователя.** После push сообщить: «Изменения запушены. Деплой не делаю без твоего разрешения — скажи «задеплой», когда будешь готов».
+14. **git add pentajunior.db**, commit, push в `master`.
+15. **Деплой только по команде пользователя.** После push сообщить: «Изменения запушены. Деплой не делаю без твоего разрешения — скажи «задеплой», когда будешь готов».
 
 ### Режим 3: короткие метатеги и статические страницы
 
@@ -175,7 +171,7 @@ trigger:
 - **Пользователь предпочитает Yandex-навык.** Для SEO-аудита и правок pentajunior-v2 использовать `yandex-seo-optimization` как основной источник рекомендаций, а `pentajunior-v2-seo` — как проектный workflow (SQLite-аудит, JSON-LD, build gate, deploy).
 - После внесения изменений в БД запускать `seo_jsonld_audit.py` **перед** build gate, чтобы поймать пустые мета-поля, некорректные цены или отсутствующие файлы до коммита.
 - **Уточнение после Wordcraft:** если появляются данные Яндекс.Wordcraft после первого прохода, можно уточнить `meta_title`/`meta_description` с высокочастотными запросами. Делать refine-коммит отдельным.
-- **Blog articles:** для скрытия статьи с сайта добавить поле `published: false` в `src/data/blog/article-XX.ts` и убедиться, что `/blog`, `/blog/[id]`, `RelatedArticles` и `generateStaticParams` фильтруют по `published`. Не удалять файл и не убирать `relatedProducts` — это не скроет статью из блога.
+- **Blog articles:** для скрытия статьи с сайта добавить поле `published: false` в `src/data/blog/article-XX.ts` и убедиться, что `/blog`, `/blog/[id]`, `RelatedArticles` и `generateStaticParams` фильтруют по `published`. Не удалять файл и не убирать `relatedProducts` — это не скроет статью из блога. Чтобы статья появилась в блоке «Полезные статьи» на странице категории, добавьте slug категории в `relatedCategories` статьи; фильтрация происходит автоматически в `src/app/production/[category]/page.tsx`.
 
 ## Final verification after all category passes
 
@@ -220,6 +216,7 @@ python3 /home/natan/.hermes/skills/software-development/pentajunior-v2-seo/refer
 - `references/html-validate-workflow.md` — how to validate compiled HTML for one page per template type and which validator warnings are actionable.
 - `references/seo-audit-report-template.md` — template for producing a structured Yandex SEO audit report from live site checks and SQLite data.
 - `references/static-pages-seo-audit-procedure.md` — how to audit static `page.tsx`, `layout.tsx`, `syte-config.ts`, and blog articles that are not covered by SQLite checks.
+- `references/blog-article-format-and-publishing-recipe.md` — рецепт добавления новой SEO-статьи в блог: формат content, relatedProducts/relatedCategories, плейсхолдеры `{product:ID}`, проверки, публикация/скрытие.
 - `references/geo-audit-comparison-workflow.md` — comparing an external SEO audit JSON with the rendered Next.js build output.
 - `references/geo-audit-parser.py` — reusable parser that extracts SEO fields from `.next/server/app/*.html` and diffs them against an audit JSON.
 - `references/short-title-optimization-pattern.md` — finding and lengthening service-page titles that are too short for SEO without keyword stuffing.

@@ -3,8 +3,9 @@ name: superpowers-workflow
 description: |
   Primary umbrella workflow for Hermes. Adapts the upstream Superpowers
   methodology (brainstorm → plan → isolate → execute → verify → review → finish)
-  to Hermes tools, MCP servers, OpenCode/delegate_task agents, and our
-  project-specific skills. Use for every software build, refactor, or complex bugfix.
+  to Hermes tools, MCP servers, OpenCode agents for execution, Hermes subagents
+  for browser/profile research, and our project-specific skills. Use for every
+  software build, refactor, or complex bugfix.
 category: software-development
 related_skills:
   - superpowers-brainstorming
@@ -20,6 +21,9 @@ related_skills:
   - ponytail-review
   - codebase-memory-audit
   - react-premium-landing-effects
+  - claude-design
+  - popular-web-designs
+  - ui-ux-pro-max
   - yandex-api
   - yandex-seo-optimization
   - obsidian
@@ -94,6 +98,9 @@ When briefing OpenCode, include an explicit **External context sources** block. 
 
 ```markdown
 ## External context sources
+
+Before editing, read this note via the obsidian MCP server and follow its principles:
+- `~/obsidian-memory/Operations/Coding Principles.md`
 
 Use the configured MCP servers for all research outside this project directory:
 - **obsidian** — query the `obsidian-memory` vault for design references, project notes, templates, runbooks.
@@ -174,16 +181,21 @@ When the design is approved:
 
 ---
 
+  - **Use OpenCode agents for execution.** Hermes `delegate_task` subagents are reserved only for browser/profile research tasks.
+  - **Initialize git only if needed.** Before OpenCode: `if [ ! -d .git ]; then git init && git add . && git commit -m "initial: baseline"; fi`. Never re-initialize an existing repo.
+  - **Use `opencode serve` + `opencode run --attach`.** Start a persistent OpenCode server: `opencode serve --port 4096 --hostname 127.0.0.1`. Then execute with: `opencode run --auto --attach http://127.0.0.1:4096 --dir <project> < brief.md`.
+  - **Headless `opencode run` (without `--attach`) cannot use MCP servers.** Use the `serve`/`attach` pattern when the brief needs `obsidian` or `codebase-memory`.
+  - **OpenCode briefs must include an anti-todo instruction.** Start every brief with: `Do not use todo or planning tools.`
+  - **OpenCode briefs must include an External context sources block.** Tell OpenCode which MCP servers to use and forbid direct filesystem access outside the project directory.
+
 ## Phase 4: Execute
 
 Pick the execution strategy based on task shape.
 
 **Default rule:** if the task originated from a user request that is large
-enough to need a plan (Phase 2) or design (Phase 1), prefer subagent or
-OpenCode execution. Inline single-session execution is only for genuinely
-small changes that fit in one verification cycle.
-
-**User preference:** when the user says to use OpenCode, always grant applicable permissions and proceed through the OpenCode path unless a runtime error makes it impossible; in that case, report the blocker and fall back to subagents or inline execution rather than silently stalling.
+enough to need a plan (Phase 2) or design (Phase 1), prefer OpenCode agent
+execution. Inline single-session execution is only for genuinely small
+changes that fit in one verification cycle.
 
 ### 4A: Single session (small or tightly coupled)
 - Load `superpowers-executing-plans`.
@@ -194,42 +206,29 @@ small changes that fit in one verification cycle.
 - **Trap check:** if you notice you are writing more than ~3 files or
   making UI/UX decisions beyond the approved spec, pause and either (a)
   escalate to the user for design approval, or (b) fall back to Phase 1/2
-  before continuing. Coding around missing design is the most common way
-  single-session execution violates the umbrella.
+  before continuing.
 
-### 4B: Subagent-driven (recommended for multi-task plans)
-- Load `superpowers-subagent-driven-development`.
-- Use `delegate_task` for each task. Fresh context per subagent.
-- Two-stage review after each task:
-  1. Spec compliance — did it match the plan?
-  2. Code quality — is it well-built?
-- Fix and re-review before moving on.
-- Maintain a ledger file at `.hermes/plans/<slug>-ledger.md` to survive context compaction.
+### 4B: OpenCode-driven (recommended for multi-task plans)
+- Load `superpowers-subagent-driven-development` (now an OpenCode execution guide).
+- Ensure the project root is a git repo. If not, initialize and commit a baseline.
+- Start `opencode serve --port 4096 --hostname 127.0.0.1` in the background.
+- Run the OpenCode smoke test against the server: `opencode run --auto --attach http://127.0.0.1:4096 --dir <project> 'Respond exactly: OPENCODE_SMOKE_OK'`.
+- For each task, write a brief file and execute: `opencode run --auto --attach http://127.0.0.1:4096 --dir <project> --title '<task>' < brief.md`.
+- Capture the brief output to a log file.
+- After each task, verify with `git diff --stat`, `npx tsc --noEmit`, `npm run build`, and screenshots where visual changes are involved.
+- Stop the OpenCode server when the plan is complete.
 
-### 4C: OpenCode-driven (large greenfield projects)
-- Use OpenCode CLI with a detailed brief **piped via stdin**: `opencode run < /tmp/brief.md`.
-- Do NOT use `opencode run -f /tmp/brief.md 'prompt'` — the positional argument is unreliable.
-- Run the OpenCode smoke test first:
-  ```bash
-  opencode --version
-  opencode auth list
-  opencode run 'List the MCP servers and tools you can access, then respond exactly: OPENCODE_SMOKE_OK'
-  ```
-- Include an explicit **External context sources** block in the brief so OpenCode uses `obsidian` and `codebase-memory` MCP servers for external research instead of direct filesystem access.
-- **Headless limitation:** `opencode run < brief.md` frequently fails with an internal `todowrite` SchemaError, even with `--auto --dir` and `--pure`. When the user asks for scripted/parallel agent execution or writes outside OpenCode's default cwd, prefer Hermes `delegate_task` subagents and reference `references/opencode-headless-limitations.md`. That reference includes a configuration recipe (update `opencode-ai`, disable MCP servers in `~/.config/opencode/opencode.json`, prepend `"Do not use todo or planning tools"`, and verify immediately).
-- **Fallback rule:** if the smoke test passes but OpenCode still cannot reach MCP servers during execution (logs show `obsidian_list-available-vaults Unknown`, `codebase-memory_list_projects Unknown`, or repeated MCP timeouts), do **not** keep retrying or leave OpenCode stalled. Stop the agents, report the failure to the user, and fall back to **inline execution** using `superpowers-executing-plans`. Do not let an MCP outage block delivery of an already-approved plan.
-- If OpenCode's bundled `opencode` skill cannot be edited (it is protected), place additional OpenCode-specific workflow rules in this umbrella skill and in `references/opencode-mcp-pitfall.md`.
-- Hermes retains ownership of planning, verification, and final review.
-
-### 4D: Parallel dispatch (independent failures)
+### 4C: Parallel OpenCode lanes (independent tasks)
 - Load `superpowers-dispatching-parallel-agents`.
-- Dispatch up to 3 `delegate_task` subagents concurrently.
-- After they return, integrate and run full suite.
+- Start a single OpenCode server.
+- Dispatch multiple `opencode run --attach` invocations concurrently **only when file sets are strictly disjoint**.
+- After lanes finish, reconcile: re-read shared files, run full verification, capture after-screenshots.
 
 **Constraints:**
-- Max 3 concurrent `delegate_task` subagents.
-- Max 2 concurrent heavy CLI agents (OpenCode / Claude Code / Codex).
-- Do NOT delegate web search or browser navigation to subagents.
+- Do NOT use Hermes `delegate_task` for code execution.
+- Use Hermes subagents (`delegate_task`) only for browser/profile research tasks.
+- Max 2 concurrent heavy OpenCode sessions.
+- Do NOT delegate web search or browser navigation to OpenCode agents.
 
 ---
 
@@ -311,9 +310,9 @@ For the original Superpowers review discipline as a reference, see `superpowers-
 - Skipping design for "simple" changes.
 - Writing code before a failing test.
 - Claiming completion without running verification.
-- Trusting subagent success reports blindly.
+- Trusting agent success reports blindly.
 - Cleaning up a worktree the user needs for PR iteration.
-- Delegating web search or browser navigation to subagents.
+- Delegating web search or browser navigation to agents.
 - Reading files outside the project directory without MCP.
 - **Importing or keeping harness-only skills** like `using-superpowers` that are
   meant for Codex/Pi/Antigravity. In Hermes the umbrella skill already defines
@@ -326,6 +325,13 @@ For the original Superpowers review discipline as a reference, see `superpowers-
   structure before implementation. If you catch yourself writing a page.tsx,
   component directory, or data model from scratch in the main session, stop,
   load `superpowers-writing-plans`, and ask for approval on the plan.
+- **Dispatching subagents before the written plan is explicitly approved.**
+  Subagent-driven execution is Phase 4; it follows Phase 1 (design approval)
+  and Phase 2 (plan approval). A verbal "давай попробуем" or a detailed
+  request is not approval of the written plan. Get an explicit green light
+  ("да", "ok", "start", "go") on the saved plan file before dispatching
+  implementers. See `superpowers-subagent-driven-development` →
+  `references/parallel-lane-pitfall.md`.
 - **Forgetting to mark interactive Next.js App Router sections as Client Components.** In Next.js 15 App Router, any component that uses event handlers (`onClick`), `useState`, `useEffect`, or `document`/`window` must include `"use client"` at the top. Server Component pages can *import* Client Components, but passing `onClick` props to a Server Component will fail at build time with: `Error: Event handlers cannot be passed to Client Component props`. When converting a Vite/React SPA to Next.js, audit each component for interactivity and add `"use client"` where needed.
 - **Using `JSX.Element` as an explicit return type in React 19 + TypeScript 5 strict projects.** React 19 removes the global `JSX` namespace. Replace `JSX.Element` with `React.JSX.Element` or rely on type inference. See `frontend-css-maintenance` → `references/nextjs15-react19-jsx-namespace.md`.
 - **Framer Motion `initial={{ opacity: 0 }}` combined with `whileInView` on Next.js 15 App Router static pages.** The server-rendered output is invisible until the client intersection observer fires, so first paint and full-page screenshots look broken. Use `initial={{ opacity: 1, y: 20 }}` (or another transform-only visible state) and animate to the final position. See `references/framer-motion-ssr-initial-opacity.md`.
@@ -374,14 +380,18 @@ These skills were absorbed into `code-quality-gates` but remain in `.archive` fo
 - `references/skill-audit-and-merge-methodology.md` — how to audit external skill libraries and consolidate local duplicates without broken references
 - `references/hermes-tool-mapping.md` — Superpowers actions → Hermes tools
 - `references/opencode-mcp-pitfall.md` — OpenCode sandbox auto-reject, MCP Unknown, and fallback rules
+- `references/opencode-serve-attach-mcp.md` — how to expose MCP servers to headless OpenCode via `opencode serve` + `opencode run --attach`
 - `references/opencode-sandbox-external-directory.md` — OpenCode auto-reject on writes outside its cwd and the delegate_task fallback
 - `references/opencode-headless-limitations.md` — internal `todowrite` SchemaError in headless `opencode run < brief.md` and the delegate_task fallback
 - `references/opencode-briefing-pattern.md` — canonical OpenCode brief and pitfalls
 - `references/nextjs-app-router-spa-migration.md` — migrating React/Vite landing pages to Next.js 15 App Router; client-component boundaries, metadata/JSON-LD, font setup, image paths, and build verification.
 - `references/ecc-portable-ideas.md` — portable ideas from ECC (affaan-m/ECC) without installing the npm package
 - `references/framer-motion-ssr-initial-opacity.md` — Framer Motion `whileInView` animations that start at `opacity: 0` cause blank SSR/SSG first paint; use a visible opacity with a transform offset, especially for sticky-scrolling feature cards.
+- `references/mobile-video-background-pitfall.md` — full-width video backgrounds can hide card grids on mobile; hide video on mobile or reduce overlay opacity, and verify mobile screenshots.
 - `references/external-design-spec-adaptation.md` — applying an external design instruction/spec to an existing project while preserving content, SEO, semantics, and functionality.
 - `references/design-adaptation-checklist.md` — older checklist variant (prefer `external-design-spec-adaptation.md`).
+- `references/skill-library-sync-safety.md` — safely syncing `~/.hermes/skills` to the public `hermes-skills` GitHub repo.
 - `references/opencode-briefing-pattern.md` — canonical OpenCode brief and pitfalls
+- `references/vite-preview-network-host.md` — exposing Vite dev/preview server to LAN for review from other devices.
 - `references/opencode-mcp-pitfall.md` — OpenCode sandbox auto-reject, MCP Unknown, and fallback rules
 - `references/nextjs-app-router-spa-migration.md` — migrating React/Vite landing pages to Next.js 15 App Router; client-component boundaries, metadata/JSON-LD, font setup, image paths, and build verification.

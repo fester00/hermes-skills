@@ -70,7 +70,7 @@ skills/<category>/<skill-name>/
 
 | Метрика | Значение |
 |---------|----------|
-| Всего активных навыков | 127 |
+| Всего активных навыков | 135 |
 | Категорий | 25 |
 | В архиве | ~56 (не входят в этот репозиторий) |
 
@@ -79,18 +79,17 @@ skills/<category>/<skill-name>/
 | Навык | Описание | Путь |
 |---|---|---|
 | `hermes-agent` | Полное руководство по Hermes Agent | `autonomous-ai-agents/hermes-agent/` |
-| `hermes-software-development-workflow` | Полный lifecycle разработки | `software-development/hermes-software-development-workflow/` |
-| `claude-design` | Дизайн-процесс + Prompt Enhancement Pipeline | `creative/claude-design/` |
-| `ui-ux-pro-max` | Design intelligence + anti-generic checklist | `creative/ui-ux-pro-max/` |
-| `popular-web-designs` | 54 реальных design system | `creative/popular-web-designs/` |
-| `design-md` | Google DESIGN.md token spec | `creative/design-md/` |
-| `systematic-debugging` | 4-фазная отладка | `software-development/systematic-debugging/` |
-| `requesting-code-review` | Pre-commit review pipeline | `software-development/requesting-code-review/` |
-| `orchestrator-mode` | Режим оркестратора | `autonomous-ai-agents/orchestrator-mode/` |
+| `superpowers-workflow` | Полный lifecycle разработки в Hermes | `software-development/superpowers-workflow/` |
 | `knowledge-first-protocol` | Порядок поиска информации | `knowledge-first-protocol/` |
-| `pentajunior-v2-nextjs-sqlite` | Класс-скилл для pentajunior-v2 | `software-development/pentajunior-v2-nextjs-sqlite/` |
+| `setup-zsh-oh-my-zsh` | Установка zsh + Oh My Zsh + Oh My Posh | `devops/setup-zsh-oh-my-zsh/` |
+| `opencode` | Делегирование кодинга в OpenCode CLI | `autonomous-ai-agents/opencode/` |
+| `hermes-skill-library` | Публикация и синхронизация библиотеки навыков | `software-development/hermes-skill-library/` |
+| `obsidian` | Работа с Obsidian vault | `note-taking/obsidian/` |
 | `pentajunior-v2-seo` | SEO-оптимизация pentajunior-v2 | `software-development/pentajunior-v2-seo/` |
 | `yandex-seo-optimization` | SEO для Яндекса | `marketing/yandex-seo-optimization/` |
+| `claude-design` | Дизайн-процесс + Prompt Enhancement Pipeline | `creative/claude-design/` |
+| `ui-ux-pro-max` | Design intelligence + anti-generic checklist | `creative/ui-ux-pro-max/` |
+| `popular-web-designs` | 74 реальных design system | `creative/popular-web-designs/` |
 | `selective-vpn-routing` | Маршрутизация сервисов через VPN/прокси | `devops/selective-vpn-routing/` |
 
 ## 📥 Как использовать навык

@@ -77,6 +77,23 @@ When the spec includes URLs for hero videos or feature videos that belong to ano
 
 A spec may call for `bg-black/20` cards. On a warm cream page this becomes muddy gray and kills contrast. Convert to solid warm surfaces (`#FFF9F2`, `#F6E4CF`) with subtle borders and shadows instead of translucent dark overlays.
 
+### 6. Uniform card heights in grids
+
+When the spec produces cards of varying height because of different description/feature counts, enforce a uniform height:
+- set `min-h` on the card root;
+- use `flex flex-col` + `mt-auto` on the bottom row;
+- clamp description text with `line-clamp-2` or `line-clamp-3`;
+- fix image container size so images don't stretch cards.
+
+For feature lists, increase feature tag size (`text-sm`/`text-base`), padding (`px-3 py-1.5` or more), and use an accent background instead of a faint border so the properties read as product attributes, not metadata.
+
+### 7. Video backgrounds
+
+When adding a spec video behind a section:
+- copy the asset into the project's `public/video/` directory rather than hotlinking;
+- add an overlay (`bg-<theme>/85` or `bg-black/20`) so text stays readable;
+- test on mobile: autoplay muted loop is required; provide a poster/fallback color.
+
 ## Verification steps
 
 After integration:
@@ -88,9 +105,15 @@ After integration:
    - invisible sections due to `opacity: 0` initial states;
    - unreadable text over busy video/backgrounds;
    - cards blending into backgrounds;
+   - cards of different heights;
    - leftover artifacts from the old UI.
 6. Update `e2e-smoke.js` selectors if the DOM structure changed.
+7. Serve with `--host 0.0.0.0` (Vite) or `-H 0.0.0.0` (Next.js) so the user can preview from another device on the LAN.
 
 ## When to stop
 
 The goal is a faithful *adaptation*, not a pixel-perfect clone. If a spec element cannot be made to work with the existing content, surface the trade-off to the user instead of forcing the mismatch.
+
+## Provenance
+
+- 2026-08-01: Drift-style spec applied to `silicone-lending-v3` (Next.js 15). Switched Instrument Serif → PT Serif for Cyrillic, copied hero video from `silicone-landing/public/video`, enforced uniform card heights and accent feature tags in the Vite-based `silicone-landing-v2` as well.
