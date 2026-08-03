@@ -197,9 +197,24 @@ Patch only agent-created skills living in `~/.hermes/skills/`.
 - Skill file parses as valid YAML frontmatter + Markdown.
 - `references/sibling-skill-architecture.md` — when to split an umbrella into sibling skills
 - `references/profile-sync-commands.md` — copy-paste ready commands to sync skills across profiles
+- `references/profile-isolated-skills.md` — when skills live only in a secondary profile
+- `references/github-sync-skills-and-profiles.md` — mirror `~/.hermes/skills` and a Hermes profile to GitHub repositories
 - `references/skill-library-index.md` — current index of skills and their locations
 
-## Related
+## Workflow: sync active skills and a Hermes profile to GitHub
+
+If the user maintains a public/private GitHub mirror for skills and/or profiles,
+use `references/github-sync-skills-and-profiles.md` for exact commands. The high-level flow is:
+
+1. Export `https_proxy=http://127.0.0.1:1081` before any GitHub operation if direct HTTPS is blocked.
+2. Sync `~/.hermes/skills/` to the skills repository with `rsync --delete` and exclude local metadata.
+3. Sync `~/.hermes/profiles/<name>/` to the profile repository, excluding `sessions/`, `state.db*`, `secrets/`, caches, and logs.
+4. Create a backup branch and review `git diff --stat`.
+5. Commit with a `sync:` prefix and push with `--force-with-lease`.
+
+See the reference for exact copy-paste commands and the `.gitignore` template.
+
+## Workflow: sync active skills to a public GitHub skills repository
 
 - `hermes-agent` — Hermes CLI operations
 - `knowledge-first-protocol` — search order and Obsidian fallback

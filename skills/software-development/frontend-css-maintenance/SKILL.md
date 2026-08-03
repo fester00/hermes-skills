@@ -148,6 +148,8 @@ If the user reports broken layout:
 - `references/diagnosing-broken-icon-backgrounds.md` — when icons appear to have broken/artifacted backgrounds, verify the icon silhouette against the container shape before editing CSS.
 - `references/silicone-landing-contacts-redesign.md` — example of redesigning contact-card icon wells from small circles to squircle wells for non-square Lucide icons.
 - `references/framer-motion-strict-variants.md` — annotate framer-motion variants as `Variants` or use `as const` to avoid strict-mode `tsc` failures.
+- `references/nextjs15-react19-jsx-namespace.md` — replace `JSX.Element` with `React.JSX.Element` under React 19 + TypeScript 5.
+- `references/uniform-product-card-height.md` — patterns for making product cards the same height in a Tailwind grid while keeping badges and pricing aligned at the bottom.
 
 ## Related skills
 
