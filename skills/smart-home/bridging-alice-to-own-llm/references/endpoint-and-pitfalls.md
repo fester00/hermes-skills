@@ -66,6 +66,15 @@ Symptom: `finish_reason: length` with empty `content`; the answer looks broken.
 Cause: thinking models spend the whole `max_tokens` budget on reasoning.
 Fix: raise `max_tokens` (≥1500) for such models, or keep them as fallback only.
 
+### `user_id` differs per surface (console vs device)
+Symptom: the physical speaker is answered with your own refusal text («доступен только владельцу»),
+while the console test of the same skill works perfectly.
+Cause: Yandex issues a **different `session.user_id` per surface** for the same account — the
+developer console and the device send different IDs. An allowlist built from console traffic
+rejects the device.
+Fix: read the rejected ID from your own request log (refusals log the offending `user_id`) and add
+it as a second line. Re-read the allowlist on every request so no restart is needed.
+
 ### Public endpoint gets scanned
 Symptom: `/.env`, `/config.json`, `/graphql`, `/api`, `/AGENTS.md` requests from unrelated IPs.
 Cause: normal background noise for any public host.
