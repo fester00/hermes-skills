@@ -105,7 +105,20 @@ operator edits a text file — no restart, no code change, no sudo. A prompt cac
 start silently keeps the old behaviour, so when a prompt edit "doesn't work", first compare the
 file's mtime against the service start time before rewriting the prompt.
 
-## Yandex beeps profanity — and how to stop it beeping
+## Leaving the skill
+
+Platform rule worth knowing: **while a skill is active, Alice herself and every other skill are
+unavailable.** A skill that always answers `end_session: false` therefore feels like a trap — the
+user cannot reach Alice to get out.
+
+Two exits, and you want both:
+
+- **Platform-side:** the user's phrases «Алиса, вернись», «Алиса, хватит», «Стоп», «Закончить»,
+  «Выйти» are handled by the platform itself (documented in «Запуск и выход»).
+- **Skill-side:** handle the same words yourself and return `end_session: true` with a short
+  goodbye, so the session is released immediately instead of lingering until the platform's
+  timeout. Match on whole tokens and allow polite inserts («выйди, пожалуйста»); require at least
+  one real exit word so that «расскажи про слово хватит» stays a normal question.
 
 Symptom: the skill's answer contains a rude word, the model complies, but the speaker plays a
 **beep over the word**. Nothing to do with the model: Yandex's speech synthesis filters obscene
