@@ -91,3 +91,16 @@ Fix: keep `/health` minimal, answer 404 to everything but the token path, and ga
 Installing Tailscale, enabling Funnel and restarting a system service need `sudo` with a password.
 Hand the user a single idempotent script to run themselves; never take, store or transmit a
 password, and never accept one in chat.
+
+**Reloading your own service needs no sudo.** If the unit runs as *your* user (`User=natan`) with
+`Restart=always`, `kill <MainPID>` makes systemd restart it in ~3 s with the new code — confirm
+`ActiveEnterTimestamp` moved before trusting the reload. Use this instead of asking the user for a
+privileged restart after every code change.
+
+## Making a setting take effect
+
+Read the system prompt (and any operator-tunable text) **from disk on every request**, never once
+in `__init__`. Then persona / tone / censorship edits apply to the very next utterance: the
+operator edits a text file — no restart, no code change, no sudo. A prompt cached at process
+start silently keeps the old behaviour, so when a prompt edit "doesn't work", first compare the
+file's mtime against the service start time before rewriting the prompt.
