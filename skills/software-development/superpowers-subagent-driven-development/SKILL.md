@@ -12,7 +12,10 @@ Execute plan by running a fresh OpenCode agent per task, a task review (spec com
 **Core principle:** Fresh OpenCode agent per task + task review (spec + quality) + broad final review = high quality, fast iteration
 
 **Prerequisites (must be done first):**
-1. The project directory must be a git repository. If it is not, run `git init && git add . && git commit -m "initial: baseline"` before any OpenCode task.
+1. The project must be a git repository with a usable baseline. **If it is not — ask the user first:**
+   do not run `git init` / `git commit` on your own. The upstream superpowers flow creates a
+   worktree instead (`superpowers-using-git-worktrees`) so the user's working copy stays untouched.
+   Baseline commits in an unprepared directory are a side effect the user has not approved.
 2. Start an OpenCode server in the project directory: `opencode serve --port 4096 --hostname 127.0.0.1`.
 3. Execute with: `opencode run --auto --attach http://127.0.0.1:4096 --dir <project> --title '<task>' < brief.md`.
 4. Capture output to a log file for review.

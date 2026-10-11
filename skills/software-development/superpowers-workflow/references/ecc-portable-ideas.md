@@ -2,8 +2,9 @@
 
 Source: https://github.com/affaan-m/ECC
 License: MIT
+Verified against ECC: 2026-10-11 (71 agents / 311 skills / 97 commands)
 
-ECC is a large agent harness plugin for Claude Code/Codex/Cursor/OpenCode/Hermes/etc. with 67 agents, 281 skills, hooks, rules, and AgentShield. This reference captures the ideas that are portable to Hermes without installing the `ecc-universal` npm package or the GitHub App.
+ECC is a large agent harness plugin for Claude Code/Codex/Cursor/OpenCode/Hermes/etc. with 71 agents, 311 skills, 97 commands, hooks, rules, and AgentShield. This reference captures the ideas that are portable to Hermes without installing the `ecc-universal` npm package or the GitHub App.
 
 ## What to avoid importing
 
@@ -64,11 +65,11 @@ Use this to expand `code-quality-gates` Gate 3 security scan.
 
 ECC agents map cleanly to Hermes subagent briefs:
 - `planner` → `superpowers-writing-plans`
-- `code-reviewer` → `simplify-code` / ``
+- `code-reviewer` → `` (кода `simplify-code` у нас нет — ссылка была битой)
 - `security-reviewer` → `code-quality-gates` Gate 3
 - `build-error-resolver` → `code-quality-gates` Gate 2/4
 - `tdd-guide` → `code-quality-gates` Gate 1
-- `loop-operator` → `superpowers-dispatching-parallel-agents`
+- `loop-operator` → **локального эквивалента нет**: ECC описывает его как «operate autonomous agent loops, monitor progress, and intervene safely when loops stall». Раньше был ошибочно сопоставлен с `superpowers-dispatching-parallel-agents` (это про запуск агентов, не про слежение за циклами); ближайшее у нас — `code-quality-gates` Gate 2 (отладка и пороги остановки)
 
 When dispatching subagents, use the ECC role descriptions as the brief foundation.
 

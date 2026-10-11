@@ -50,11 +50,22 @@ Do NOT run for:
 The MCP server must be configured in `~/.hermes/config.yaml`:
 
 ```yaml
-mcp:
-  servers:
-    codebase-memory:
-      command: /home/natan/.local/bin/codebase-memory-mcp
+mcp_servers:               # Hermes reads THIS key (see the native-mcp skill)
+  codebase-memory:
+    command: /home/natan/.local/bin/codebase-memory-mcp
 ```
+
+> ⚠️ **Проверено 2026-10-11:** у нас стоит `codebase-memory-mcp 0.9.0` и он отдаёт **14 инструментов**
+> (`hermes mcp test codebase-memory`). Прежний вариант блока — `mcp: servers:` — **неверен**: так
+> конфигурируется OpenCode, а не Hermes.
+>
+> **Что движок умеет, а навык не описывал:** `.cbmignore` (исключения как в `.gitignore`),
+> лимиты ресурсов индексации (`docs/INDEX_RESOURCE_LIMITS.md`), свежесть индекса и watch-режим,
+> `detect_changes` (влияние правок), `index_status` (состояние и покрытие), пагинация графа.
+>
+> **`ingest_traces`:** инструмент зарегистрирован, но апстрим пишет о модели runtime-трасс
+> «This document is an architecture contract, **not an implementation**» — не обещать
+> работоспособность, проверять перед использованием.
 
 When available, this skill uses the native MCP tools. Fallback to CLI is documented below.
 
