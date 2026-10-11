@@ -180,3 +180,11 @@ pygount --format=summary --folders-to-skip=".git,node_modules,venv" .
 | Recover lost commits | `github-workflows` → recovery section | `superpowers-systematic-debugging` (reference) / `code-quality-gates` Gate 2 |
 | Measure codebase size | `github-workflows` → inspection section | — |
 | Pre-commit verification | `code-quality-gates` | `github-workflows` → review section |
+
+## Related
+
+The granular family lives in the `github/` category — `github-auth`, `github-issues`,
+`github-pr-workflow`, `github-repo-management`, `github-code-review`, `github-issue-to-pr`.
+This skill is the **router**: start here, then open the specific one.
+Deep reference material (API cheatsheet, CI troubleshooting, conventional commits, PR/review
+templates) is in `software-development/github/references/`.

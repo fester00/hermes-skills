@@ -101,3 +101,9 @@ vault note is the live system** (service names, ports, tokens, current persona).
 
 - `references/alice-protocol.md` — request/response JSON, fields, limits, activation, session flow
 - `references/endpoint-and-pitfalls.md` — endpoint options and every pitfall hit in practice
+- `references/integration-notes-and-verification.md` — шире: маршрут B (Home Assistant), поиск
+  устройства в LAN, выход из навыка, чек-лист проверки. **Поглощено** из навыка
+  `yandex-alice-integration` (2026-10-11), чтобы не держать два навыка об одном
+- `references/voice-output-and-persona.md` — голос, озвучка, персона (поглощено оттуда же)
+- `references/public-endpoint-and-root-script-hygiene.md` — публичный адрес и гигиена скриптов
+  под root (поглощено оттуда же)
