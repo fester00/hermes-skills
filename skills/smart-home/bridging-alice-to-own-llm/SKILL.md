@@ -85,6 +85,18 @@ See `references/endpoint-and-pitfalls.md` for the full verified list. The four t
 - **The session-open request carries an empty utterance** — greet on `session.new` instead of
   replying «не расслышал».
 
+## Project instance (this house)
+
+The live deployment of this pattern — exact paths, configs, persona, diagnostics — is documented in
+the Obsidian vault:
+
+- `Operations/Runbooks/alice-bridge — навык Алисы на своём LLM.md` — the full reference (chain,
+  file map, configs, change recipes, diagnostics, pitfalls)
+- `Projects/alice-bridge — колонка со своим LLM.md` — the project card
+
+Read the vault note before touching the running service: **this skill is the generic method, the
+vault note is the live system** (service names, ports, tokens, current persona).
+
 ## References
 
 - `references/alice-protocol.md` — request/response JSON, fields, limits, activation, session flow
