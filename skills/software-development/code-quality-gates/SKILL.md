@@ -7,12 +7,24 @@ license: MIT
 metadata:
   hermes:
     tags: [quality, testing, debugging, tdd, review, verification, code-review]
-    related_skills: [superpowers-workflow, github-workflows]
+    related_skills: [superpowers-workflow, superpowers-verification-before-completion, github-workflows]
 ---
 
 # Code Quality Gates
 
 A collection of guardrails and practices to ensure code is correct, secure, and maintainable — from the first test through production debugging.
+
+## Mapping to obra/superpowers skills
+
+| obra/superpowers skill | Covered here | Notes |
+|---|---|---|
+| `test-driven-development` | **Gate 1** (TDD) | Operational gate with RED-GREEN-REFACTOR and language auto-detection. |
+| `systematic-debugging` | **Gate 2** (Systematic Debugging) | Operational 4-phase process. |
+| `verification-before-completion` | **Gate 3** + `superpowers-verification-before-completion` | Gate 3 gives concrete verification commands; `superpowers-verification-before-completion` provides the "evidence before claims" discipline. |
+| `requesting-code-review` | **Gate 3** (Pre-Commit Verification) | Reviewer subagent template and self-review checklist. |
+| `receiving-code-review` | **Gate 3** (Pre-Commit Verification) | Auto-fix loop and response to feedback. |
+
+---
 
 ## Gate 1: Test-Driven Development (TDD)
 
@@ -86,6 +98,8 @@ When a UI element animates unexpectedly during state changes (filtering, sorting
 ### Gate 3: Pre-Commit Verification
 
 **Core principle:** No agent should verify its own work. Fresh context finds what you miss.
+
+> Before making any success claim, also load `superpowers-verification-before-completion` to enforce "evidence before claims".
 
 ### Pipeline
 1. **Get the diff** (`git diff --cached`)

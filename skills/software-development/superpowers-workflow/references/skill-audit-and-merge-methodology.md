@@ -36,10 +36,10 @@ Also scan for references to superseded standalone skills such as:
 - `orchestrator-mode`
 - `subagent-driven-development`
 - `writing-plans`
-- `test-driven-development`
-- `systematic-debugging`
-- `requesting-code-review`
-- `verification-before-completion`
+- `test-driven-development` → `code-quality-gates` Gate 1 (deep-dive text in `code-quality-gates/references/test-driven-development.md`)
+- `systematic-debugging` → `code-quality-gates` Gate 2 (deep-dive text in `code-quality-gates/references/systematic-debugging.md`)
+- `requesting-code-review` → `code-quality-gates` Gate 3
+- `verification-before-completion` → `superpowers-verification-before-completion`
 - `plan`
 - `spike`
 
@@ -51,8 +51,8 @@ Replace stale references with the current canonical names:
 | `orchestrator-mode` | `superpowers-workflow` |
 | `subagent-driven-development` | `superpowers-subagent-driven-development` |
 | `writing-plans` | `superpowers-writing-plans` |
-| `test-driven-development` | `code-quality-gates` (operational gate) or `superpowers-test-driven-development` (deep-dive reference) |
-| `systematic-debugging` | `code-quality-gates` (operational gate) or `superpowers-systematic-debugging` (deep-dive reference) |
+| `test-driven-development` | `code-quality-gates` Gate 1 (operational); upstream deep-dive retained as `references/test-driven-development.md` in `code-quality-gates` |
+| `systematic-debugging` | `code-quality-gates` Gate 2 (operational); upstream deep-dive retained as `references/systematic-debugging.md` in `code-quality-gates` |
 | `requesting-code-review` | `code-quality-gates` Gate 3 |
 | `verification-before-completion` | `code-quality-gates` Gate 4 |
 | `plan` | `superpowers-writing-plans` |

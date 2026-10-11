@@ -11,10 +11,12 @@ related_skills:
   - superpowers-dispatching-parallel-agents
   - superpowers-finishing-a-development-branch
   - superpowers-writing-skills
+  - superpowers-verification-before-completion
   - code-quality-gates
   - 
   - 
   - codebase-memory-audit
+  - karpathy-lens
   - react-premium-landing-effects
   - claude-design
   - popular-web-designs
@@ -106,7 +108,7 @@ Do NOT read, copy, or list files outside the current project directory via direc
 
 ### Karpathy lens
 
-Apply these four principles from Andrej Karpathy's coding guidelines in every phase:
+Apply `karpathy-lens` as a filter during every phase. Load the skill if the session is not already using it. The four principles and their anti-patterns live there; below is the compact checklist:
 
 1. **Think Before Coding** — state assumptions explicitly, present multiple interpretations, surface tradeoffs, stop and ask when confused.
 2. **Simplicity First** — minimum code that solves the problem; no speculative features, single-use abstractions, or unnecessary flexibility.
@@ -240,10 +242,10 @@ changes that fit in one verification cycle.
 3. Run it fresh. Read the full output.
 4. Only then claim success.
 
-For deep reference on a specific gate, load the archived Superpowers skill:
-- TDD deep-dive → `superpowers-test-driven-development` (archived reference)
-- Debugging deep-dive → `superpowers-systematic-debugging` (archived reference)
-- Verification deep-dive → `superpowers-verification-before-completion` (archived reference)
+For deep reference on a specific gate, load the matching skill:
+- TDD deep-dive → `code-quality-gates` Gate 1; full upstream text is in `code-quality-gates/references/test-driven-development.md`.
+- Debugging deep-dive → `code-quality-gates` Gate 2; full upstream text is in `code-quality-gates/references/systematic-debugging.md`.
+- Verification deep-dive → `superpowers-verification-before-completion`.
 
 ---
 
@@ -263,7 +265,7 @@ Run `` as an optional over-engineering pass: it lists what to
 delete, replace with stdlib/native, or shrink. Route correctness and security
 findings to `code-quality-gates`.
 
-For the original Superpowers review discipline as a reference, see `superpowers-requesting-code-review` (archived reference).
+For the original Superpowers review discipline, see the upstream `requesting-code-review` skill; in Hermes use `code-quality-gates` Gate 3 for pre-merge review.
 
 ---
 
@@ -357,20 +359,40 @@ Quality gate: after the audit, run a broken-reference check across the active sk
 - `superpowers-finishing-a-development-branch` — merge/PR/cleanup
 - `superpowers-dispatching-parallel-agents` — parallel failure investigation
 - `codebase-memory-audit` — codebase intelligence via MCP
+- `karpathy-lens` — surgical, simple, goal-driven coding filter
 - `obsidian` — vault access for project context
 - `yandex-api` — file upload and public links
 - `yandex-seo-optimization` — Yandex SEO workflow
 - `react-premium-landing-effects` — polished dark landing-page motion effects (gradient meshes, glassmorphism, shimmer, staggered entrances).
 
-### Archived Superpowers references (deep-dive only)
+### Upstream Superpowers mapping
 
-These skills were absorbed into `code-quality-gates` but remain in `.archive` for detailed reference:
+| Upstream Superpowers skill | Hermes canonical location |
+|---|---|
+| `brainstorming` | `superpowers-brainstorming` |
+| `dispatching-parallel-agents` | `superpowers-dispatching-parallel-agents` |
+| `executing-plans` | `superpowers-executing-plans` |
+| `finishing-a-development-branch` | `superpowers-finishing-a-development-branch` |
+| `subagent-driven-development` | `superpowers-subagent-driven-development` |
+| `using-git-worktrees` | `superpowers-using-git-worktrees` |
+| `writing-plans` | `superpowers-writing-plans` |
+| `writing-skills` | `superpowers-writing-skills` |
+| `test-driven-development` | `code-quality-gates` Gate 1 (TDD) |
+| `systematic-debugging` | `code-quality-gates` Gate 2 (Systematic Debugging) |
+| `verification-before-completion` | `superpowers-verification-before-completion` |
+| `requesting-code-review` | `code-quality-gates` Gate 3 (Pre-Commit Verification) |
+| `receiving-code-review` | `code-quality-gates` Gate 3 (Pre-Commit Verification) |
+| `using-superpowers` | Not adopted — harness-specific bootstrap, not needed in Hermes |
+| `diagnosing-superpowers` | Not adopted — Hermes-native debugging is in `code-quality-gates` |
 
-- `superpowers-test-driven-development` — RED-GREEN-REFACTOR deep-dive
-- `superpowers-systematic-debugging` — 4-phase debugging deep-dive
-- `superpowers-verification-before-completion` — evidence-before-claims deep-dive
-- `superpowers-requesting-code-review` — pre-merge review discipline
-- `superpowers-receiving-code-review` — responding to feedback
+### Archived / deep-dive references
+
+Some upstream skills are kept only as deep-dive references when the compact Hermes checklist is not enough:
+
+- obra/superpowers `test-driven-development` — upstream RED-GREEN-REFACTOR deep-dive; operational equivalent is `code-quality-gates` Gate 1.
+- obra/superpowers `systematic-debugging` — upstream 4-phase debugging deep-dive; operational equivalent is `code-quality-gates` Gate 2.
+- obra/superpowers `requesting-code-review` — upstream pre-merge review discipline; not adopted as a standalone skill.
+- obra/superpowers `receiving-code-review` — upstream response-to-feedback discipline; not adopted as a standalone skill.
 
 - `references/skill-audit-and-merge-methodology.md` — how to audit external skill libraries and consolidate local duplicates without broken references
 - `references/hermes-tool-mapping.md` — Superpowers actions → Hermes tools

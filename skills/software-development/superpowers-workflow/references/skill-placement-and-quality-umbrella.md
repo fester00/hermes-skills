@@ -17,10 +17,11 @@ default profile and finding `skills_list` did not return them.
 ## Quality umbrella: `code-quality-gates` over Superpowers quality skills
 
 We evaluated the upstream Superpowers quality skills
-(`superpowers-test-driven-development`, `superpowers-systematic-debugging`,
-`superpowers-requesting-code-review`, `superpowers-receiving-code-review`,
-`superpowers-verification-before-completion`) against our internal
-`code-quality-gates`.
+(`test-driven-development`, `systematic-debugging`,
+`requesting-code-review`, `receiving-code-review`,
+`verification-before-completion`) against our internal `code-quality-gates`.
+The upstream skills are referenced by their upstream short names; Hermes
+mappings are in `superpowers-workflow` → "Upstream Superpowers mapping".
 
 `code-quality-gates` is more useful in Hermes because it already includes:
 - concrete `delegate_task` / `read_file` / `search_files` / `terminal` mappings,
@@ -30,11 +31,13 @@ We evaluated the upstream Superpowers quality skills
 - auto-fix loop ≤ 2 cycles,
 - Hermes-specific debugging sections (TUI, React/TS animations).
 
-Therefore these Superpowers quality skills were archived to
-`~/.hermes/skills/.archive/software-development/` and `superpowers-workflow`
-now routes Verify/Review phases through `code-quality-gates`. The archived
-Superpowers skills remain available as deep-dive references when the compact
-Hermes checklist is not enough.
+Therefore the operational equivalents for `test-driven-development`,
+`systematic-debugging`, `requesting-code-review`, and `receiving-code-review`
+are in `code-quality-gates`. `verification-before-completion` is adopted as a
+standalone Hermes skill: `superpowers-verification-before-completion`.
+Upstream deep-dive texts are kept as reference documents under
+`code-quality-gates/references/` and may be surfaced as optional deep-dive
+skills later; they are not required for normal operation.
 
 ## `simplify-code` source and scope
 
@@ -46,5 +49,5 @@ provides parallel cleanup review.
 ## External reference sources
 
 - Upstream Superpowers: https://github.com/obra/superpowers
-- Karpathy guidelines: https://github.com/multica-ai/andrej-karpathy-skills
+- Karpathy guidelines: `karpathy-lens` skill (source: https://github.com/multica-ai/andrej-karpathy-skills)
 -  methodology: https://github.com/DietrichGebert/
