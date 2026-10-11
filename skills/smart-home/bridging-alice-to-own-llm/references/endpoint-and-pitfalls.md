@@ -38,6 +38,20 @@ Symptom: a script or test sends a wrong `user_id` (e.g. `1000`) and gets refused
 Cause: `UID` is set by bash and cannot be assigned.
 Fix: use another variable name (`MYID`).
 
+### Probing your own Funnel from the same host reports `000` (false alarm)
+Symptom: a check running **on the machine that hosts the Funnel** curls `https://<node>.ts.net/health`
+and gets `000` (or a TLS/response failure) every single time — while the service's own access log
+shows the same probe arriving with `200 OK` from an outer address. A watchdog built on the status
+code alone then cries wolf every few minutes.
+Cause: the request does leave through the internet and **does** reach Tailscale's ingress and your
+app (hence the `200` in the app log), but the **response never makes it back to that curl** — the
+same-host path is not symmetric. The status code therefore proves nothing about the edge.
+Fix: judge by **whether the request arrived**, not by the code curl received. Count `/health` hits in
+the app's access log before and after the probe; if the counter grew, the public path works. Alert
+only if the probe did not arrive **and** (`tailscale funnel status` lost the hostname **or**
+tailscaled is not active), and rate-limit to once an hour. Corroborating proof that the path is
+live from outside: any real `caller=<yandex ip>` line in the request log.
+
 ### `*.ts.net` resolves to the tailnet address locally
 Symptom: a local curl of the Funnel URL returns a certificate for an unrelated site, or connects
 somewhere unexpected.
@@ -84,6 +98,10 @@ Fix: keep `/health` minimal, answer 404 to everything but the token path, and ga
 
 - App: systemd unit with `Restart=always`, installed with `enable --now`.
 - Edge proxy: `cron @reboot` plus a watchdog every few minutes that checks `/health` and restarts it.
+- The edge check must **not** trust the HTTP code of a probe issued from the Funnel's own host
+  (see the `000` pitfall above): test delivery into the app's access log instead, and alert only
+  when the probe did not arrive and the Funnel configuration/`tailscaled` is unhealthy. Rate-limit
+  alerts (once an hour), otherwise a benign artefact fills the log.
 - Verify the watchdog by killing the proxy and watching it come back.
 
 ## Privileged steps
