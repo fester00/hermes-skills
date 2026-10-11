@@ -1,6 +1,6 @@
 ---
 name: setup-zsh-oh-my-zsh
-description: Install zsh and Oh My Zsh, set a theme, enable plugins, and switch the default shell on Ubuntu/Debian and Arch-based Linux.
+description: Use when setting up zsh on Linux. Install Oh My Zsh, pick a theme, enable plugins, and switch the default shell.
 title: Setup zsh + Oh My Zsh on Linux
 category: devops
 tags: [zsh, oh-my-zsh, shell, ubuntu, arch, cachyos, terminal]
@@ -175,12 +175,106 @@ EOF
 
 - **Order matters:** `eval "$(oh-my-posh init zsh ...)"` must run **after** `source $ZSH/oh-my-zsh.sh`. If it runs before, OMZ's theme hooks will clobber the OMP prompt.
 - **PATH timing:** `oh-my-posh` is often installed into `~/.local/bin`. If that directory is added to `PATH` only after `source $ZSH/oh-my-zsh.sh`, the `(( $+commands[oh-my-posh] ))` guard will fail on the first load and OMP will never initialize.
+- **PATH line must be real, not commented:** A commented example like `# export PATH=$HOME/.local/bin:$PATH` does not make the binary discoverable. When automating edits, do not pattern-match `$HOME/.local/bin` naively; check for an actual, uncommented `export PATH=...` line.
+- **OMZ theme conflict:** Some OMZ themes (e.g. `fox`) install aggressive prompt hooks that survive after `source $ZSH/oh-my-zsh.sh` and can overwrite the Oh My Posh prompt even if OMP is loaded later. Keep `ZSH_THEME="robbyrussell"` (or another lightweight built-in) when using Oh My Posh; OMP will replace the rendered prompt anyway.
 - **Nerd Font required:** Most OMP themes use icon glyphs. If the terminal font is not a Nerd Font, icons render as boxes or tofu. Install and select a Nerd Font in the terminal emulator (e.g. JetBrainsMono Nerd Font or MesloLGS Nerd Font).
 - **No need to port the JSON:** You do not have to translate an OMP theme into an OMZ theme. The two systems are different; prompt rendering is handled by OMP, plugins/aliases by OMZ.
 
-See also `references/oh-my-posh-with-oh-my-zsh.md` for a ready-to-use `.zshrc` snippet.
+See also `references/oh-my-posh-with-oh-my-zsh.md` for a ready-to-use `.zshrc` snippet and `references/remote-ssh-password-install.md` for installing Oh My Posh on a password-auth SSH host without interaction.
 
-## Terminal emulator config (Alacritty / niri / Wayland)
+## eza: icon-rich `ls` replacement
+
+`eza` is a modern `ls` replacement with Nerd Font icons, git highlighting, and tree output.
+
+### Install
+
+**Arch / CachyOS / Manjaro:**
+```bash
+sudo pacman -S --needed eza
+```
+
+**Ubuntu/Debian:**
+```bash
+sudo apt update && sudo apt install -y eza
+```
+
+### Recommended zsh aliases
+
+Place these **after** `source $ZSH/oh-my-zsh.sh` so they override any OMZ `ls` aliases:
+
+```zsh
+unalias ls la ll lt 2>/dev/null
+
+alias ls='eza --icons=always --group-directories-first'
+alias la='eza -a --icons=always --group-directories-first'
+alias ll='eza -la --icons=always --group-directories-first'
+alias lt='eza --tree --icons=always --level=2'
+```
+
+Use `--icons=always` (not bare `--icons`) so icons render even when the tool is uncertain about terminal capability.
+
+### Pitfalls
+
+- **No icons:** Terminal font is not a Nerd Font, or locale is `POSIX`/`C`. See the Nerd Fonts and locale sections below.
+- **OMZ aliases win:** If `ls` still invokes the old command, Oh My Zsh's `lib/directories.zsh` may have loaded its own aliases. The `unalias` guard above fixes this.
+
+## Nerd Fonts for icons
+
+Oh My Posh and eza rely on Nerd Font glyphs. Without one, icons render as boxes or `?????`.
+
+### Quick setup
+
+Install a Nerd Font on the machine where the terminal emulator runs (not the SSH server, unless you use a local console there). Recommended fonts:
+
+- **MesloLGS Nerd Font Mono** — default recommendation, wide glyphs, very compatible.
+- **JetBrainsMono Nerd Font Mono** — coding-focused, clean.
+
+### Meslo suffixes explained
+
+| Suffix | Meaning |
+|---|---|
+| `LGS` | Largest, widest glyphs (best for big icons). |
+| `LGM` | Medium size/width. |
+| `LGL` | Taller line height, slightly more compact glyphs. |
+| `SDZ` | Dotted zero (`0`). |
+| `Mono` | Monospaced — required for terminal emulators. |
+| `Propo` | Proportional — for documents, not terminals. |
+
+If icons feel small, first increase the terminal font `size`; if still cramped, switch from `LGM` to `LGS`.
+
+### Alacritty example
+
+```toml
+[font]
+normal = { family = "MesloLGS Nerd Font Mono", style = "Regular" }
+size = 11.0
+```
+
+Restart the terminal emulator after changing the font.
+
+## Locale: icons require UTF-8
+
+A `POSIX` or `C` locale will break icon rendering over SSH even if a Nerd Font is installed. Always set a UTF-8 locale in `~/.zshrc`:
+
+```zsh
+export LANG="en_US.UTF-8"
+```
+
+On Arch/CachyOS, make sure the locale is generated:
+
+```bash
+grep "^en_US.UTF-8" /etc/locale.gen
+# If missing, add it and run:
+sudo locale-gen
+```
+
+### Symptoms of wrong locale
+
+- Oh My Posh icons show as `?????` or empty boxes.
+- `eza --icons` does not render folder/file icons.
+- `fastfetch` or `neofetch` shows `Locale: C` or `POSIX`.
+
+The fix is the `export LANG=en_US.UTF-8` line in `~/.zshrc`, placed early enough that all icon-rendering tools inherit it.
 
 Some Wayland compositors (e.g. **niri**) start the user session with a non-default shell (e.g. `/bin/fish`). The terminal emulator then inherits that `$SHELL`, so even after `chsh`, new terminal windows may still open in fish.
 
@@ -236,6 +330,10 @@ See also:
 
 - `references/arch-cachyos-vscode-official.md` — official Microsoft VS Code install recipe.
 - `references/arch-cachyos-remote-automation.md` — SSH + sudo + UFW troubleshooting recipes for CachyOS.
+- `references/oh-my-posh-with-oh-my-zsh.md` — ready-to-use `.zshrc` snippet for Oh My Posh under OMZ.
+- `references/remote-ssh-password-install.md` — installing Oh My Posh on a password-auth SSH host without interaction.
+- `references/nerd-fonts-for-terminal-icons.md` — choosing and configuring a Nerd Font for icon glyphs.
+- `references/eza-ls-replacement.md` — replacing `ls` with `eza` for icons and color output.
 
 ## References
 

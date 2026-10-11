@@ -1,6 +1,6 @@
 ---
 name: godmode
-description: "Jailbreak LLMs: Parseltongue, GODMODE, ULTRAPLINIAN."
+description: Use when the user wants to jailbreak, red-team, or bypass filters on API-served LLMs.
 version: 1.0.0
 author: Hermes Agent + Teknium
 license: MIT

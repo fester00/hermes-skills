@@ -1,11 +1,12 @@
 ---
 name: obsidian
-description: Read, search, and create notes in the Obsidian vault — via MCP server (preferred) or terminal fallback.
+description: "Use when reading, searching, or writing notes in the Obsidian vault. MCP obsidian tools first, terminal fallback second."
 ---
 
 # Obsidian Vault
 
-**Location (terminal fallback):** Set via `OBSIDIAN_VAULT_PATH` env var. If unset, defaults to `~/Documents/Obsidian Vault`.
+**Location (terminal fallback):** **This server:** `/home/natan/obsidian-memory` (symlinked knowledge vault, pushed to GitHub).
+Set via `OBSIDIAN_VAULT_PATH` env var; if unset, defaults to `~/obsidian-memory` (this server).
 
 **Preferred method:** MCP server `obsidian-mcp` — gives the agent 11 native tools (`mcp_obsidian_*`) for direct read/write/search/tag operations without shell escaping or path quoting issues.
 
@@ -236,3 +237,13 @@ When the user wants a freely available technical book or tutorial in the vault f
 5. **For PDF books**, follow: `references/pdf-to-obsidian-conversion.md` (TOC-based chapter split, Markdown cleanup, README/SUMMARY generation).
 
 Full conversion recipe and script: `references/import-mdbook-to-obsidian.md` and `references/pdf-to-obsidian-conversion.md`.
+
+## Vault rules live in the vault itself
+
+The vault's own constitution is `/home/natan/obsidian-memory/AGENTS.md` (folder map, working rules,
+safety, task handoff) — read it before structural changes. Supporting notes:
+
+- `AGENTS.md` — folder map, rules, conventions
+- `Operations/MOC — Operations.md` · `Knowledge/MOC — Index.md` — navigation
+- `references/two-tier-memory-model.md` — why the agent stores only coordinates and the vault stores knowledge
+- Related skill: `knowledge-first-protocol` (retrieval order: session search → skills → vault → project files → web)

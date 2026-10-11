@@ -1,6 +1,6 @@
 ---
 name: polymarket
-description: "Query Polymarket: markets, prices, orderbooks, history."
+description: Use when the user asks about Polymarket prediction-market odds, markets, or history.
 version: 1.0.0
 author: Hermes Agent + Teknium
 tags: [polymarket, prediction-markets, market-data, trading]

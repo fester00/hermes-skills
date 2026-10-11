@@ -1,6 +1,6 @@
 ---
 name: office-to-markdown
-description: "Конвертация Office-документов (PDF, Excel, Word, PowerPoint, изображения, аудио, ZIP и др.) в Markdown через Microsoft MarkItDown."
+description: Use when converting Office documents, PDFs, media, or archives to Markdown. Prefer MarkItDown; use pymupdf4llm for technical books.
 version: 1.0.1
 author: Hermes Agent
 license: MIT

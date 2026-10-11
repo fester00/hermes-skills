@@ -1,6 +1,6 @@
 ---
 name: outlines
-description: "Outlines: structured JSON/regex/Pydantic LLM generation."
+description: Use when constraining LLM outputs. Generate valid JSON, regex, or Pydantic-typed text with Outlines.
 version: 1.0.0
 author: Orchestra Research
 license: MIT

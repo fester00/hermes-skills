@@ -2,16 +2,7 @@
 name: vk-market-management
 title: VK Market — импорт и управление товарами
 icon: 🛒
-description: >
-  Работа с VK Market: генерация YML-фидов, импорт/обновление товаров, очистка
-  каталога. Предпочитает не-browser пути (YML/API) вместо CDP-кликов.
-triggers:
-  - импорт товаров в VK
-  - загрузить товары в VK Market
-  - обновить цены VK
-  - YML для VK
-  - VK маркетплейс
-  - каталог сообщества VK
+description: Use when importing, updating, or cleaning up VK Market product catalogs via YML feeds or API.
 ---
 
 # VK Market — импорт и управление товарами

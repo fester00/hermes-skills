@@ -1,9 +1,6 @@
 ---
 name: codebase-memory-audit
-description: |
-  Read-only project intelligence skill. Uses the codebase-memory-mcp server to index
-  a project and query its knowledge graph. Activate during Knowledge Discovery before
-  design or planning for any project with more than 5 files.
+description: Use when exploring or modifying an existing project with more than a few files.
 category: software-development
 related_skills:
   - superpowers-workflow

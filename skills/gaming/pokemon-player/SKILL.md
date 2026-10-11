@@ -1,6 +1,6 @@
 ---
 name: pokemon-player
-description: "Play Pokemon via headless emulator + RAM reads."
+description: Use when playing Pokemon via emulator. Run headless Game Boy/GBA games, save state, and share a live dashboard.
 tags: [gaming, pokemon, emulator, pyboy, gameplay, gameboy]
 platforms: [linux, macos, windows]
 ---

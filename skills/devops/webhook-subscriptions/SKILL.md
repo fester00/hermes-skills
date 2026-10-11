@@ -1,6 +1,6 @@
 ---
 name: webhook-subscriptions
-description: "Webhook subscriptions: event-driven agent runs."
+description: Use when receiving webhooks in Hermes. Subscribe external services to trigger agent runs on incoming events.
 version: 1.1.0
 platforms: [linux, macos, windows]
 metadata:

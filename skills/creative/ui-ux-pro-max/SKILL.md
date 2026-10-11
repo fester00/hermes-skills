@@ -1,10 +1,6 @@
 ---
 name: ui-ux-pro-max
-description: |
-  AI-powered design intelligence database with 192 product-type design systems,
-  84 UI styles, 192 color palettes, 74 font pairings, 99 UX guidelines, 16 motion
-  patterns, and 25 chart types across 22 tech stacks. Provides industry-specific
-  design recommendations via Python BM25 search or direct CSV lookup.
+description: Use when starting a web or app design task. Search the design-system database for product-type matched recommendations.
 version: 2.11.0
 author: NextLevelBuilder (integrated by Hermes)
 license: MIT

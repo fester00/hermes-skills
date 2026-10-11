@@ -1,10 +1,6 @@
 ---
 name: tts-selection
-description: |
-  Evaluate, select, and deploy local / self-hosted text-to-speech (TTS) engines
-  under hardware constraints (CPU-only, low-GPU, no cloud). Covers lightweight
-  models (Piper, Kokoro, Silero) and larger neural models (XTTS, CosyVoice, Fish
-  Speech), with a unified decision framework and Hermes integration.
+description: Use when choosing a local TTS engine. Evaluate Piper, Kokoro, XTTS, CosyVoice, and Fish Speech under constraints.
 version: 1.0.0
 author: Hermes Agent / Master Ugwai
 license: MIT

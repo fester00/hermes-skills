@@ -1,9 +1,6 @@
 ---
 name: kanban
-description: |
-  Multi-agent Kanban board for Hermes: orchestrator decomposition playbook,
-  worker lifecycle guidance, and specialist roster conventions. Covers task routing,
-  workspace isolation, tenant memory, and anti-temptation rules.
+description: Use when running Hermes Kanban workflows. Covers orchestrator playbooks and the worker lifecycle conventions.
 version: 1.0.0
 author: Hermes Agent
 license: MIT

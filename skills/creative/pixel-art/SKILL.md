@@ -1,6 +1,6 @@
 ---
 name: pixel-art
-description: "Pixel art w/ era palettes (NES, Game Boy, PICO-8)."
+description: Use when making retro pixel art. Convert images or animate loops with NES, Game Boy, or PICO-8 palettes.
 version: 2.0.0
 author: dodo-reach
 license: MIT

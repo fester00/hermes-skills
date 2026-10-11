@@ -1,6 +1,6 @@
 ---
 name: public-webhook-endpoint
-description: Use when exposing a local service as a public webhook URL.
+description: Use when exposing a local service publicly. Create a reachable HTTPS webhook URL behind NAT or firewall.
 category: devops
 metadata:
   hermes:

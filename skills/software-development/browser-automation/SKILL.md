@@ -1,6 +1,6 @@
 ---
 name: browser-automation
-description: Browser automation via Chrome DevTools Protocol (CDP) and Hermes browser tools. Navigate, interact with forms, handle cross-origin iframes, capture and crop screenshots, extract data from web pages.
+description: Use when automating web interactions via Hermes browser tools and CDP.
 ---
 
 # Browser Automation

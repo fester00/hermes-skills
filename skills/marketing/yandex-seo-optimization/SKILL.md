@@ -1,6 +1,6 @@
 ---
 name: yandex-seo-optimization
-description: Use when the user asks how to improve Yandex search rankings, optimize a Russian-language site for Yandex, audit on-page/off-page SEO, or apply fresh Yandex Webmaster guidelines to a project like pentajunior-v2.
+description: Use when optimizing a Russian site for Yandex. Apply on-page/off-page and Webmaster guidelines to improve rankings.
 version: 2.0.0
 author: Hermes Agent
 license: MIT

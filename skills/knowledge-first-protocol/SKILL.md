@@ -1,6 +1,6 @@
 ---
 name: knowledge-first-protocol
-description: Protocol for information retrieval — what to search and where. Compact checklist for every user request.
+description: "Use when starting any user request. Decide what to search and where: skills, memory, projects, then external sources."
 version: 1.2.0
 author: Master Ugwai
 metadata:

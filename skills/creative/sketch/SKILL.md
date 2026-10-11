@@ -1,6 +1,6 @@
 ---
 name: sketch
-description: "Throwaway HTML mockups: 2-3 design variants to compare."
+description: Use when exploring UI directions quickly. Produce 2-3 disposable HTML mockup variants for side-by-side comparison.
 version: 1.0.0
 author: Hermes Agent (adapted from gsd-build/get-shit-done)
 license: MIT

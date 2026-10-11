@@ -1,6 +1,6 @@
 ---
 name: hermes-internal-operations
-description: Class-level runbook for operating, auditing, and troubleshooting the Hermes Agent instance itself — state reconciliation, token-usage diagnosis, and WebUI service maintenance.
+description: Use when troubleshooting Hermes itself. Audit skill counts, token usage, profile state, or WebUI service health.
 version: 1.0.0
 author: Hermes Agent
 license: MIT

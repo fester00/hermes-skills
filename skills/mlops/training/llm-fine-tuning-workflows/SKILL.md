@@ -1,6 +1,6 @@
 ---
 name: llm-fine-tuning-workflows
-description: "Post-training and fine-tuning LLMs: Axolotl (YAML-driven), TRL (SFT/DPO/PPO/GRPO programmatic), and Unsloth (fast LoRA/QLoRA). Pick the right framework for the task."
+description: Use when picking an LLM fine-tuning framework. Compare Axolotl, TRL, and Unsloth for the task and constraints.
 version: 1.0.0
 author: Hermes Agent
 license: MIT

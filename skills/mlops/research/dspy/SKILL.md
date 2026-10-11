@@ -1,6 +1,6 @@
 ---
 name: dspy
-description: "DSPy: declarative LM programs, auto-optimize prompts, RAG."
+description: Use when programming language models declaratively. Build modular DSPy signatures, optimizers, and RAG pipelines.
 version: 1.0.0
 author: Orchestra Research
 license: MIT

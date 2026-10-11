@@ -1,9 +1,6 @@
 ---
 name: baoyu-content
-description: |
-  宝玉 (BaoYu) creative content generation: knowledge comics (知识漫画) for education,
-  biography, and tutorials; plus 21-layout infographics in 21 styles for data
-  visualization and information design.
+description: Use when producing BaoYu visual content. Create knowledge comics or infographic layouts for education and data stories.
 version: 1.0.0
 author: Hermes Agent
 license: MIT

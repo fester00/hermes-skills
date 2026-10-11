@@ -1,9 +1,6 @@
 ---
 name: apple-ecosystem
-description: |
-  Manage Apple ecosystem apps from the terminal: Notes (memo), Reminders (remindctl),
-  Messages (imsg), and Find My (AppleScript + UI automation). All commands require
-  macOS with appropriate permissions and iCloud sign-in.
+description: Use when automating Apple apps on macOS. Manage Notes, Reminders, Messages, and Find My from the terminal with the right permissions.
 version: 1.0.0
 author: Hermes Agent
 license: MIT

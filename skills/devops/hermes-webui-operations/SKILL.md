@@ -1,6 +1,6 @@
 ---
 name: hermes-webui-operations
-description: "Operate and troubleshoot the Hermes WebUI: process management, nginx reverse proxy, file upload limits, CSRF origins, and service recovery."
+description: Use when operating the Hermes WebUI. Manage process lifecycle, nginx proxy, uploads, CSRF origins, and recovery.
 version: 1.0.0
 author: Master Ugwai
 license: MIT
@@ -53,6 +53,38 @@ systemctl --user status  hermes-webui.service --no-pager | head -10
 ```
 
 After a `git pull` update of `~/hermes-webui/`, a systemd restart is sufficient: the unit's `WorkingDirectory=/home/natan/hermes-webui` means the service will load the freshly checked-out code. See `references/webui-update-workflow.md` for the full safe-update checklist and `references/ctl-sh-vs-systemd-conflict.md` for the double-supervisor pitfall.
+
+#### Hard recovery: systemd lost the process but the port is still bound
+
+If `systemctl --user status hermes-webui.service` shows `activating (auto-restart)` or the process is `deactivating`, yet `ss -tlnp | grep 18789` still shows a `python server.py` process, systemd has lost track of the actual `server.py`. A plain `systemctl restart` will keep failing with `FATAL: Another server is already responding` because the orphan process holds the port.
+
+Recover in this exact order:
+
+```bash
+# 1. Stop the systemd unit (so it stops auto-restarting into the occupied port)
+systemctl --user stop hermes-webui.service
+
+# 2. Verify the orphan server.py is still there
+ss -tlnp | grep 18789
+ps aux | grep 'hermes-webui/server.py' | grep -v grep
+
+# 3. Kill only the orphan server.py by PID (do not kill stealth-browser or other python processes)
+kill <PID>
+
+# 4. Confirm the port is free
+ss -tlnp | grep 18789 || echo "port 18789 free"
+
+# 5. Start cleanly via systemd
+systemctl --user start hermes-webui.service
+
+# 6. Verify both local and proxied endpoints
+systemctl --user status hermes-webui.service --no-pager | head -5
+ss -tlnp | grep 18789
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:18789/health
+curl -s -o /dev/null -w "%{http_code}\n" -k https://130.255.9.9:8443/health
+```
+
+If multiple agents or supervisors are operating on WebUI concurrently, coordinate so only one of them performs the recovery — otherwise one agent kills the process another agent just started. When a second agent reports a different PID than systemd, that agent is looking at stale state; trust `systemctl --user status` and `ss -tlnp` over the second agent's narrative.
 
 ### If there is no systemd unit
 
@@ -129,12 +161,15 @@ Default values:
 
 ## Recovery checklist
 
-1. `ss -tlnp | grep 18789` — is the server listening?
-2. `tail -n 50 ~/.hermes/webui.log` — any Python traceback?
-3. `sudo nginx -t` — nginx config valid?
+1. `systemctl --user status hermes-webui.service --no-pager | head -5` — is the service active or auto-restarting?
+2. `ss -tlnp | grep 18789` — who owns the port?
+3. `tail -n 50 ~/.hermes/webui.log` — any Python traceback?
+4. `sudo nginx -t` — nginx config valid?
+5. When another agent reports conflicting process state, re-run steps 1 and 2 yourself before acting on the other agent's claim.
 - `references/ctl-sh-vs-systemd-conflict.md` — when `ctl.sh` and a systemd user service both try to supervise the same port
 - `references/webui-upload-limits.md` — nginx + WebUI upload tuning
 - `references/webui-update-workflow.md` — safe `git pull` + `systemctl --user restart` update path
+- `references/multi-agent-recovery-coordination.md` — avoid ping-pong when multiple agents try to recover WebUI concurrently
 
 ## Related
 

@@ -1,6 +1,6 @@
 ---
 name: native-mcp
-description: "MCP client: connect servers, register tools (stdio/HTTP)."
+description: Use when connecting MCP servers to Hermes. Register stdio or HTTP servers in config.yaml for auto-discovered tools.
 version: 1.0.0
 author: Hermes Agent
 license: MIT

@@ -1,6 +1,6 @@
 ---
 name: selective-vpn-routing
-description: Route only specific services or applications through a VPN/proxy while keeping the rest of the system on a direct connection. Covers local SOCKS5/HTTP proxy setup with Xray/v2ray, subscription parsing, systemd user services, and Hermes Telegram gateway integration.
+description: Use when only one app needs a VPN. Route a specific service through a local proxy while the rest stays direct.
 version: 1.0.0
 author: Master Ugwai
 metadata:
@@ -53,11 +53,26 @@ Nekobox on Windows is a sing-box/Xray GUI. For browser-only selective routing, p
 ### For router-level transparent proxy, prefer v2rayA on stock firmware
 `v2raya` is the safest GUI path on stock GL.iNet SDK 4.x: it installs `xray-core`, exposes a web UI on port 2017, and manages its own transparent proxy + DNS rules. Do not attempt manual `iptables` TPROXY unless the user explicitly accepts the risk of breaking LAN internet and the web UI.
 
+### Do not hand-edit `/etc/v2raya/config.json`
+v2rayA owns this file and regenerates it from `/etc/v2raya/bolt.db` on every start/apply. Editing it directly (e.g. over SSH) is ineffective: the changes are overwritten immediately. Always change settings through the v2rayA API/web UI. v2rayA listens on `http://ROUTER_IP:2017` by default; API paths use `/api/...` (e.g. `/api/touch`, `/api/setting`, `/api/import`).
+
+Reading this file over SSH is safe and is the correct way to audit the live state — it is exactly what Xray is currently running. Only *writes* are futile. For the full read-only audit procedure, see `references/v2raya-api-commands.md`.
+
 ### Manual TPROXY breaks internet and the GL.iNet web UI backend
 Manual `iptables -t mangle` TPROXY rules easily break internet for all LAN clients and can break the GL.iNet web UI backend (e.g. VPN tabs disappear). Prefer Passwall2/Nikki on community firmware, or use v2rayA on stock firmware, or keep Xray as SOCKS5/HTTP only.
 
 ### DNS must also go through the tunnel
-TCP-only proxying is not enough: if DNS still resolves through the provider, blocked domains return fake/unreachable IPs. The solution must route DNS (UDP 53 or DNS-over-HTTPS/TLS) through the tunnel, or let v2rayA handle DNS transparently.
+TCP-only proxying is not enough: if DNS still resolves through the provider, blocked domains return fake/unreachable IPs. The solution must route DNS (UDP 53 or DNS-over-HTTPS/TLS) through the tunnel, or let v2rayA handle DNS transparently. In v2rayA, set **Settings → Anti-pollution** to `dns-over-https`.
+
+### A proxy is not broken just because its public IP equals the direct one
+Under split-tunnel routing (only gfw/blocked domains → `proxy`, everything else → `direct`), an unrestricted echo service such as `api.ipify.org` always exits direct, so comparing `curl --socks5-hostname 127.0.0.1:<port> https://api.ipify.org` with a direct `curl` and seeing the SAME IP is the EXPECTED result, not a failure. Verify liveness with traffic that actually rides the tunnel instead:
+- Fetch a blocked domain and require a real status: `curl -s -o /dev/null -w "%{http_code}" https://telegram.org` (200) or `https://rutracker.org` (301). Real codes mean `proxy` works.
+- Inspect live flows: `grep <proxy-server-ip> /proc/net/nf_conntrack` — ESTABLISHED entries with non-zero packet/byte counters prove the tunnel carries traffic.
+- Tail `/var/log/v2raya/v2raya.log` for `transparent -> proxy` / `transparent -> direct` decisions.
+Also normal: `curl https://<proxy-ip>:443` failing with TLS code 000 — the server speaks Reality, not HTTPS, so a raw TLS probe never completes. Do not report it as "port unreachable".
+
+### v2rayA transparent rules cover IPv4 only — check IPv6 before claiming full coverage
+`/etc/v2raya/v2raya.nft` matches `meta nfproto ipv4` and has no IPv6 tproxy chain. Confirm with `ip -6 addr` (must show no global address) and `ip -6 route` (must show no default route): if both are empty there is no leak today. If the ISP later delegates global IPv6, all v6 traffic bypasses the tunnel until v6 rules are added.
 
 ### Stock firmware does not support VLESS/XRay natively
 GL.iNet SDK 4.x / OpenWrt 21.02 web UI only shows OpenVPN, WireGuard, Tor, and sometimes Shadowsocks. VLESS/VMess/Reality require community packages (`xray-core`, `luci-app-passwall2`, `luci-app-nikki`) that are not in stock GL.iNet repos. Do not promise the user a one-click GUI path on stock firmware.
@@ -94,6 +109,13 @@ On routers where `v2raya` and `xray-core` are available from OpenWrt 24.10+ repo
 4. Import the VLESS share URL from the server setup.
 5. In **Settings → Transparent Proxy**, enable transparent proxy and choose a routing rule set that sends `geosite:category-ru-blocked` and common blocked domains to `proxy`, everything else `direct`.
 6. Apply and verify from a LAN client with `curl https://2ip.ru`.
+
+For a "send all blocked traffic through the tunnel" setup, the simplest v2rayA settings are:
+- **Transparent Proxy / System Proxy**: `global` (all LAN traffic goes through the active proxy).
+- **Anti-pollution**: `dns-over-https` (DNS is resolved through the tunnel, not the ISP).
+- **PAC Mode**: `global`.
+
+If the user imports additional servers later, the currently connected server can be switched via the web UI or API. As long as the active server maps to the outbound tag `proxy`, the global routing rules continue to work.
 
 Caveats:
 - v2rayA may not offer WireGuard in its UI; use VLESS/VMess/Xray protocols.
@@ -252,9 +274,12 @@ If you just set up `wg-easy` on a fresh VPS and the router can handshake but can
 - `scripts/glinet-sing-box-install.sh` — installs sing-box from OpenWrt repos, creates `/etc/sing-box/config.json` from the template, enables the service, and configures dnsmasq/nftables/TPROXY on a GL-MT6000-class device.
 - `references/wg-easy-docker-host-forwarding.md` — same problem as above, solved with `iptables-persistent` instead of a systemd service (simpler on Debian/Ubuntu hosts).
 - `references/glinet-wireguard-policy-routing.md` — GL-MT6000 WireGuard Client: Policy vs Global Proxy, UCI file locations, DNS visibility, tunnel flapping, nftables set verification, Ubuntu 24.04 HWE kernel bug, and coexistence with v2rayA/Xray.
+- `references/xray-vps-vless-reality-2026-08-session.md` — August 2026 session: choosing a Reality SNI that is reachable from the VPS itself, extracting the correct x25519 public key, and a working minimal VLESS+Reality server setup.
+- `scripts/xray-vps-vless-reality-setup.sh` — idempotent install + config generator for the above.
 - `references/xray-vps-vless-reality.md` — installing a self-hosted Xray VLESS+Reality inbound on Ubuntu 24.04 alongside Docker/wg-easy, using port 8443 when nginx owns 443.
 - `references/vless-subscription-parser.md` — parse JSON-style Xray/VLESS subscriptions into individual `vless://` URLs.
 - `references/glinet-v2raya-transparent-session.md` — GL.iNet + v2rayA transparent proxy session: safe router-level path, DNS through tunnel, binary transfer recipe, rollback.
+- `references/v2raya-api-commands.md` — v2rayA REST API for headless tuning, plus a read-only config-audit checklist (field-by-field match of the active server, conntrack/log liveness checks, IPv6 coverage gap).
 - `references/glinet-v2raya-autostart.md` — make v2rayA/xray start automatically after a router reboot on stock GL.iNet / OpenWrt, including the autoconnect caveat.
 - `references/telegram-xray-session.md` — real session notes: okmulti.com VLESS/SS subscription, node selection, working Xray config, Hermes Telegram integration.
 - `references/windows-nekobox-browser-split-tunnel.md` — Windows Nekobox setup for browser-only selective routing to YouTube, Twitch, Discord, ChatGPT, Gemini, etc.

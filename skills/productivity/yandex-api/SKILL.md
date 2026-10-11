@@ -1,9 +1,6 @@
 ---
 name: yandex-api
-description: |
-  Яндекс API — Диск (OAuth REST) и Почта (IMAP/SMTP через пароль приложения).
-  Загрузка файлов, публичные ссылки, чтение почты через Python IMAP (рекомендуется) или Himalaya CLI.
-  Для Диска требуется OAuth токен. Для Почты — пароль приложения типа «Почта» (не основной пароль!).
+description: Use when working with Yandex Disk or Yandex Mail. Disk uses OAuth; Mail requires an app-specific password.
 version: 1.0.0
 author: Hermes Agent
 license: MIT

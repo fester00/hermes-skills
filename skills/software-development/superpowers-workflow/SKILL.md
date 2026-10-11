@@ -1,11 +1,6 @@
 ---
 name: superpowers-workflow
-description: |
-  Primary umbrella workflow for Hermes. Adapts the upstream Superpowers
-  methodology (brainstorm → plan → isolate → execute → verify → review → finish)
-  to Hermes tools, MCP servers, OpenCode agents for execution, Hermes subagents
-  for browser/profile research, and our project-specific skills. Use for every
-  software build, refactor, or complex bugfix.
+description: Use when building, refactoring, or fixing complex software in Hermes.
 category: software-development
 related_skills:
   - superpowers-brainstorming

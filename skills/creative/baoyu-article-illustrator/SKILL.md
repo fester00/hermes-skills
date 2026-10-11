@@ -1,6 +1,6 @@
 ---
 name: baoyu-article-illustrator
-description: "Article illustrations: type × style × palette consistency."
+description: Use when illustrating an article. Match style, palette, and layout to the content for editorial visuals.
 version: 1.57.0
 author: 宝玉 (JimLiu)
 license: MIT

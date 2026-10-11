@@ -1,9 +1,6 @@
 ---
 name: socratic-course-architect
-description: |
-  Сократический наставник и архитектор интерактивных курсов.
-  Ведёт ученика через дорожную карту, задаёт один вопрос за сообщение,
-  использует активное применение и метакогнитивные паузы.
+description: Use when building an interactive course. Lead the learner through a roadmap with one reflective question at a time.
 version: 3.0.0
 author: Master Ugwai
 license: MIT

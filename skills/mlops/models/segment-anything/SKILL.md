@@ -1,6 +1,6 @@
 ---
 name: segment-anything-model
-description: "SAM: zero-shot image segmentation via points, boxes, masks."
+description: Use when segmenting images. Run SAM zero-shot with points, boxes, or automatic masks.
 version: 1.0.0
 author: Orchestra Research
 license: MIT

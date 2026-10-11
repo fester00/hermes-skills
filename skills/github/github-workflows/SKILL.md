@@ -1,9 +1,6 @@
 ---
 name: github-workflows
-description: |
-  Complete GitHub lifecycle: authentication, repository management, issues, PRs,
-  code review, commit recovery, and codebase inspection. Covers gh CLI and git+curl
-  fallbacks for headless environments.
+description: Use when doing full-lifecycle GitHub work. Covers auth, repos, issues, PRs, review, and recovery workflows.
 version: 1.0.0
 author: Hermes Agent
 license: MIT

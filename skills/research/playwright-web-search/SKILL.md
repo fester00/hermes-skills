@@ -1,9 +1,6 @@
 ---
 name: playwright-web-search
-description: |
-  Search the web through Yandex and Google using Playwright with a persistent
-  Chrome profile and Xvfb. Fallback when the built-in Hermes browser hits
-  CAPTCHA or anti-bot protection.
+description: Use when the built-in Hermes browser is blocked by CAPTCHA on Yandex or Google search.
 category: research
 related_skills:
   - playwright-marketplace-search

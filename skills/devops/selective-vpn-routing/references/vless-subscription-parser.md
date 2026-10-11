@@ -40,6 +40,14 @@ Some VPN providers (e.g. okvpn-style `cdn.oksbrf.ru/new/<token>` endpoints) retu
 
 There may also be `hysteria` or other non-VLESS outbounds mixed in; skip those.
 
+## Deduplicate, and name links by server — not by profile
+
+A single subscription often contains MANY profiles (one per region or routing group), and the same physical server reappears across them: one UUID/public-key pair shared by every node, the same `address:port` repeated under different `remarks` values. Naive iteration therefore emits the same server several times and labels each link with the profile name rather than the server.
+
+- Deduplicate on the tuple `(address, port, users[0].id)` before writing the list.
+- Derive the link remark from the SERVER, not the enclosing profile. If the array holds one region-named profile per server (e.g. `🇩🇪Германия`, `🇮🇹Италия`), build an `ip -> region` map from those profiles first and name each deduped link from it; otherwise fall back to `profile remarks + outbound tag`.
+- Report the final unique count and print `name -> address` so the user can verify the set at a glance.
+
 ## Conversion rules
 
 | Xray field | vless URL query param |
@@ -139,6 +147,7 @@ json_text = urllib.request.urlopen(req, timeout=20).read().decode()
 
 ## Notes
 
+- Some providers serve the array-of-Xray-configs format from a `/new/<token>` path on an `api.<provider>` host. Fetch with a client User-Agent (`-A "v2rayN/6.0"`) and confirm `Content-Type: application/json` before parsing.
 - `type=raw` is the modern Xray name for plain TCP; many clients still expect `type=tcp`.
 - Some clients require `encryption=none` as a query param even though it is the VLESS default.
 - `spiderX` from Reality is rarely needed in import URLs; omit it unless the target client complains.

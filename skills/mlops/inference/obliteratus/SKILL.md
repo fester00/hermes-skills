@@ -1,6 +1,6 @@
 ---
 name: obliteratus
-description: "OBLITERATUS: abliterate LLM refusals (diff-in-means)."
+description: Use when removing LLM refusals. Invoke OBLITERATUS via CLI for surgical weight projection, never as a library.
 version: 2.0.0
 author: Hermes Agent
 license: MIT

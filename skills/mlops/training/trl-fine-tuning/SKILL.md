@@ -1,6 +1,6 @@
 ---
 name: fine-tuning-with-trl
-description: "TRL: SFT, DPO, PPO, GRPO, reward modeling for LLM RLHF."
+description: Use when post-training LLMs programmatically. Run SFT, DPO, PPO, GRPO, and reward modeling with TRL.
 version: 1.0.0
 author: Orchestra Research
 license: MIT

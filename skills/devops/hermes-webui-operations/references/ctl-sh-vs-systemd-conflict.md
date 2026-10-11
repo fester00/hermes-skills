@@ -66,6 +66,27 @@ systemctl --user stop hermes-webui.service
 ss -tlnp | grep 18789 || echo "port free"
 ```
 
+### When systemd has lost the actual `server.py`
+
+If `systemctl --user status hermes-webui.service` shows `activating (auto-restart)` while `ss -tlnp | grep 18789` still shows a `python ... hermes-webui/server.py` process, systemd has lost track of the real process. A plain `systemctl restart` keeps failing with `FATAL: Another server is already responding` because the orphan holds the port. Use the hard-recovery sequence instead of a `kill` loop:
+
+```bash
+systemctl --user stop hermes-webui.service
+ss -tlnp | grep 18789                      # confirm orphan PID
+ps aux | grep 'hermes-webui/server.py' | grep -v grep
+kill <PID>                                 # kill only the orphan server.py
+ss -tlnp | grep 18789 || echo "port free"  # confirm release
+systemctl --user start hermes-webui.service
+systemctl --user status hermes-webui.service --no-pager | head -5
+```
+
+After recovery, verify both the local endpoint and the nginx-proxied HTTPS endpoint:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:18789/health
+curl -s -o /dev/null -w "%{http_code}\n" -k https://130.255.9.9:8443/health
+```
+
 ## After a code update
 
 When `~/hermes-webui` is updated via `git pull`:

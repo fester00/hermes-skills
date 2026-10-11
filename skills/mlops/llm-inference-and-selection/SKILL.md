@@ -1,10 +1,6 @@
 ---
 name: llm-inference-and-selection
-description: |
-  Choose, compare, and run open-weight LLMs. Covers model discovery (Ollama Hub,
-  Arena AI), benchmark-aware selection, hardware-fit sizing, local deployment
-  (Ollama / llama.cpp / vLLM), storage management, and cloud-only provider
-  caveats.
+description: Use when choosing a local LLM. Compare models, size to hardware, and deploy via Ollama, llama.cpp, or vLLM.
 version: 2.0.0
 tags: [mlops, llm, ollama, models, comparison, selection, local-inference, quantization, GGUF, vllm, llama.cpp, disk-space, RAM-planning]
 ---

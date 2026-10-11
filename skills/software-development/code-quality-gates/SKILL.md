@@ -1,9 +1,6 @@
 ---
 name: code-quality-gates
-description: |
-  Quality gates for software development: test-driven development, systematic
-  debugging, pre-commit verification, and runtime debugging for Python, Node.js,
-  and Hermes internal components. Use before, during, and after writing code.
+description: Use when writing, debugging, or reviewing software where tests, root-cause analysis, and verification are required.
 version: 1.0.0
 author: Hermes Agent
 license: MIT

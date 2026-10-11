@@ -1,8 +1,6 @@
 ---
 name: playwright-marketplace-search
-description: |
-  Search Russian marketplaces (Ozon, Wildberries, Yandex Market) via Playwright.
-  Uses a real Chrome profile and an Xvfb viewport to bypass anti-bot protection.
+description: Use when the built-in Hermes browser is blocked on Russian e-commerce sites like Ozon or Wildberries.
 category: shopping
 related_skills:
   - playwright-web-search

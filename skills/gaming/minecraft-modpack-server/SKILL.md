@@ -1,6 +1,6 @@
 ---
 name: minecraft-modpack-server
-description: "Host modded Minecraft servers (CurseForge, Modrinth)."
+description: Use when hosting a modded Minecraft server. Set up NeoForge/Forge server packs from CurseForge or Modrinth.
 tags: [minecraft, gaming, server, neoforge, forge, modpack]
 platforms: [linux, macos]
 ---

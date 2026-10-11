@@ -1,6 +1,6 @@
 ---
 name: heartmula
-description: "HeartMuLa: Suno-like song generation from lyrics + tags."
+description: Use when generating music from lyrics. Produce Suno-like songs with the HeartMuLa open-source pipeline.
 version: 1.0.0
 platforms: [linux, macos, windows]
 metadata:

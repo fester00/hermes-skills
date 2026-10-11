@@ -1,6 +1,6 @@
 ---
 name: jupyter-live-kernel
-description: "Iterative Python via live Jupyter kernel (hamelnb)."
+description: Use when iterating on Python interactively. Run a live Jupyter kernel so variables persist across execution steps.
 version: 1.0.0
 author: Hermes Agent
 license: MIT

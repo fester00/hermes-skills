@@ -1,9 +1,6 @@
 ---
 name: hermes-ops-devops
-description: |
-  Umbrella for server operations, live service debugging, health monitoring,
-  and file deployment. Covers systemd/nginx diagnostics, auto-repair runbooks,
-  zombie process cleanup, and FTP upload workflows.
+description: Use when a live server service is failing. Debug, monitor, repair, or deploy without bringing down co-hosted services.
 version: 1.0.0
 author: Hermes Agent
 license: MIT
@@ -115,6 +112,7 @@ sudo iptables -L -n | grep relevant_port
 | **J: Missing module behind systemd** | `ModuleNotFoundError` via systemd but works manually | Use venv python path in `ExecStart=` |
 | **K: Git conflict markers → SyntaxError** | Process exists, high CPU, port not open, no logs | `grep -rn '<<<<<<<' --include="*.py"`, resolve conflict, recompile |
 | **L: WebUI workspace uploads fail or land in the wrong place** | File upload to `/mnt/data/.../books/js` fails silently, returns "Upload failed", or ends up in the session workspace instead | WebUI upload uses relative `path` inside the session workspace, not absolute filesystem paths. Also verify nginx `client_max_body_size` and `HERMES_WEBUI_MAX_UPLOAD_MB`. See `references/webui-workspace-upload-pitfalls.md`. |
+| **M: Next.js "This page couldn't load — Reload to try again"** | User reports browser-side "page couldn't load" on a Next.js route; server returns 200 with valid HTML; all `/_next/static/chunks/*.js` are 200 | **99% of the time this is BROWSER CACHE, not a server bug.** Next.js ISR serves pre-rendered HTML (`x-nextjs-cache: HIT`, `x-nextjs-prerender: 1`); a recent deploy changed chunk hashes, so old `<script>` tags in the user's browser don't match new ones — hydration fails and Chrome shows its degraded fallback. Diagnose by curling the page + chunks; if both are 200, instruct user to hard-refresh (`Ctrl+Shift+R`) or open Incognito. See `references/nextjs-page-couldnt-load-diagnosis.md`. |
 
 ### Repair Procedure
 1. Backup every config before editing
@@ -729,7 +727,7 @@ This requires no sudo — user-level systemd overrides live in `~/.config/system
 - `references/secondary-disk-archive-workflow.md` — Step-by-step archive and migration of heavy developer directories (npm/nvm/rustup caches, Chrome profiles, projects, workspace) to `/mnt/data/natan-storage`, including symlink pitfalls and active-port verification.
 - `references/secondary-disk-migration.md` — Step-by-step migration of heavy user directories (npm cache, nvm, rustup, Chrome profiles, projects) to a secondary disk using `rsync` + symlinks; includes safety checklist and pitfalls.
 - `references/browser-automation-options.md` — Choosing between Hermes' built-in CDP browser, `browser-use`, Comet, and remote-debugging when bot protection or persistent profiles are required.
-- `references/pm2-nodejs-service-config.md` — Full PM2 ecosystem config for Next.js/Node.js apps with production safeguards (memory limits, restart backoff, anti-npm-wrapper pattern)
+- `references/pm2-nodejs-service-config.md` — Full PM2 ecosystem config for Next.js/Node.js apps with production safeguards (memory limits, restart backoff, anti-npm-wrapper pattern, Google Fonts / proxy build failures)
 - `references/gateway-connectivity-diagnostic.md` — Gateway connectivity diagnostic
 - `references/pm2-multiversion-cwd-pitfall.md` — Detecting and fixing stale `cwd` in multi-version PM2 configs (copied ecosystem.config.js pointing to wrong project directory)
 - `references/telegram-fallback-ip-fix.md` — Full runbook: diagnosing Telegram Bot API blocks, selecting working fallback IPs, systemd env persistence, and SOCKS5 setup
@@ -739,6 +737,7 @@ This requires no sudo — user-level systemd overrides live in `~/.config/system
 - `references/hermes-profile-creation.md` — Creating profiles, custom working directories (CLI wrapper `cd` pattern), profile anatomy, switching between CLI and WebUI
 - `references/gateway-telegram-selective-proxy.md` — Selective SOCKS5 proxy for Hermes Telegram adapter: Xray from a VLESS subscription, leaving nginx/Next.js traffic untouched
 - `references/sqlite-binary-merge-smart.md` — Resolving git conflicts in tracked SQLite `.db` files by smart-merging structured `template_data` instead of choosing `ours`/`theirs` blindly.
+- `references/nextjs-page-couldnt-load-diagnosis.md` — Full diagnostic playbook for Chrome's "This page couldn't load" message on Next.js routes: distinguishing browser cache from server bugs, verifying ISR/SSR responses, checking chunk availability, and instructing the user through cache invalidation.
 ## Cron Job Template
 
 To schedule recurring health checks, use the `cronjob` tool:
