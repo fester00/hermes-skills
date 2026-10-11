@@ -55,19 +55,46 @@ mcp_servers:               # Hermes reads THIS key (see the native-mcp skill)
     command: /home/natan/.local/bin/codebase-memory-mcp
 ```
 
-> ⚠️ **Проверено 2026-10-11:** у нас стоит `codebase-memory-mcp 0.9.0` и он отдаёт **14 инструментов**
-> (`hermes mcp test codebase-memory`). Прежний вариант блока — `mcp: servers:` — **неверен**: так
-> конфигурируется OpenCode, а не Hermes.
+> ⚠️ **Проверено 2026-10-11 (версия 0.11.0):** движок отдаёт **17 инструментов** (`hermes mcp test codebase-memory`).
+> Ключ конфига — только `mcp_servers`; блок `mcp: servers:` — это формат **OpenClaw** (единственное место в коде Hermes, где он читается, — скрипт миграции `openclaw_to_hermes.py`), в Hermes он мёртв.
+> В секции `mcp:` Hermes читает единственный под-ключ — `auto_reload_on_config_change`.
+>
+> **Что добавилось в 0.11.0** (после 0.9.0): `get_file_outline` (объявление символов одного файла), `compare_graphs` (сравнение двух индексов — что изменилось), `check_index_coverage` (реальное покрытие и свежесть). Итого 17 инструментов против 14.
 >
 > **Что движок умеет, а навык не описывал:** `.cbmignore` (исключения как в `.gitignore`),
 > лимиты ресурсов индексации (`docs/INDEX_RESOURCE_LIMITS.md`), свежесть индекса и watch-режим,
 > `detect_changes` (влияние правок), `index_status` (состояние и покрытие), пагинация графа.
 >
-> **`ingest_traces`:** инструмент зарегистрирован, но апстрим пишет о модели runtime-трасс
-> «This document is an architecture contract, **not an implementation**» — не обещать
-> работоспособность, проверять перед использованием.
+> **`ingest_traces` — заглушка, подтверждено описанием самого инструмента в 0.11.0:**
+> «Validate and count traces; **graph edge creation is not implemented**». Считать его рабочим нельзя.
 
 When available, this skill uses the native MCP tools. Fallback to CLI is documented below.
+
+---
+
+## Updating the engine (0.9.0 → 0.11.0 и далее)
+
+Встроенный апдейтер (проверено 2026-10-11, 0.9.0 → 0.11.0):
+
+```bash
+codebase-memory-mcp update -y --standard     # --standard ОБЯЗАТЕЛЕН: без tty апдейтер падает
+                                             # с «variant selection requires a terminal»
+```
+
+Три вещи, которые он делает помимо замены бинаря — знать заранее:
+
+1. **Удаляет все индексы** (формат меняется) и говорит «They will be rebuilt automatically». Пересобери вручную — быстрее и предсказуемее:
+   `codebase-memory-mcp cli index_repository --repo-path <путь>` (pentajunior-v2 и vidvis — по ~5 с каждый).
+2. **Переписывает конфиги агентов**: `~/.config/opencode/opencode.json`, `~/.config/opencode/AGENTS.md` (добавляет блок инструкций «предпочитай граф поиску grep»), а также `~/.claude.json` и `~/.claude/.mcp.json`. **Профили под `~/.config/opencode/profiles/` он НЕ трогает** — наши MCP-профили целы.
+3. **Hermes продолжает работать со старым бинарём**, потому что MCP-потомок живёт с момента старта соединения (может — неделями) и держит удалённый inode. Новый бинарь подхватывается так:
+
+```bash
+ps -eo pid,ppid,etime,cmd | grep codebase-memory-mcp        # найти потомка с ppid = процесс gateway
+readlink /proc/<pid>/exe | grep deleted                       # 'deleted' = старый бинарь
+kill <pid>                                                    # Hermes пересоздаёт сервер при следующем вызове
+```
+
+Проверено: gateway пересоздаёт MCP-сервер сам, перезапуск gateway не нужен. Каталог инструментов в уже открытой сессии остаётся старым до следующей сессии — это косметика.
 
 ---
 
@@ -92,8 +119,10 @@ codebase-memory-mcp cli index_repository --repo-path <project-root>
 
 Or via MCP tool `index_repository` with `repo_path`.
 
-Indexing is fast (pentajunior-v2: ~1s, Liga_vkBot: ~1s). It is safe to re-run;
-subsequent calls are incremental.
+Indexing is fast — реальные замеры 2026-10-11 на 0.11.0: `/home/natan/pentajunior-v2`
+(1,9 ГБ, 66k файлов) → 910 узлов / 2433 связи за 5 с; `/mnt/data/natan-storage/vidvis` → 219 / 508 за 5 с.
+Оба проекта были пересобраны после обновления движка. Собирается только исходный код — ассеты,
+`.next`, `node_modules`, `.git` и всё из `.gitignore`/`.cbmignore` отсекаются by design.
 
 **Project slug** is derived from the path (e.g. `/home/natan/pentajunior-v2` →
 `home-natan-pentajunior-v2`). Confirm the slug with `list_projects` before using
@@ -166,7 +195,7 @@ After the audit:
 
 - **Wrong project root** — indexing a parent directory adds noise.
 - **Indexing node_modules/.next/.git** — CBM excludes these by default.
-- **Trusting outdated index** — re-index after large changes.
+- **Trusting outdated index** — re-index after large changes (в 0.11.0 формат индекса изменился: после апгрейда движка индексы надо пересобрать, иначе граф пуст).
 - **Over-querying** — one good `get_architecture` call replaces many greps.
 - **Forgetting to save to Obsidian** — insights should persist across sessions.
 - **Indexing non-code knowledge bases** — CBM is built for code, not for Markdown/Obsidian vaults. A vault full of notes yields many `Section`/`File` nodes but weak edges and poor `query_graph`/`search_graph` results. Use MCP Obsidian + `search_files`/`read_file` for vaults instead.

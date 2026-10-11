@@ -393,10 +393,30 @@ Servers can also include `tools` in sampling requests for multi-turn tool-augmen
 
 Disable sampling for untrusted servers with `sampling: { enabled: false }`.
 
+## Переключение сервера на новый бинарь без перезапуска gateway
+
+Проверено 2026-10-11 на `codebase-memory-mcp` (обновление 0.9.0 → 0.11.0). Ситуация: бинарь заменён на диске, а Hermes продолжает работать со старой версией, потому что stdio-потомок MCP-сервера живёт с момента старта соединения (у нас — с 2 октября) и держит удалённый inode.
+
+```bash
+# 1 найти потомка MCP-сервера, у которого родитель — процесс gateway
+ps -eo pid,ppid,etime,cmd | grep <имя-бинаря>
+# 2 проверить, на каком он бинаре
+readlink /proc/<pid>/exe        # путь с пометкой '(deleted)' = старый, уже не существует на диске
+# 3 убрать его — Hermes пересоздаёт сервер при следующем вызове инструмента, уже новым бинарём
+kill <pid>
+```
+
+Важно:
+- **Перезапуск gateway для этого НЕ нужен** — и не пытайся вызывать `hermes gateway restart` изнутри сессии: команда заблокирована защитой, а если бы прошла — убила бы саму сессию.
+- После `kill` следующий вызов MCP-инструмента может вернуть ошибку «lost its stdio subprocess»: это ожидаемо, повторять его не надо — сервер уже пересоздаётся. Проверь новым вызовом.
+- **Список инструментов в уже открытой сессии остаётся старым** (Hermes снимает каталог при подключении). Если новая версия добавила инструменты, они появятся только в новой сессии; на живой сервер это не влияет — проверяй доступность через CLI.
+
 ## Notes
 
 - MCP tools are called synchronously from the agent's perspective but run asynchronously on a dedicated background event loop
 - Tool results are returned as JSON with either `{"result": "..."}` or `{"error": "..."}`
 - The native MCP client is independent of `mcporter` -- you can use both simultaneously
 - Server connections are persistent and shared across all conversations in the same agent process
-- Adding or removing servers requires restarting the agent (no hot-reload currently)
+- Adding or removing servers requires restarting the agent (no hot-reload currently). Уточнение (проверено 2026-10-11): правка `mcp_servers` на живом gateway ничего не меняет — авто-перезагрузка (`_reload_mcp`) висит на интерактивной CLI-сессии, не на gateway; а вот уже подключённый stdio-потомок Hermes пересоздаёт сам (см. раздел ниже)
+- **Секция `mcp:` ≠ `mcp_servers:` (проверено 2026-10-11).** Hermes читает серверы только из `mcp_servers`. Блок вида `mcp:` → `servers:` — это формат **OpenClaw**: единственное место в коде Hermes, где он читается, — скрипт миграции `optional-skills/migration/openclaw-migration/scripts/openclaw_to_hermes.py`. В Hermes такой блок **мёртв** (на нашем хосте он висел с переезда и вводил в заблуждение — из него был скопирован неверный пример в навык). В секции `mcp:` Hermes читает ровно один под-ключ: `auto_reload_on_config_change`. Проверка на живом конфиге: добавь в мёртвый блок фиктивный сервер и запусти `hermes mcp list` — он не появится.
+- **Правка `config.yaml` — только с проверкой ДО записи.** Сделай копию (`cp config.yaml /tmp/config.yaml.bak-$(date +%s)`), собери новый текст в переменной, прогони `yaml.safe_load(...)` и только потом пиши. Удалять YAML-блок построчно по совпадению заголовка нельзя: легко снести `mcp:`/`servers:` и осиротить вложенные строки — файл перестаёт парситься (проверено на себе 2026-10-11), а агент читает конфиг на каждом шаге.
