@@ -170,3 +170,24 @@ opencode run --standalone --auto /tmp/opencode-smoke "Create file done.txt with 
 - `autonomous-coding-agents` skill for agent selection and briefing.
 - `references/opencode-skill-environment.md` for installing skills, plugins, and MCP servers on the agent.
 - Hermes provider config in `~/.hermes/config.yaml` for available `opencode-go` model IDs.
+
+## MCP profile check — do this FIRST
+
+**Only some profiles carry the MCP servers.** On this machine `~/.config/opencode/profiles/opencodeai-rental.json`
+declares `mcp.servers` with `codebase-memory` and `obsidian`; `opencodeai.json`, `opencodeai-ling.json`,
+`opencodeai-test.json`, `opencode-free.json` and the root `opencode.jsonc` declare **none**. An agent
+launched on those profiles is blind to the vault and to the code graph.
+
+Before promising an agent any vault/graph work:
+
+```bash
+OPENCODE_CONFIG=<profile with mcp.servers> opencode run --auto -m opencode-go/claude-haiku-5-5 \
+  "Call the obsidian MCP tool that lists vaults, then codebase-memory list_projects. Report results."
+```
+
+Verified 2026-10-11 on `opencode-go/claude-haiku-5-5`: obsidian → `list-available-vaults` →
+`obsidian-memory`; codebase-memory → `list_projects` → 4 projects. Tool names in OpenCode are
+kebab-case (`list-available-vaults`), and agents can call them in one `execute` block via `tools.<server>[...]`.
+
+Also note: the background service (`opencode.exe serve --service`, `127.0.0.1:49374`) is usually up, so
+`--standalone` is not needed for one-shot runs.
