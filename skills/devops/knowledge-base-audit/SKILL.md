@@ -40,7 +40,11 @@ Every brief must state all five:
 - **an honest exit** — «if you cannot verify a claim, mark it uncertain and say what evidence is missing».
 
 Child summaries are self-reports: verify the load-bearing claims yourself (open the file, run the
-command) before acting on them or repeating them to the user.
+command) before acting on them or repeating them to the user. Counts inflate predictably — a child
+measuring «broken links», «notes without frontmatter» or «violations» applies no exclusion classes, so
+its total lands two to three times the truth. Demand a **breakdown by class** in the brief instead of one
+total, state in the brief what must not count, and re-derive the figure with your own script before it
+reaches the user or a note.
 
 ## Checks that pay off
 
@@ -58,6 +62,10 @@ command) before acting on them or repeating them to the user.
 - **Exit codes, not eyeballs.** A command that prints a warning and then fails still exits non-zero. Check
   `$?`/`exit_code` before writing «the config check passes» into a note — an unverified reassurance is a
   defect you will have to correct later.
+- **Probe a service in the scope where it is declared.** A **user** unit that is running fine answers
+  `inactive` or `not-found` to a system-scope `systemctl is-active`. Before recording «service down»,
+  list `systemctl --user list-units --type=service --state=running`; a scope artefact written into the
+  record is a defect you injected yourself. Full rule: `hermes-ops-devops`.
 - **Ambiguous links.** A bare `[[Name]]` resolves unpredictably once two notes share that filename.
   Find duplicates with `find . -name '*.md' -printf '%f\n' | sort | uniq -d` and fix by collapsing the
   duplicate note, not by rewriting every link that points at it.
@@ -78,12 +86,45 @@ command) before acting on them or repeating them to the user.
 - **Frontmatter presence** (title/date/tags) where the convention requires it.
 - **Live skills directory against its git repo.** `diff -r <live> <repo>` — content on only one side
   is lost work. Also flag archived skills still cited as live examples, and counts asserted in an index
-  («~128 skills») against the real count.
+  («~128 skills») against the real count. Sync direction is one-way and additive: see recipe 5 in
+  `references/dead-link-and-duplicate-repair.md`.
+- **Search the archive and the repo before «it does not exist».** A skill or note reported missing is
+  usually sitting in `.archive/` (local) or still live in the repo — the two trees drift apart in both
+  directions. An archived copy of a skill that is also active is a finding in itself: a stale second
+  source of truth nobody reconciled.
+- **Reparented orphans.** Count processes whose parent is the user's `systemd --user`: servers spawned
+  per session (MCP servers, watchers) are not reaped when their client dies and hold tens of MB each.
+  An orphan is the one whose parent is the user manager, not a live service — kill only those.
+
+## Auditing a library against its upstream sources
+
+A skill library accumulates derivatives of outside repositories. When the owner asks «сверь наши навыки
+с их источниками», that is a fifth scope — and a different one from the four above:
+
+- **Establish provenance by string, never by resemblance.** Grep the upstream tree for the distinctive
+  phrases the derived skill actually uses before asserting derivation: a brief that assumes «наши
+  knowledge-first / anti-duplication / kung-fu пришли из ECC» collapses when a grep returns zero hits.
+  State the negative result explicitly — it is a finding («гипотеза не подтверждена»), and it stops the
+  next session from repeating the claim.
+- **Verify each claim by quotation and re-derive every number.** A delegated auditor invents
+  duplicates that do not exist (`name` fields are unique), reports a rule as «lost» when it sits in our
+  file word-for-word, and misquotes benchmarks. Quote the line for what you keep, and say plainly which
+  claims you refuted.
+- **Close the uncertain ones instead of parking them.** Resolve «version unknown», «is this feature
+  real» with an authoritative lookup or a live probe; a stub tool reveals itself in its own description
+  («graph edge creation is not implemented»). Publish three buckets: verified / refuted / open, each
+  with its evidence.
+- **Keep the distilled report, drop the bulk.** Archive the agents' reports and briefs plus only the
+  upstream files a later fix will need into the vault; then delete the clones. Reports survive, tens of
+  gigabytes of somebody else's history do not earn their place on disk.
+
+Full recipe, including how to brief the per-source agents — `references/upstream-provenance-audit.md`.
 
 ## Repair recipes
 
 Ready-to-run recipes — the dead-link classifier, the lossless skill merge, the registry recount, the
-duplicate-note merge — are in `references/dead-link-and-duplicate-repair.md`. A structural fix that
+duplicate-note merge, the additive repo sync and the bulk description sweep — are in
+`references/dead-link-and-duplicate-repair.md`. A structural fix that
 silently drops content is worse than the defect it removes: absorb, never discard.
 
 ## Reporting, then fixing
@@ -121,7 +162,8 @@ silently drops content is worse than the defect it removes: absorb, never discar
   Deduplicate their findings and keep the evidence, not the repetition.
 - **Your own first classification is as likely to be wrong as the subagent's.** After each repair pass,
   re-run the count and correct the number in the audit note rather than leaving the old figure standing
-  next to a fixed tree.
+  next to a fixed tree. When a check of yours put a wrong fact into the record, add a short «corrections
+  to this report» section naming it: a reader who spots one uncorrected claim stops trusting the rest.
 - A duplicate is resolved by **merging the unique half across**, not by picking the winner: two versions
   of one project note usually diverge into complementary halves (infrastructure and DB here, deploy and
   known-issues there). Read both, merge into the canonical one, verify the contested facts against the

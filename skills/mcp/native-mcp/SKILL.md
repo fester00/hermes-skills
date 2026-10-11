@@ -411,6 +411,52 @@ kill <pid>
 - После `kill` следующий вызов MCP-инструмента может вернуть ошибку «lost its stdio subprocess»: это ожидаемо, повторять его не надо — сервер уже пересоздаётся. Проверь новым вызовом.
 - **Список инструментов в уже открытой сессии остаётся старым** (Hermes снимает каталог при подключении). Если новая версия добавила инструменты, они появятся только в новой сессии; на живой сервер это не влияет — проверяй доступность через CLI.
 
+## Обёртка xvfb-run ломает stdio JSON-RPC (проверено 2026-10-11)
+
+Симптом: в `~/.hermes/logs/errors.log` пачками идёт `ERROR mcp.client.stdio: Failed to parse
+JSONRPC message from server`, а **все** MCP-вызовы висят до таймаута (Obsidian отдавал 120 с
+таймаута, хотя standalone отвечал за 0.15 с). Один испорченный поток валит весь MCP-клиент
+Hermes, а не только свой сервер.
+
+Причина: `/usr/bin/xvfb-run` запускает команду как `"$@" 2>&1` (строка ~184), то есть
+**сливает stderr сервера в stdout**. Любой вывод в stderr — стартовый баннер FastMCP
+(`run_stdio_async(show_banner=True)` печатает рамку) и Python-варнинги — попадает в поток JSON-RPC.
+
+Диагностика (обязательно различать потоки):
+```bash
+# через обёртку: если рамка оказалась в stdout — виноват xvfb-run
+bash run_mcp_server.sh < /dev/null > /tmp/o 2>/tmp/e
+# без xvfb-run: рамка уходит в stderr => сам сервер корректен
+python src/server.py < /dev/null > /tmp/o2 2>/tmp/e2
+```
+
+ЛЕЧЕНИЕ (минимум правок, Xvfb сохраняется) — увести stderr сервера в файл, чтобы в слитый
+поток шёл только stdout:
+```bash
+exec xvfb-run -a --server-args="-screen 0 1920x1080x24" \
+    sh -c "exec python /path/src/server.py 2>>/tmp/stealth-browser-mcp.err"
+```
+Проверка после правки: `stdout` при живом stdin должен начинаться с `{"jsonrpc":"2.0",...` за ~1 с.
+Затем **убей уже запущенных детей** (они держат старый код) — пересоздаются лениво при следующем вызове.
+
+### Дубли MCP-процессов — это НЕ зомби
+Свои потомки есть у каждого процесса Hermes: CLI-сессия, gateway и WebUI держат отдельные
+наборы `obsidian-mcp` / `codebase-memory-mcp` / `stealth-browser`. Три пары `xvfb-run`+`python`
+в `ps` — норма. Сверяй `ppid` с pid'ами `hermes`, не считай их мусором и не убивай чужой набор.
+
+### Питфолл `pkill -f` убивает собственную команду
+Терминальный инструмент оборачивает команду в `bash -c '...'`, поэтому `pkill -f "<строка>"`,
+где строка встречается в твоей же команде (путь обёртки, имя скрипта), матчит этот shell и
+убивает его SIGTERM (exit_code -15). Используй bracket-трюк (`pgrep -f "[s]tealth-browser..."`)
+или явные PID.
+
+### `~/.hermes/config.yaml` агенту править нельзя
+Инструменты `patch`/`write_file` отказывают: «Agent cannot modify security-sensitive
+configuration». Санкционированный путь — `hermes config set <dotted.key> <value>`
+(есть `get`, `unset`, `show`, `check`). Важно: `hermes config set` **переписывает файл через
+YAML load/dump и сносит ВСЕ комментарии** — делай бэкап и проверяй структуру после записи
+(`python3 -c "import yaml;d=yaml.safe_load(open(...));print(len(d),sorted(d))"`).
+
 ## Notes
 
 - MCP tools are called synchronously from the agent's perspective but run asynchronously on a dedicated background event loop

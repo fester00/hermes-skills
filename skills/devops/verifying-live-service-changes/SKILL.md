@@ -29,6 +29,21 @@ If the process started **before** the file changed, your change is not live — 
 the file looks. Services do not watch their own source, prompts or configs unless you made them.
 Never debug behaviour while a stale build is running: reload first, then re-test.
 
+The same trap has a second form for long-lived children of a supervisor (MCP servers, watchers,
+sidecars). Replace the binary on disk and the running process keeps executing the old one, because it
+still holds the unlinked inode — sometimes for weeks:
+
+```bash
+ps -eo pid,ppid,etime,cmd | grep <binary>   # find the child; its parent is the supervisor
+readlink /proc/<pid>/exe                    # trailing ' (deleted)' = it runs the replaced file
+kill <pid>                                  # the supervisor respawns it with the new build
+```
+
+After such a swap the **catalogue lies**: a tool list, help index or capability registry captured
+when the connection was made is a snapshot. Prove a new capability by invoking it (a live call,
+`cli <tool> --help`) — never by re-reading the list, which still shows the old set and reads as «the
+upgrade did not take».
+
 ### 2. Read operator-tunable text from disk on every request
 
 Prompts, greetings, allowlists, templates, feature masks: read them **per request**, not once in
@@ -78,6 +93,18 @@ Prefer the caller's logged latency to any probe of your own. Your probe travels 
 than the caller's infrastructure: aggregate the elapsed times your log recorded for caller-originated
 requests (median, max, how many broke the contract budget) before chasing a stall that only your
 own uplink sees. An anomaly your service never logged is not the caller's problem.
+
+A probe sent **from the host that serves the endpoint** is not a liveness test at all. The request
+does leave through the internet and does arrive — your access log records it, `200 OK`, from an outer
+address — while the response never makes it back to that client, because the same-host path is not
+symmetric. A watchdog that judges by the status code then reports an outage every few minutes while
+the service is perfectly healthy, and the false alarm trains you to ignore real ones.
+
+Judge by **delivery**, not by the code your own client received: count the endpoint's hits in the
+access log before and after the probe (or any real caller request in the window). Treat a missing
+status code as *inconclusive*, alert only when the probe did not arrive **and** the routing
+configuration is genuinely gone, and rate-limit that alert (once an hour) so a benign artefact cannot
+flood the log.
 
 ### 6. Never `pkill -f <pattern>` from an agent shell
 

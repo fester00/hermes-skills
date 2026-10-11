@@ -197,6 +197,7 @@ chat/completions + minimax-m3          → 200
 3. `tail -n 50 ~/.hermes/webui.log` — any Python traceback?
 4. `sudo nginx -t` — nginx config valid?
 5. When another agent reports conflicting process state, re-run steps 1 and 2 yourself before acting on the other agent's claim.
+6. **WebUI «отваливается постоянно», nginx `failed` с момента загрузки?** Проверь, не держит ли `:443` tailscaled (Tailscale Funnel) — тогда nginx не может занять wildcard. Лечение: `listen <IP>:443` вместо `listen 443`. Полный разбор — `hermes-ops-devops`, «Паттерн N».
 - `references/ctl-sh-vs-systemd-conflict.md` — when `ctl.sh` and a systemd user service both try to supervise the same port
 - `references/webui-upload-limits.md` — nginx + WebUI upload tuning
 - `references/webui-update-workflow.md` — safe `git pull` + `systemctl --user restart` update path

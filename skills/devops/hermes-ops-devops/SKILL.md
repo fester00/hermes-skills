@@ -114,6 +114,51 @@ sudo iptables -L -n | grep relevant_port
 | **L: WebUI workspace uploads fail or land in the wrong place** | File upload to `/mnt/data/.../books/js` fails silently, returns "Upload failed", or ends up in the session workspace instead | WebUI upload uses relative `path` inside the session workspace, not absolute filesystem paths. Also verify nginx `client_max_body_size` and `HERMES_WEBUI_MAX_UPLOAD_MB`. See `references/webui-workspace-upload-pitfalls.md`. |
 | **M: Next.js "This page couldn't load — Reload to try again"** | User reports browser-side "page couldn't load" on a Next.js route; server returns 200 with valid HTML; all `/_next/static/chunks/*.js` are 200 | **99% of the time this is BROWSER CACHE, not a server bug.** Next.js ISR serves pre-rendered HTML (`x-nextjs-cache: HIT`, `x-nextjs-prerender: 1`); a recent deploy changed chunk hashes, so old `<script>` tags in the user's browser don't match new ones — hydration fails and Chrome shows its degraded fallback. Diagnose by curling the page + chunks; if both are 200, instruct user to hard-refresh (`Ctrl+Shift+R`) or open Incognito. See `references/nextjs-page-couldnt-load-diagnosis.md`. |
 
+### Паттерн N: nginx не стартует после ребута — порт 443 держит Tailscale (проверено 2026-10-11)
+
+Симптом: `systemctl is-active nginx` → `failed` с момента загрузки; снаружи недоступны и
+прод-сайт (443), и Hermes WebUI (8443), при этом сами бэкенды живы (`:3000` → 200,
+`127.0.0.1:18789/health` → 200). Пользователь описывает это как «веб-интерфейс постоянно
+отваливается». В журнале загрузки:
+
+```
+tailscaled: listening on 100.64.227.83:443
+nginx[..]: [emerg] bind() to 0.0.0.0:443 failed (98: Address already in use)   # x5
+nginx[..]: still could not bind()
+```
+
+Это **не гонка, а жёсткий конфликт**: пока `tailscaled` (Tailscale Serve/Funnel) держит `:443`
+на tailnet-адресе, bind на `0.0.0.0:443` невозможен НИ с `SO_REUSEADDR`, НИ без него
+(проверяется питоном под root). Ранее всё работало лишь потому, что nginx успевал занять
+wildcard первым, а tailscaled привязывался к конкретному адресу вторым.
+
+Диагностика:
+```bash
+systemctl status nginx --no-pager | head -20
+journalctl -b --no-pager | grep -aiE "443|already in use" | grep -av 8443
+ss -tlnp | grep -E ':443 |:8443 '
+tailscale serve status          # включён Funnel?
+```
+
+ЛЕЧЕНИЕ — nginx должен слушать **конкретный IP**, а не wildcard:
+```nginx
+listen 192.168.0.98:443 ssl;   # вместо listen 443 ssl;
+```
+Публичный путь (проброс порта на роутере) сохраняется: проверено `curl -sk
+https://<публичный-IP>/ -H 'Host: pentajunior.ru'` → 200.
+
+Плюс страховка — drop-in `/etc/systemd/system/nginx.service.d/10-tailscale-race.conf`:
+```ini
+[Unit]
+After=network-online.target
+[Service]
+Restart=on-failure
+RestartSec=15
+```
+**НЕ добавляй `After=tailscaled.service` в nginx** — это гарантирует проигрыш (tailscaled
+займёт 443 первым и nginx упадёт). Обратный порядок недостижим без wildcard-привязки,
+поэтому правильный выбор — явный IP.
+
 ### Repair Procedure
 1. Backup every config before editing
 2. Apply ONE fix
