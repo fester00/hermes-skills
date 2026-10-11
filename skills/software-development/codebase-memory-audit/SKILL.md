@@ -195,6 +195,7 @@ After the audit:
 
 - **Wrong project root** — indexing a parent directory adds noise.
 - **Indexing node_modules/.next/.git** — CBM excludes these by default.
+- **Призрак проекта ≠ удалённый проект.** Если `index_status`/`list_projects` показывает проект без каталога (`root_exists: false`) или путь вида `/tmp/...`, **не считай его мусором и не удаляй молча** — индекс часто строился с копии в `/tmp`, которую ОС чистит, или с промежуточного пути. Прежде чем чистить: найди проект по имени по всему диску (`find /home /mnt/data /srv -maxdepth 5 -iname '*<имя>*'`), загляни в заметки хранилища и проверь git-remote. Так же проверь, нет ли рядом копий `_v2/_v3`: неверсионированная копия может быть **новее** репозитория, и тогда именно она — источник истины для пользователя.
 - **Trusting outdated index** — re-index after large changes (в 0.11.0 формат индекса изменился: после апгрейда движка индексы надо пересобрать, иначе граф пуст).
 - **Over-querying** — one good `get_architecture` call replaces many greps.
 - **Forgetting to save to Obsidian** — insights should persist across sessions.
