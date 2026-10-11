@@ -159,6 +159,37 @@ Default values:
 
 `/api/workspace/upload` writes into the **session workspace**, not an arbitrary absolute path. The `path` form field is a subdirectory inside that workspace. For example, if workspace is `/mnt/data/natan-storage/workspace` and user uploads into `books/js`, the file lands at `/mnt/data/natan-storage/workspace/books/js/`.
 
+## Сбой модели ≠ сбой интерфейса (не перезапускай службу)
+
+Симптом: интерфейс пишет «Request timed out. Please try again.», и первое желание — перезапустить службу. **Сначала проверь, что служба действительно виновата:**
+
+```bash
+systemctl --user is-active hermes-webui.service
+journalctl --user -u hermes-webui.service --since "-15min" | grep -oE '"path": "[^"]*"[, ]*"sta[^,]*' | tail -12   # видны 200-е?
+timeout 10 curl -s --noproxy '*' -o /dev/null -w '%{http_code}\n' http://127.0.0.1:18789/health
+```
+
+Если служба активна и отдаёт 200 — **перезапуск не поможет**, врет модель. Диагностика в два шага:
+
+1. **Сессия:** модель лежит прямо в файле сессии — `/mnt/data/natan-storage/.hermes/webui/sessions/<id>.json`, поле `model`. Id сессии виден в логе (`/api/session?session_id=<id>`).
+2. **Дампы падений:** рядом лежат `request_dump_<session_id>_<дата>.json` — в них готовый диагноз: `error.type`, `status_code`, `request.url` и тело запроса. Это быстрее, чем гадать по логу.
+
+**Проверенный случай (2026-10-11).** Сессия на модели `claude-haiku-5-5` провайдера `opencode-go` падала с `400 ModelProtocolUnsupported: Model does not support this protocol`. Причина: у этого агрегатора Claude-модели говорят по **Anthropic Messages**, а Hermes шлёт OpenAI-совместимый `chat/completions`. Проба одного и того же ключа с заголовком `x-opencode-session`:
+
+```
+chat/completions + deepseek-v4.1-flash → 200        chat/completions + claude-haiku-5-5 → 400 ModelProtocolUnsupported
+chat/completions + kimi-k2.7-code      → 200        POST /v1/messages + claude-haiku-5-5 → 200 (заголовки x-api-key + anthropic-version)
+chat/completions + minimax-m3          → 200
+```
+
+Три следствия:
+
+- **Лечение — сменить модель у сессии** (через интерфейс, там есть выбор модели), а не перезапускать службу.
+- **Правку файла сессии вручную служба затирает:** она держит сессию в памяти и перезаписывает JSON при следующем же запросе. Меняй модель только через UI/его API (а API закрыт парольной авторизацией).
+- **При пробах агрегатора обязателен заголовок `x-opencode-session`** (любой uuid): без него любой запрос отбивается 400 с текстом «Request is missing x-opencode-session» — легко принять это за поломку модели.
+
+В коде Hermes такие провайдеры помечены `is_aggregator=True` (`hermes_cli/providers.py`), протокол определяется по метаданным модели; если модель не размечена — берётся `chat_completions`.
+
 ## Recovery checklist
 
 1. `systemctl --user status hermes-webui.service --no-pager | head -5` — is the service active or auto-restarting?
