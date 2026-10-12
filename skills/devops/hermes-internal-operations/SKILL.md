@@ -1,7 +1,7 @@
 ---
 name: hermes-internal-operations
 description: Use when troubleshooting Hermes itself. Audit skill counts, token usage, profile state, or WebUI service health.
-version: 1.0.0
+version: 1.1.0
 author: Hermes Agent
 license: MIT
 metadata:
@@ -733,6 +733,86 @@ print(model, provider, normalized)
 
 See `references/webui-ollama-colon-model-revert-bug.md` for the full case study, reproduction recipe, and patch outline.
 
+## 7. Cron Job Fails With `provider 'custom'` (Stale Provider Snapshot)
+
+Use this section when a scheduled job's last run failed with:
+
+```
+RuntimeError: provider 'custom' resolved without credentials (no endpoint or API key configured).
+If this is a named custom provider, use its real name (see providers: in config.yaml).
+```
+
+### What it means
+
+The job failed **before any LLM call** — nothing was billed and the task body never ran. This is a
+provider-resolution failure, not a model-backend failure. The delivered message the user sees is the
+error document itself, not a job report (delivery still fires for failures on the `deliver` target).
+
+### Root cause
+
+Unpinned cron jobs carry a creation snapshot of the provider (`provider_snapshot` in
+`$HERMES_HOME/cron/jobs.json`). `_snapshot_pin()` in `cron/scheduler.py` replays that snapshot as the
+**requested** provider on every later run, so a global default change never silently alters spend.
+If the snapshot is the bare placeholder `custom`, resolution dies: a bare `custom` request carries no
+endpoint and no key.
+
+This bites when a job was created (or re-snapped) while the global provider was a bare `custom` entry
+with `model.base_url` pointing at a local endpoint, and the user later migrated to a **named**
+`providers:` entry (e.g. `ollama-launch`) and cleared `model.base_url`. Before the migration the
+local-endpoint bypass still resolved `custom`; after it, it does not.
+
+### Upstream bug: `resnap` cannot repair it
+
+`hermes cron resnap` re-derived the same dead value: `cron/jobs.py:_compute_provider_model_snapshots`
+stored `snap["provider"]`, and `resolve_runtime_provider()` reports the bare billing class `custom` for
+**every** named `providers:` entry — the configured id survives only in `requested_provider`. Fix is to
+persist `effective_runtime_provider(None, snap)` instead (same bug class as #98739 in fallback/delegation).
+
+### Fix recipe
+
+```bash
+# 1. Confirm the snapshot is the culprit (job.provider null + provider_snapshot "custom")
+python3 -c "import json;print([(j['id'],j.get('provider'),j.get('provider_snapshot')) for j in json.load(open('$HERMES_HOME/cron/jobs.json'))['jobs']])"
+
+# 2. Pin the provider explicitly — works with or without the core patch
+hermes cron edit <job_id> --provider <named-provider>      # e.g. ollama-launch
+
+# 3. To keep the job unpinned (track the global default) instead, clear the pin AFTER
+#    applying the core patch; the snapshot is then recomputed to the real name:
+hermes cron edit <job_id> --provider ""                    # -> provider_snapshot: <named-provider>
+
+# 4. Prove resolution without waiting for the schedule (exact scheduler path)
+cd $HERMES_HOME/hermes-agent && python3 - <<'PY'
+import json
+from cron.scheduler import _load_cron_job_config, _resolve_job_runtime
+job=json.load(open('$HERMES_HOME/cron/jobs.json'))['jobs'][0]
+jc=_load_cron_job_config(job, job['id'], job['name'])
+print(_resolve_job_runtime(job, job['id'], jc))
+PY
+
+# 5. End-to-end: force one synchronous run, then read the durable ledger
+hermes cron run <job_id>
+python3 -c "import sqlite3;c=sqlite3.connect('$HERMES_HOME/cron/executions.db');print(c.execute('select status,finished_at,error from executions order by claimed_at desc limit 1').fetchone())"
+
+# 6. Confirm clean
+hermes cron doctor
+```
+
+### Pitfalls
+
+- `hermes cron doctor` keeps reporting the old error right after the fix: it reads the job's persisted
+  `last_status`/`last_error`, which only clear on the first healthy run (then `failure_streak` -> 0 and
+  the `cron_incidents` row moves to `resolved`).
+- `resnap` also refreshes the **model** snapshot to the current global default; restore a specific model
+  with `hermes cron edit <job_id> --model <name>`.
+- The Hermes install is a git checkout: if you patch core, commit locally (a dirty tree can block
+  `hermes update`) or upstream it. Check whether upstream still carries the bug with
+  `git show HEAD:cron/jobs.py | grep -n "provider_snapshot = str(snap.get"`.
+- A failed run's output file still exists under `$HERMES_HOME/cron/output/<job_id>/` and contains the
+  full prompt plus the traceback — read it to confirm failure happened before the LLM call.
+
+See `references/cron-provider-custom-snapshot-failure.md` for the full case study.
+
 ## References
 
 - `references/session-2026-06-03-skills-reconciliation.md` — concrete state-reconciliation case study
@@ -747,3 +827,4 @@ See `references/webui-ollama-colon-model-revert-bug.md` for the full case study,
 - `references/webui-ollama-colon-model-revert-bug.md` — WebUI model selection reverts to default after first response when Ollama model IDs contain `:`
 - `references/webui-workspace-upload-pitfalls.md` — Workspace upload fails, lands in wrong place, or nginx blocks files > 1 MB; covers relative-path model and upload limits
 - `references/hermes-cli-path-zsh-diagnosis.md` — Hermes CLI stops resolving in zsh: `~/.profile` not sourced, fix via idempotent PATH guard in `~/.zshrc`
+- `references/cron-provider-custom-snapshot-failure.md` — cron job dies with `provider 'custom' resolved without credentials`; stale provider snapshot, `resnap` inherits the bug, fixed by pinning the named provider
