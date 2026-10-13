@@ -102,5 +102,15 @@ Task quality: Approved | Needs fixes — one or two sentences of technical reaso
   implementation conversation — fresh context is the point.
 - Both verdicts are required. `needs_fixes` with empty `critical`/`important` lists → reject the review and
   re-dispatch with the contract restated.
+- **Anti-rubber-stamp rule:** an `approved` verdict with empty issue lists is only credible for a trivial diff.
+  On a substantive diff (several files, new logic, tests), approval with zero file:line evidence is a failed
+  review — re-dispatch demanding "quote at least one concrete line you checked and why it is correct". Never
+  ledger a task `review clean` on a bare approval.
+- **Shared blind spots:** implementer and reviewer run on the same pinned `delegation.model`, so the review
+  catches spec and process failures, not that model's own blind spots. The controller's own verification is the
+  independent evidence; for judgment-heavy work pin a stronger model for the whole plan, or route review lanes
+  through OpenCode (which takes `-m` per run).
 - Findings go back to the implementer **verbatim**, not summarised by you.
-- Reviewer children run on the same model as implementers unless `delegation.model` is pinned.
+- Reviewer children run on whatever the `delegation` block in `~/.hermes/config.yaml` pins — on this machine
+  that is `kimi-k2.7-code:cloud`, i.e. the same model as the implementers. There is no per-dispatch model
+  argument in `delegate_task`.

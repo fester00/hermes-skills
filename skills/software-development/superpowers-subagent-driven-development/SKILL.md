@@ -149,6 +149,10 @@ Use the recorded `BASE` — never `HEAD~1`, which silently truncates multi-commi
 require **both** verdicts: spec compliance *and* code quality. A report missing either one is not a review.
 Do not pre-judge findings for the reviewer.
 
+An `approved` verdict with zero findings is credible only for a trivial diff — on anything substantive,
+re-dispatch with the evidence requirement. Implementer and reviewer share the pinned `delegation.model`, so
+what buys you a second opinion here is independent context, not a second model (see `task-reviewer-prompt.md`).
+
 ### 6. Fix loop
 
 - Rounds 1–3: re-dispatch with the open findings appended to `context`, instructing the child to append a
