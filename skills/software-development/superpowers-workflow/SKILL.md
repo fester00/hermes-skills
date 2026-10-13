@@ -202,15 +202,18 @@ When the design is approved:
 Pick the execution strategy based on task shape.
 
 **Default rule:** if the task originated from a user request that is large
-enough to need a plan (Phase 2) or design (Phase 1), it runs in an agent runtime
-(OpenCode or Hermes subagents), not inline in the controller session. Inline
-single-session execution is only for genuinely small changes that fit in one
-verification cycle.
+enough to need a plan (Phase 2) or design (Phase 1), it runs in an agent runtime,
+not inline in the controller session. Inline single-session execution is only for
+genuinely small changes that fit in one verification cycle.
 
-**Engine choice is a standing user preference, not a per-task judgement call.**
-The user profile and this skill may name different defaults; when they disagree,
-ask one explicit question and follow that answer for the whole plan. Never pick
-silently and never switch engines mid-plan without approval.
+**Engine choice is settled (recorded 2026-10-13): Hermes subagents are always the
+default execution engine for code** — `delegate_task` via
+`superpowers-subagent-driven-development`. **OpenCode runs only when the user
+explicitly asks for it** ("opencode агенты", "избавляемся от субагентов"). Do not
+re-ask per task, never pick OpenCode silently, never switch engines mid-plan
+without approval. OpenCode stays installed and documented as a capability (it is
+the only route to gateway models with no direct API key, and it has a live TUI
+session), not as the default.
 
 ### 4A: Single session (small or tightly coupled)
 - Load `superpowers-executing-plans`.
@@ -223,7 +226,7 @@ silently and never switch engines mid-plan without approval.
   escalate to the user for design approval, or (b) fall back to Phase 1/2
   before continuing.
 
-### 4B: OpenCode-driven (recommended for multi-task plans)
+### 4B: OpenCode-driven (only on explicit user request)
 - Load `superpowers-subagent-driven-development` (now an OpenCode execution guide).
 - Ensure the project root is a git repo. If not, initialize and commit a baseline.
 - Start `opencode serve --port 4096 --hostname 127.0.0.1` in the background.
@@ -240,8 +243,10 @@ silently and never switch engines mid-plan without approval.
 - After lanes finish, reconcile: re-read shared files, run full verification, capture after-screenshots.
 
 **Constraints:**
-- Do NOT use Hermes `delegate_task` for code execution.
-- Use Hermes subagents (`delegate_task`) only for browser/profile research tasks.
+- Hermes `delegate_task` subagents ARE the default code-execution path — do not
+  hand-code a multi-file plan inline instead of delegating it.
+- OpenCode lanes run only on explicit request. If one starts failing, ask before
+  falling back to subagents — never switch engines silently.
 - Max 2 concurrent heavy OpenCode sessions.
 - Do NOT delegate web search or browser navigation to OpenCode agents.
 
@@ -313,7 +318,7 @@ For the original Superpowers review discipline, see the upstream `requesting-cod
 | Brainstorm / Design | project-specific skills + `superpowers-brainstorming` | approved spec |
 | Plan | `superpowers-writing-plans` | plan file |
 | Isolate | `superpowers-using-git-worktrees` (or stated base dir) | clean workspace |
-| Execute | `superpowers-subagent-driven-development` / `superpowers-executing-plans` / OpenCode | implemented tasks |
+| Execute | superpowers-subagent-driven-development (default) / superpowers-executing-plans (small, tightly coupled) / OpenCode (only on explicit request) | implemented tasks |
 | Verify | `code-quality-gates` (Gates 1–4 as needed) | fresh evidence |
 | Review | `code-quality-gates` Gate 3 + `superpowers-subagent-driven-development` two-stage review + optional `` | reviewed code |
 | Finish | `superpowers-finishing-a-development-branch` + `yandex-api` (optional) | delivered work |
@@ -332,10 +337,10 @@ For the original Superpowers review discipline, see the upstream `requesting-cod
 - **Using v1 OpenCode flags on v2.** `--attach` and `--dir` were removed in v2; the equivalents are
   `--server <url>` plus running from the project cwd with `OPENCODE_CONFIG=<profile>` exported. A stale
   command copied from old notes fails with an unknown-argument error instead of doing work.
-- **Silently choosing an execution engine when the standing preference conflicts with this skill.**
-  The profile may say "default to Hermes subagents" while this skill says "prefer OpenCode". Ask once,
-  record the answer, then stay on that engine for the whole plan — mixing them mid-plan breaks review
-  and verification.
+- **Reopening the settled engine question.** The engine is decided: Hermes subagents by default,
+  OpenCode only on explicit request (recorded 2026-10-13). Re-asking per task, or drifting to OpenCode
+  because an older version of this skill said so, wastes a turn. Mixing engines mid-plan breaks review
+  and verification in any case.
 - **Importing or keeping harness-only skills** like `using-superpowers` that are
   meant for Codex/Pi/Antigravity. In Hermes the umbrella skill already defines
   the workflow; extra harness-specific bootstrap skills create confusion and
