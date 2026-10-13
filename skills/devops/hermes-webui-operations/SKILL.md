@@ -1,7 +1,7 @@
 ---
 name: hermes-webui-operations
-description: Use when operating the Hermes WebUI. Manage process lifecycle, nginx proxy, uploads, CSRF origins, and recovery.
-version: 1.0.0
+description: Use when operating the Hermes WebUI. Manage process lifecycle, nginx proxy, uploads, CSRF origins, post-update stale-runtime 409s, and recovery.
+version: 1.1.0
 author: Master Ugwai
 license: MIT
 platforms: [linux]
@@ -21,6 +21,7 @@ Runbook for operating the Hermes WebUI (https://github.com/nesquena/hermes-webui
 - nginx reverse-proxy gotchas
 - File upload size limits
 - CSRF / origin mismatch errors
+- Stale agent runtime after an update or an agent-checkout commit (409 on `/api/chat/start`)
 - Quick recovery after crashes or reboots
 
 ## Key paths
@@ -190,6 +191,29 @@ chat/completions + minimax-m3          → 200
 
 В коде Hermes такие провайдеры помечены `is_aggregator=True` (`hermes_cli/providers.py`), протокол определяется по метаданным модели; если модель не размечена — берётся `chat_completions`.
 
+## «Упал после апдейта»: устаревший рантайм агента (409 на `/api/chat/start`)
+
+Симптом: служба активна, `/health` отдаёт 200, но чат в интерфейсе не стартует — в журнале каждая отправка даёт `POST /api/chat/start` → 409. Здесь **перезапуск службы и есть правильное лечение**, а не костыль.
+
+Механизм: WebUI грузит агента В СВОЙ процесс и намеренно отказывается смешивать модули разных ревизий (`api/agent_runtime.py`: `ensure_agent_runtime_current` → `AgentRuntimeChangedError` → ответ `{"type": "agent_runtime_stale", "retryable": true}` со статусом 409). Устаревшим рантайм делает **любая** смена ревизии чекаута агента (`~/.hermes/hermes-agent`) после старта процесса — включая локальный коммит, сделанный в агенте, а не только `hermes update`.
+
+Диагностика (отличает этот случай от застрявшего стрима):
+
+```bash
+ps -o lstart= -p "$(systemctl --user show -p MainPID --value hermes-webui.service)"   # когда стартовал процесс
+git -C ~/.hermes/hermes-agent reflog --date=iso -5 | head                            # двигалась ли ревизия агента ПОСЛЕ старта
+git -C ~/hermes-webui reflog --date=iso -5 | head                                    # то же для WebUI (в т.ч. был ли реально pull)
+journalctl --user -u hermes-webui.service --since "-2h" --no-pager | grep -oE '"status": [0-9]+' | sort | uniq -c
+```
+
+Правило разбора — **время последнего коммита против времени старта процесса**: коммит новее процесса → рантайм устарел. Если времена сходятся, а 409 всё равно есть, это второй источник — застрявший стрим (`"session already has an active stream"`): тогда смотри `active_stream_id` в `~/.hermes/webui/sessions/<id>.json`, а не ревизии.
+
+Лечение: `systemctl --user restart hermes-webui.service`, затем `/health` локально и через прокси — служба перечитывает ревизию при старте. Полный read-only слепок — `scripts/webui-diagnose.sh`.
+
+Проверяй отдельно, применён ли сам апдейт: `git -C ~/hermes-webui log -1`, `git log --oneline HEAD..origin/master`, `git status --short`. Свежий `FETCH_HEAD` при неизменном `HEAD` означает, что был только `git fetch` — кода не обновилось, и «после апдейта» может относиться к чекауту агента, а не к WebUI. Скажи это пользователю явно и не обновляй WebUI без его слова.
+
+Питфолл инспекции кода: python-heredoc, читающий файлы апдейтера WebUI, может быть отбит встроенным guard'ом с текстом «cannot restart, stop, or uninstall the gateway from inside the gateway process» — не повторяй попытку, читай исходники через `read_file` / `search_files`.
+
 ## Recovery checklist
 
 1. `systemctl --user status hermes-webui.service --no-pager | head -5` — is the service active or auto-restarting?
@@ -198,10 +222,12 @@ chat/completions + minimax-m3          → 200
 4. `sudo nginx -t` — nginx config valid?
 5. When another agent reports conflicting process state, re-run steps 1 and 2 yourself before acting on the other agent's claim.
 6. **WebUI «отваливается постоянно», nginx `failed` с момента загрузки?** Проверь, не держит ли `:443` tailscaled (Tailscale Funnel) — тогда nginx не может занять wildcard. Лечение: `listen <IP>:443` вместо `listen 443`. Полный разбор — `hermes-ops-devops`, «Паттерн N».
+7. **Чат не стартует, а служба жива?** Сверь время последнего коммита чекаута агента (`git -C ~/.hermes/hermes-agent reflog --date=iso -3`) со временем старта процесса (`ps -o lstart= -p <MainPID>`): коммит новее → рантайм агента устарел, лечится перезапуском службы (см. раздел про 409 `agent_runtime_stale`).
 - `references/ctl-sh-vs-systemd-conflict.md` — when `ctl.sh` and a systemd user service both try to supervise the same port
 - `references/webui-upload-limits.md` — nginx + WebUI upload tuning
 - `references/webui-update-workflow.md` — safe `git pull` + `systemctl --user restart` update path
 - `references/multi-agent-recovery-coordination.md` — avoid ping-pong when multiple agents try to recover WebUI concurrently
+- `scripts/webui-diagnose.sh` — read-only probe: checkout revisions vs process start time, health local + proxied, non-200 status histogram
 
 ## Related
 

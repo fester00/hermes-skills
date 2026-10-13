@@ -48,6 +48,24 @@ Nekobox on Windows is a sing-box/Xray GUI. For browser-only selective routing, p
 7. **Create a systemd user service** for the proxy so it survives reboots.
 8. **Verify end-to-end.** Check application logs, not just proxy connectivity.
 
+### Check the consumers and the router before debugging the host proxy
+
+A host-side proxy is often redundant. If the router already runs a transparent proxy for the LAN,
+every device is covered; and a consumer may have been deliberately switched off the proxy — a
+commented `# TELEGRAM_PROXY disabled: ... direct works` in `~/.hermes/.env` is a decision, not a
+bug. Before rebuilding plumbing, test the real endpoints **direct** (`api.telegram.org`, the model
+provider API) and read the router's transparent-proxy state.
+
+Two Xray installs also coexist easily: the installer's **system** service with an empty `{}` config
+binds nothing while a **user** service serves the real ports. Identify which PID owns the port and
+which config is non-empty before debugging anything.
+
+When a proxy accepts connections but every request hangs, follow the ordered decision tree rather
+than guessing: owner PID → consumers' direct path → node TCP reachability → error-log signature →
+subscription link validity. Full decision tree, log signatures (`[EOF]`,
+`REALITY: received real certificate`, `malformed HTTP request`), and the throwaway-instance
+verification recipe: `references/xray-local-proxy-diagnostics.md`.
+
 ## Router-specific pitfalls (GL.iNet / OpenWrt 21.02)
 
 ### For router-level transparent proxy, prefer v2rayA on stock firmware
@@ -278,6 +296,7 @@ If you just set up `wg-easy` on a fresh VPS and the router can handshake but can
 - `scripts/xray-vps-vless-reality-setup.sh` — idempotent install + config generator for the above.
 - `references/xray-vps-vless-reality.md` — installing a self-hosted Xray VLESS+Reality inbound on Ubuntu 24.04 alongside Docker/wg-easy, using port 8443 when nginx owns 443.
 - `references/vless-subscription-parser.md` — parse JSON-style Xray/VLESS subscriptions into individual `vless://` URLs.
+- `references/xray-local-proxy-diagnostics.md` — a local proxy that accepts connections but hangs: ordered decision tree, error-log signatures, subscription-token diagnosis, and the throwaway-instance recipe for verifying a candidate node without touching the live config.
 - `references/glinet-v2raya-transparent-session.md` — GL.iNet + v2rayA transparent proxy session: safe router-level path, DNS through tunnel, binary transfer recipe, rollback.
 - `references/v2raya-api-commands.md` — v2rayA REST API for headless tuning, plus a read-only config-audit checklist (field-by-field match of the active server, conntrack/log liveness checks, IPv6 coverage gap).
 - `references/glinet-v2raya-autostart.md` — make v2rayA/xray start automatically after a router reboot on stock GL.iNet / OpenWrt, including the autoconnect caveat.

@@ -87,6 +87,10 @@ The smoke test must confirm:
 - model responds,
 - MCP servers (`obsidian`, `codebase-memory`) are reachable.
 
+Facts about OpenCode itself (agent types, permissions, config keys, CLI subcommands) are mirrored locally
+as raw Markdown: `/mnt/data/natan-storage/docs/opencode-v2/` — `ru/` is the official Russian translation for
+reading, `en/` the originals; refresh with `opencode-v2-cli` → `scripts/regen-docs.sh`.
+
 If OpenCode or its MCP fail, stop and report. Do not silently fall back to reading files outside the project directory.
 
 ### External context via MCP
@@ -178,10 +182,18 @@ When the design is approved:
 
 ---
 
-  - **Use OpenCode agents for execution.** Hermes `delegate_task` subagents are reserved only for browser/profile research tasks.
+### OpenCode execution rules (apply inside Phase 4)
+
+  - **Use the agreed agent runtime for execution.** Hermes `delegate_task` subagents and OpenCode agents are different machines: a Hermes child is an isolated process that only sees `context`; an OpenCode agent is a role inside the OpenCode server that also sees the project, `AGENTS.md` and OpenCode's own skills. See `references/opencode-vs-subagents.md` before briefing either.
   - **Initialize git only if needed.** Before OpenCode: `if [ ! -d .git ]; then git init && git add . && git commit -m "initial: baseline"; fi`. Never re-initialize an existing repo.
-  - **Use `opencode serve` + `opencode run --attach`.** Start a persistent OpenCode server: `opencode serve --port 4096 --hostname 127.0.0.1`. Then execute with: `opencode run --auto --attach http://127.0.0.1:4096 --dir <project> < brief.md`.
-  - **Headless `opencode run` (without `--attach`) cannot use MCP servers.** Use the `serve`/`attach` pattern when the brief needs `obsidian` or `codebase-memory`.
+  - **v2 command form — `--attach` and `--dir` no longer exist.** Run from the project directory and select the provider through a profile:
+    ```bash
+    cd <project>
+    export OPENCODE_CONFIG=$HOME/.config/opencode/profiles/opencodeai.json
+    opencode run --auto --title '<task>' < brief.md
+    ```
+    `--server <url>` connects to a running server (replacing v1 `--attach`); the project directory is the cwd, and a positional path is swallowed into the message. `--standalone` is only needed when the background service is not listening (`ss -tlnp | grep 49374`). Copying the v1 line out of memory or this skill fails with an unknown-argument error.
+  - **MCP now comes from the profile, not from `--attach`.** v2 declares servers under `mcp.servers` inside the profile, so a plain `opencode run` reaches `obsidian` and `codebase-memory`. Start `opencode serve --hostname 127.0.0.1 --port <port>` only when you want a persistent server (web/TUI clients, `opencode api`).
   - **OpenCode briefs must include an anti-todo instruction.** Start every brief with: `Do not use todo or planning tools.`
   - **OpenCode briefs must include an External context sources block.** Tell OpenCode which MCP servers to use and forbid direct filesystem access outside the project directory.
 
@@ -190,9 +202,15 @@ When the design is approved:
 Pick the execution strategy based on task shape.
 
 **Default rule:** if the task originated from a user request that is large
-enough to need a plan (Phase 2) or design (Phase 1), prefer OpenCode agent
-execution. Inline single-session execution is only for genuinely small
-changes that fit in one verification cycle.
+enough to need a plan (Phase 2) or design (Phase 1), it runs in an agent runtime
+(OpenCode or Hermes subagents), not inline in the controller session. Inline
+single-session execution is only for genuinely small changes that fit in one
+verification cycle.
+
+**Engine choice is a standing user preference, not a per-task judgement call.**
+The user profile and this skill may name different defaults; when they disagree,
+ask one explicit question and follow that answer for the whole plan. Never pick
+silently and never switch engines mid-plan without approval.
 
 ### 4A: Single session (small or tightly coupled)
 - Load `superpowers-executing-plans`.
@@ -209,8 +227,8 @@ changes that fit in one verification cycle.
 - Load `superpowers-subagent-driven-development` (now an OpenCode execution guide).
 - Ensure the project root is a git repo. If not, initialize and commit a baseline.
 - Start `opencode serve --port 4096 --hostname 127.0.0.1` in the background.
-- Run the OpenCode smoke test against the server: `opencode run --auto --attach http://127.0.0.1:4096 --dir <project> 'Respond exactly: OPENCODE_SMOKE_OK'`.
-- For each task, write a brief file and execute: `opencode run --auto --attach http://127.0.0.1:4096 --dir <project> --title '<task>' < brief.md`.
+- Run the OpenCode smoke test from the project directory: `OPENCODE_CONFIG=<profile> opencode run --auto -m <provider>/<model> 'Respond exactly: OPENCODE_SMOKE_OK'`.
+- For each task, write a brief file and execute it from the project directory: `OPENCODE_CONFIG=<profile> opencode run --auto --title '<task>' < brief.md`.
 - Capture the brief output to a log file.
 - After each task, verify with `git diff --stat`, `npx tsc --noEmit`, `npm run build`, and screenshots where visual changes are involved.
 - Stop the OpenCode server when the plan is complete.
@@ -218,7 +236,7 @@ changes that fit in one verification cycle.
 ### 4C: Parallel OpenCode lanes (independent tasks)
 - Load `superpowers-dispatching-parallel-agents`.
 - Start a single OpenCode server.
-- Dispatch multiple `opencode run --attach` invocations concurrently **only when file sets are strictly disjoint**.
+- Dispatch multiple `opencode run` invocations concurrently (same profile, disjoint project directories) **only when file sets are strictly disjoint**.
 - After lanes finish, reconcile: re-read shared files, run full verification, capture after-screenshots.
 
 **Constraints:**
@@ -311,6 +329,13 @@ For the original Superpowers review discipline, see the upstream `requesting-cod
 - Cleaning up a worktree the user needs for PR iteration.
 - Delegating web search or browser navigation to agents.
 - Reading files outside the project directory without MCP.
+- **Using v1 OpenCode flags on v2.** `--attach` and `--dir` were removed in v2; the equivalents are
+  `--server <url>` plus running from the project cwd with `OPENCODE_CONFIG=<profile>` exported. A stale
+  command copied from old notes fails with an unknown-argument error instead of doing work.
+- **Silently choosing an execution engine when the standing preference conflicts with this skill.**
+  The profile may say "default to Hermes subagents" while this skill says "prefer OpenCode". Ask once,
+  record the answer, then stay on that engine for the whole plan — mixing them mid-plan breaks review
+  and verification.
 - **Importing or keeping harness-only skills** like `using-superpowers` that are
   meant for Codex/Pi/Antigravity. In Hermes the umbrella skill already defines
   the workflow; extra harness-specific bootstrap skills create confusion and
@@ -409,6 +434,7 @@ Some upstream skills are kept only as deep-dive references when the compact Herm
 - `references/design-adaptation-checklist.md` — older checklist variant (prefer `external-design-spec-adaptation.md`).
 - `references/skill-library-sync-safety.md` — safely syncing `~/.hermes/skills` to the public `hermes-skills` GitHub repo.
 - `references/opencode-briefing-pattern.md` — canonical OpenCode brief and pitfalls
+- `references/opencode-vs-subagents.md` — what an OpenCode agent is versus a Hermes subagent, engine-selection rules, and the v2 command forms
 - `references/vite-preview-network-host.md` — exposing Vite dev/preview server to LAN for review from other devices.
 - `references/opencode-mcp-pitfall.md` — OpenCode sandbox auto-reject, MCP Unknown, and fallback rules
 - `references/nextjs-app-router-spa-migration.md` — migrating React/Vite landing pages to Next.js 15 App Router; client-component boundaries, metadata/JSON-LD, font setup, image paths, and build verification.

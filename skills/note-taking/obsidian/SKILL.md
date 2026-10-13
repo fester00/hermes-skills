@@ -241,7 +241,20 @@ Full conversion recipe and script: `references/import-mdbook-to-obsidian.md` and
 ## Vault rules live in the vault itself
 
 The vault's own constitution is `/home/natan/obsidian-memory/AGENTS.md` (folder map, working rules,
-safety, task handoff) — read it before structural changes. Supporting notes:
+safety, task handoff) — read it before structural changes. It is written for **any** agent: rules that
+only work in Hermes are tagged `[Hermes]`, so the same file serves Claude Code, Codex and OpenCode
+(they auto-read `AGENTS.md` in the repo root, and `CLAUDE.md` is the short shim for Claude Code).
+Supporting notes:
+
+- `AGENTS.md` — folder map, rules, conventions **и критерии роста структуры** (когда новая папка/MOC, регистрация в индексе, архивация) (all agents)
+- `Knowledge/Принципы устройства базы.md` — **почему** структура такая: происхождение, шесть принципов, чего они не обещают. Читать перед любой попыткой перестроить хранилище: школа за базой не стоит (не PARA/Zettelkasten), рост — по критериям из `AGENTS.md`, а не по схеме
+- `CLAUDE.md` — short entrypoint for Claude Code; `Operations/Runbooks/Vault — инструкции для внешнего агента` — hands-on how-to for non-Hermes agents (search recipes, note templates, MCP setup, git flow, работа из Obsidian Desktop, pitfalls)
+- `Operations/MOC — Operations.md` · `Knowledge/MOC — Index.md` — navigation
+- `references/two-tier-memory-model.md` — why the agent stores only coordinates and the vault stores knowledge
+- Related skill: `knowledge-first-protocol` (retrieval order: session search → skills → vault → project files → web)
+
+Keep the two instruction layers in step: `AGENTS.md` in the vault and this skill. A rule that a
+non-Hermes agent must follow belongs in `AGENTS.md`; a rule about Hermes tooling belongs here.
 
 - `AGENTS.md` — folder map, rules, conventions
 - `Operations/MOC — Operations.md` · `Knowledge/MOC — Index.md` — navigation

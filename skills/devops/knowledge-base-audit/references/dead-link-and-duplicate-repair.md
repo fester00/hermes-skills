@@ -104,3 +104,56 @@ procedure/known issues/changelog in the other. Merge, do not choose:
    `ss -tlnp` shows) — merge is the moment when stale halves get laundered into the canonical note.
 4. Fix stale absolute paths found in either half (projects move: `~/project` → `/mnt/data/.../project`).
 5. Delete the twin, then `grep -rn` the old path/name to catch referrers, and update the project MOC.
+
+## 5. Syncing the live skills tree into its git repo — additively
+
+The repo is not a mirror: it can legitimately hold skills that are not installed locally (a published
+collection, another profile's set). A `--delete` mirror destroys them. Measure the asymmetry first:
+
+```python
+live_files = {p.relative_to(live) for p in live.rglob("*") if p.is_file() and ".git" not in p.parts}
+only_repo = [p for p in repo.rglob("*") if p.relative_to(repo) not in live_files]
+```
+
+Then push in one direction only — copy new and changed files, delete nothing:
+
+```python
+for p in live.rglob("*"):
+    if not p.is_file() or ".archive" in p.parts:
+        continue                                   # the local archive stays out of the repo
+    target = repo / p.relative_to(live)
+    if not target.exists():
+        target.parent.mkdir(parents=True, exist_ok=True); shutil.copy2(p, target); added += 1
+    elif not filecmp.cmp(p, target, shallow=False):
+        shutil.copy2(p, target); updated += 1
+```
+
+- Report `added / updated / unchanged`. Never «synced, N changes» — the reader cannot tell an addition
+  from a deletion.
+- Deletions are a separate, owner-approved action and belong to a merge (recipe 2), never to a bulk sync.
+  After the sync `git status --porcelain | grep -c '^ D'` must be `0`.
+- Leave the repo-only remainder in place and report it (count plus top categories) as an open question.
+- Runtime state files swept in by the copy (`.*lock.json`, `.*state`, `.*manifest`) may already be
+  tracked — flag that as a pre-existing defect; do not untrack them unasked.
+- Large deltas are the point of the exercise: a skill whose live copy differs by hundreds of lines is
+  exactly the work that existed only on the server and would have been lost.
+
+## 6. Normalising skill descriptions in bulk
+
+Convention: `description: Use when <trigger>. <behaviour>.` — the first 57 characters are the trigger and
+must stand alone, the whole value stays under ~200 characters, written in English.
+
+1. Select the targets with a script that also matches block scalars (`description: |` with the text on the
+   following lines); a single-line regex reports those as empty and hides the worst offenders:
+   ```python
+   m = re.search(r"^description:\s*(\||>)?\s*\n((?:[ \t]+.*\n)+)", txt, re.M)
+   ```
+2. Read each skill's overview before rewriting. The trigger names the **situation** («Use when the built-in
+   browser is blocked on X»), not the topic («About browser automation»).
+3. Split the set across two subagents by category range (A–M / N–Z); the halves cannot collide on a file
+   and the wall time halves.
+4. Verify instead of trusting the report: (a) re-run the selector — zero remaining; (b) `yaml.safe_load`
+   every frontmatter — zero errors, which also catches unescaped colons; (c) compare line and section
+   counts against before to prove the body survived; (d) quote five old→new pairs.
+5. Change the `description` line only. Quote the value when it contains a colon or quotes, and collapse
+   block descriptions to one line so the next scanner sees them.

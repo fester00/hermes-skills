@@ -1,64 +1,141 @@
-# OpenCode vs Hermes `delegate_task` — Decision Guide
+# Агенты OpenCode и субагенты Hermes: чем отличаются и когда что запускать
 
-Session-specific context: `silicone-landing-v2` polish, 2026-08-01.
+Проверено на `opencode v2.0.28` и на Hermes `delegate_task`. Команды и флаги — в формате v2.
 
-## Rule of thumb
+## Короткий ответ
 
-- **User says "OpenCode" / "opencode агенты" / "не субагенты"** → use OpenCode headless (`opencode run --auto --dir <project> < brief.md`). Do not continue dispatching `delegate_task`.
-- **User says "делегируй" / "субагенты" / "проверяй результат"** → use Hermes `delegate_task` via `superpowers-subagent-driven-development`.
-- **No explicit preference, multi-file UI/design work** → default to subagents for complex Hermes-native workflows; OpenCode for greenfield scaffolding.
+Это разные вещи с похожими названиями.
 
-## When OpenCode headless works
+- **Субагент Hermes** (`delegate_task`) — **отдельный процесс**: своя сессия, свой контекст, свой терминал.
+  Родитель получает только финальный отчёт. Инструментов у ребёнка меньше: нет `delegate_task`, `clarify`,
+  `memory`, `cronjob`. Скиллы и память родителя ему не видны — всё нужное передаётся в `context`.
+- **Агент OpenCode** — **роль внутри одного рантайма**, а не процесс. Это профиль: системный промпт, модель,
+  набор инструментов, права. Его исполняет сервер OpenCode, живёт он в сессии этого сервера и видит проект,
+  `AGENTS.md` и скиллы OpenCode.
 
-After the 2026-08 OpenCode upgrade (CLI + plugin 1.18.10) and MCP servers disabled:
+OpenCode — среда (клиент-сервер): TUI, CLI и web — клиенты, сессии и состояние держит сервер
+(`~/.local/share/opencode/opencode.db`, фоновый сервис на `127.0.0.1:49374`). Один сервер обслуживает много
+сессий сразу — отсюда и вложенные (дочерние) сессии.
 
-- Smoke test passes: `opencode --version`, `opencode auth list`, `opencode run` with a simple command.
-- Anti-todo prefix in every brief prevents the internal `todowrite` SchemaError:
-  ```markdown
-  Do not use todo or planning tools. Just execute the steps below.
-  ```
-- `--auto --dir <project-root>` grants write permissions inside the project directory.
-- Tasks with 1–3 files and clear specs work reliably.
+## Типы агентов в OpenCode
 
-## When OpenCode headless struggles
+| Тип | Кто это | Как вызывается |
+|---|---|---|
+| `primary` | основной собеседник: **Build** (все инструменты), **Plan** (правки и bash в режиме `ask`) | **Tab** / `switch_agent`, либо флаг `--agent <имя>` |
+| `subagent` | специализированный помощник: встроенные **General**, **Explore**, **Scout** и свои | автоматически основным агентом через инструмент **`task`**, либо вручную `@имя` в сообщении |
+| скрытые системные | **Compact**, **Title**, **Summary** — сжатие контекста, заголовки, сводки | автоматически, в UI не выбираются |
 
-- Complex briefs with 10+ files may be partially executed or skipped. In that case, either split the brief into smaller lanes or fall back to `delegate_task`.
-- If the user explicitly rejects subagents, stay on OpenCode and split the work into smaller, verifiable briefs rather than silently falling back.
+Ключевое, что отличает это от субагентов Hermes: **делегирование — это инструмент `task` внутри одного
+процесса**, а не запуск нового. General получает полный набор инструментов *кроме* задач, то есть по
+умолчанию вложенное делегирование запрещено — но его можно разрешить (см. ниже).
 
-## Recommended OpenCode brief shape
+## Как задаётся агент
+
+Два способа, оба — конфигурация:
+
+1. `opencode.json` → блок `agent.<имя>` с полями `description`, `mode`, `model`, `prompt`,
+   `temperature`, `top_p`, `tools`, `permission`, `steps`(максимум шагов), `hidden`, `color`,
+   `disable`.
+2. Markdown-файлы: `~/.config/opencode/agents/*.md` (глобально) или `.opencode/agents/*.md` (проект).
+   Имя файла = имя агента; во frontmatter те же поля (`description`, `mode`, `model`, `tools`, …),
+   тело файла — системный промпт.
+
+`mode` бывает `primary`, `subagent` или `all` (по умолчанию `all`).
+
+## Права и вложенность
+
+- `permission` управляет доступом к инструментам значениями `allow` / `ask` / `deny`.
+- `permission.task` — glob-правила на то, **каких субагентов агент вправе вызывать**
+  (например `{"*": "deny", "orchestrator-*": "allow", "code-reviewer": "ask"}`).
+  Правила оцениваются по порядку, **побеждает последнее подходящее**.
+- При `deny` субагент вообще исчезает из описания инструмента `task` — модель его не увидит и не вызовет.
+- Пользователь всегда может вызвать любого субагента вручную через автодополнение `@`, даже если у агента
+  это запрещено.
+
+## Что видит и чем управляется: сравнение
+
+| | Субагент Hermes (`delegate_task`) | Агент OpenCode |
+|---|---|---|
+| Природа | отдельный процесс | роль в общем рантайме |
+| Контекст | изолированный, чистый | своя (дочерняя) сессия сервера |
+| Что видит | только переданный `context`; скиллы и память родителя — нет | проект, `AGENTS.md`, `~/.config/opencode/skills/`, MCP-серверы профиля |
+| Промпт, модель, температура | наследует модель родителя (или пиннинг в `config.yaml`) | задаются в конфиге агента и **независимы** от родителя |
+| Вложенность | запрещена: ребёнок не может звать `delegate_task` | разрешается через `permission.task` |
+| Права | наследуются от родителя | явные: `allow`/`ask`/`deny` по инструментам |
+| Как инструктировать | аргумент `context` в вызове | файл-бриф в промпте + `AGENTS.md` + скиллы OpenCode |
+| Видимость работы | живой транскрипт в `cache/delegation/…`, отчёт в конце | живой TUI, переключение в дочернюю сессию `<Leader>+←/→` (`session_child_cycle`) |
+| Параллельность | до лимита профиля (4) | сервер держит много сессий; тяжёлых держать ≤2 |
+
+Практический вывод: OpenCode-агенту бесполезно «передать контекст как ребёнку» — ему нужен **файл-бриф
+в рабочем каталоге** и правила в `AGENTS.md`. И наоборот: Hermes-субагенту бесполезно говорить «прочитай
+навык X» — навык надо вложить в `context`.
+
+## Правило выбора движка
+
+Движок — **стоячее предпочтение пользователя**, а не вкусовое решение по задаче. Профиль пользователя
+и этот навык могут расходиться; при расхождении задать один явный вопрос и дальше следовать ответу
+до конца плана. Молча выбирать движок нельзя.
+
+- Пользователь назвал OpenCode («opencode агенты», «избавляемся от субагентов») → исполнять в OpenCode,
+  Hermes-субагентов не подмешивать.
+- Пользователь назвал субагентов («делегируй», «работаем субагентами») → `delegate_task`
+  через `superpowers-subagent-driven-development`.
+- Явного указания нет → спросить один раз и записать ответ.
+
+Команды OpenCode v2 (флагов `--attach` и `--dir` больше нет — это синтаксис v1):
+
+```bash
+cd <project>                                   # каталог проекта = cwd; позиционный путь утонет в сообщении
+export OPENCODE_CONFIG=~/.config/opencode/profiles/opencodeai.json   # провайдер живёт в профиле
+opencode run --auto --title 'lane A' < brief.md
+# нужен постоянный сервер (web/TUI/`opencode api`):
+#   opencode serve --hostname 127.0.0.1 --port 4096
+#   opencode run --server http://127.0.0.1:4096 --auto < brief.md
+```
+
+В v2 MCP-серверы объявлены внутри профиля (`mcp.servers`), поэтому обычный `opencode run` с профилем их
+видит — старый танец `serve` + `attach` был нужен потому, что headless-v1 их не видел. Без
+`OPENCODE_CONFIG` провайдер `opencode-go` вообще не существует: `Error: Model unavailable`.
+
+## Форма брифа
 
 ```markdown
 Do not use todo or planning tools. Just execute the steps below.
 
 ## Goal
-One sentence.
+Одно предложение.
 
 ## Files to modify
 - `src/components/X.tsx`
-- `src/sections/Y.tsx`
 
 ## Exact requirements
-...
+…
 
 ## Verification
-After changes run:
 ```bash
-npx tsc --noEmit
-npm run build
+npx tsc --noEmit && npm run build
 ```
-Expected: exit 0.
+Ожидается: exit 0.
 
 ## Report
-Write a short report to `<project>/.superpowers/opencode-<lane>-report.md`.
+Короткий отчёт в `<project>/.superpowers/opencode-<lane>-report.md`.
 ```
 
-## Lane split pattern
+## Разбиение на линии
 
-For a landing-page polish, split by visual subsystem:
-- **Lane A:** cards + modal (shared component logic).
-- **Lane B:** hero + sections + forms.
-- **Lane C:** verification + screenshots (run by the controller, not OpenCode).
+- **Линия A:** компоненты + модальные окна (общая логика).
+- **Линия B:** hero, секции, формы.
+- **Линия C:** верификация и скриншоты — выполняется контроллером, не OpenCode.
 
-## Key pitfall
+Линии запускать параллельно только при **строго непересекающихся наборах файлов**.
 
-Do not mix execution models in the same plan mid-stream unless the user approves. If OpenCode starts failing, ask before switching back to subagents. If the user demands OpenCode, do not use subagents as a quiet fallback.
+## Подводные камни
+
+- Не смешивать движки внутри одного плана без согласия пользователя: ломается ревью и верификация.
+  Если OpenCode начал сбоить — спросить, а не тихо вернуться на субагентов; если пользователь требует
+  OpenCode — не подсовывать субагентов как запасной выход.
+- Брифы на 10+ файлов выполняются частично; дробить на короткие проверяемые линии.
+- Агент OpenCode не видит скиллы и память Hermes. Всё, что нужно из хранилища, — либо через MCP-профиль,
+  либо процитировано в брифе.
+- Проверку результата делает контроллер (`git diff --stat`, `npx tsc --noEmit`, `npm run build`,
+  скриншоты). Отчёт агента — самоотчёт, не доказательство.

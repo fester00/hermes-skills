@@ -722,6 +722,14 @@ model:
   sudo loginctl enable-linger $USER
   ```
 
+### Обновление Hermes изнутри работающего гейтвея
+
+- **Сначала `hermes update --check` и `--plan`.** `--plan` read-only и безопасен на живой системе: печатает вид установки, профили, все работающие сервисы с супервизором, текущей ревизией и способом перезапуска.
+- **Запускать апдейт прямо из сессии гейтвея можно.** Апдейтер это распознаёт, шлёт drain-first сигнал и перезапускает гейтвей **после** завершения текущего хода: ответ пользователю успевает уйти, а следующий инструмент уже не выполнить. Нужно дожить сессию — флаг `--no-gateway-restart`, перезапуск потом вручную или `/restart`.
+- **Локальные коммиты в чекауте агента апдейт не сохраняет в ветке**: после `git pull` их нет в ancestry HEAD, объекты остаются только в reflog. Свою правку сохраняй патчем (`git format-patch -1 <hash> -o <dir>`) вне чекаута и накладывай заново после каждого апдейта.
+- **Вывод `--plan` показывает ревизию работающего сервиса.** Расходится с HEAD чекаута — процессу нужен рестарт, иначе он продолжит жить на старых модулях (для WebUI это ещё и 409 на `/api/chat/start`, см. `hermes-webui-operations`).
+- **`hermes --version` может писать `Up to date`, не проверяя локальные патчи поверх upstream** — расхождение ловится только чтением дерева (`git status --short`, `git log -1`).
+
 ### Changes not taking effect
 - **Tools/skills:** `/reset` starts a new session with updated toolset
 - **Config changes:** In gateway: `/restart`. In CLI: exit and relaunch.
@@ -984,15 +992,20 @@ grep "TELEGRAM_ALLOWED_USERS" ~/.hermes/.env
 sed -i 's/TELEGRAM_ALLOWED_USERS=OLD_IDS/TELEGRAM_ALLOWED_USERS=OLD_IDS,NEW_ID/' ~/.hermes/.env
 
 # Verify
-grep "TELEGRAM_ALLOWED_USERS" ~/.hermes/.env
-
-# Restart gateway to pick up changes (reads .env only at startup)
-systemctl --user restart hermes-gateway
-sleep 3
-systemctl --user status hermes-gateway --no-pager | head -5
+ grep "TELEGRAM_ALLOWED_USERS" ~/.hermes/.env
 ```
 
-**Critical:** The gateway reads `.env` only at process startup. Adding a user without restarting the gateway leaves them blocked. Always restart after editing `TELEGRAM_ALLOWED_USERS`.
+**No restart is needed — the gateway hot-reloads `.env` per turn.** (`gateway/run.py::_reload_runtime_env_preserving_config_authority`, driven per turn by `_current_max_iterations` → `load_hermes_dotenv`, which lets `~/.hermes/.env` override stale process values.) Verified 2026-10-13: a new id added to `TELEGRAM_ALLOWED_USERS` was accepted at 20:29:59 — about three minutes after the edit — while the gateway process had been up since the previous day and was never restarted. A `systemctl --user restart hermes-gateway` remains the fallback if a message is still refused (or when the edit must apply to an existing message that is already in flight).
+
+**Verify via the log, never via `/proc/<gateway_pid>/environ`.** That file is a snapshot of the environment **at exec time**; it ignores later `putenv`/`os.environ` mutations, so it keeps showing the old value long after the reload and will send you chasing a restart that is not needed. Correct check:
+
+```bash
+grep -E "Blocked unauthorized user|inbound message: .*chat=<NEW_ID>" ~/.hermes/logs/gateway.log | tail -5
+```
+
+`inbound message: … chat=<ID>` plus a `Sending response … to <ID>` line = admitted. A fresh `Blocked unauthorized user <ID>` after the edit = not admitted (check for a duplicate token/placeholder, or restart the gateway).
+
+**Other grant paths** (checked before the env allowlist, so an empty env list is not proof of denial): the pairing store (`hermes pairing list` / `approve`) and per-platform `TELEGRAM_GROUP_ALLOWED_USERS`. If `hermes pairing list` shows entries but the env list has no id, the user is admitted through pairing.
 
 **Finding a user's chat_id:** When an unauthorized user sends `/start`, the gateway logs show:
 ```

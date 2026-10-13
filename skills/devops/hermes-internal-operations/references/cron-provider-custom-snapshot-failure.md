@@ -80,6 +80,43 @@ Then force a real run (`hermes cron run <id>`, synchronous) and confirm the ledg
 `delivery_outcome=delivered`, `last_status: ok`, `failure_streak: 0`, the config incident moved to
 `resolved`, and `hermes cron doctor` reported no issues.
 
+## 2026-10-12: `hermes update` removed the fix — code moved, bug stayed
+
+A large upstream update (agent `045eb443` -> `3f2abce7`) refactored the area away: `provider_snapshot`,
+`_compute_provider_model_snapshots` and `hermes cron resnap` **no longer exist** (`cron/jobs.py` now
+computes the pin in `_main_model_pin()`), so the old patch neither applies nor is needed in that shape —
+but the **same bug came back in the new shape**:
+
+- `cron/jobs.py::_main_model_pin()` persists `resolve_runtime_provider(requested=None)["provider"]`, which
+  is still the bare `custom` for a named `providers:` entry (configured id lives in `requested_provider`).
+- `cron/scheduler.py` consumes it as `requested = job.get("provider") or jc.cron_default_provider or None`,
+  and `resolve_runtime_provider(requested="custom")` raises `AuthError` — so every `pinned=True` job dies
+  pre-LLM on its next run.
+
+Measured on the updated tree: `resolve_runtime_provider(requested=None)` -> `provider=custom`,
+`requested_provider=ollama-launch`; `requested="custom"` -> `AuthError`; `requested="ollama-launch"` -> OK.
+
+Re-applied patch (same one-liner idea, new home) and the saved diff:
+
+```python
+# cron/jobs.py :: _main_model_pin()
+-from
+- provider = _normalize_job_optional_text(resolve_runtime_provider(requested=None).get("provider"))
++to
++ from hermes_cli.fallback_config import effective_runtime_provider
++ runtime = resolve_runtime_provider(requested=None)
++ provider = _normalize_job_optional_text(effective_runtime_provider(None, runtime))
+```
+
+- Patch kept at `$HERMES_HOME/patches/cron-pin-named-custom-provider.patch` (`git -C <agent> apply`), because
+  **every `hermes update` reverts it** — re-apply and re-verify after each update, before trusting cron.
+- End-to-end proof used (real CLI path, not just the function): `hermes cron create '0 4 1 1 *' 'Reply with
+  exactly: pin-ok' --name pin-verify-tmp --pin --deliver local` -> stored `provider='ollama-launch'` ->
+  `hermes cron run <id>` -> `Last run: ok / Execution: completed` -> `hermes cron remove <id>`.
+  `--deliver local` keeps the test out of the user's chat.
+- `hermes --version` can say `Up to date` while a just-updated tree keeps the bug: read the code, do not
+  trust the version string.
+
 ## Gotchas
 
 - `cron doctor` still shows the old error immediately after the fix — it reads persisted `last_status`.

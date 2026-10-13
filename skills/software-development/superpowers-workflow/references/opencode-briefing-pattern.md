@@ -12,11 +12,11 @@ opencode run 'List MCP servers you can access, then respond exactly: OPENCODE_SM
 
 Success means: CLI starts, model answers, and `obsidian`/`codebase-memory` MCP servers are reachable. If any step fails, stop and report to the user instead of launching OpenCode.
 
-Also verify the CLI and plugin are up to date before a large headless run:
+Also verify the CLI is up to date before a large headless run:
 
 ```bash
-npm install -g opencode-ai@latest
-cd ~/.config/opencode && npm install @opencode-ai/plugin@latest
+npm install -g @opencode/cli@latest --force   # v2 package; the v1 `opencode-ai` package is gone
+opencode --version                            # expect v2.x
 ```
 
 ## 2. Brief delivery
@@ -24,11 +24,15 @@ cd ~/.config/opencode && npm install @opencode-ai/plugin@latest
 Always pipe the brief via stdin:
 
 ```bash
-opencode run --auto --dir /path/to/project --title 'brief task' < /tmp/brief.md
+cd /path/to/project
+export OPENCODE_CONFIG=$HOME/.config/opencode/profiles/opencodeai.json
+opencode run --auto --title 'brief task' < /tmp/brief.md
 ```
 
-Use `--auto` to auto-approve filesystem permissions and `--dir` to set the
-working directory. Bad forms to avoid:
+Run from the project directory — v2 has **no `--dir` and no `--attach`**; the cwd *is* the working
+directory and the provider comes from the profile named by `OPENCODE_CONFIG`. Add `--server <url>` only to
+talk to a persistent server, and `--standalone` only when no background service is listening
+(`ss -tlnp | grep 49374`). Bad forms to avoid:
 
 ```bash
 # WRONG — positional prompt is unreliable and may be treated as a file
@@ -65,8 +69,8 @@ schema that fails in headless mode and abort before creating files.
 
 ## 5. Verbatim "External context sources" block
 
-Skip this block if MCP servers are disabled in `~/.config/opencode/opencode.json`
-and the context is inlined in the brief.
+Include this block whenever the run uses a profile that declares MCP servers (v2 puts them in the profile
+under `mcp.servers`). If the profile declares none and the context is inlined in the brief, it can go.
 
 ```markdown
 ## External context sources
@@ -103,18 +107,14 @@ Run OpenCode in background with `notify_on_complete=True` so you can keep workin
 
 ```python
 terminal(
-    command="cd /tmp && opencode run --auto --dir /path/to/project --title 'task' < /tmp/brief.md",
+    command="cd /path/to/project && OPENCODE_CONFIG=$HOME/.config/opencode/profiles/opencodeai.json "
+            "opencode run --auto --title 'task' < /tmp/brief.md",
     background=True,
-    notify_on_complete=True
+    notify=True
 )
 ```
 
-Then poll:
-
-```python
-process(action="poll", session_id="<id>")
-process(action="log", session_id="<id>", limit=200)
-```
+Then poll it with the Hermes `process_manage` tool (actions `list` / `poll` / `log`).
 
 ## 8. Recovery after compaction
 
@@ -136,6 +136,10 @@ Save the ledger beside the plan. After compaction, read the ledger and `git log`
 - OpenCode may cancel `npm create vite` if the target directory already exists. Prepare the skeleton yourself, or ensure the directory does not exist before launch.
 - Vite SSR requires two builds: `vite build` for the client and `vite build --ssr entry.tsx --outDir dist/server` for prerender. Do not put `build.ssr` in `vite.config.ts` or the client `index.html` will not be produced.
 - OpenCode's todo tool may fail with schema errors; do not rely on it for progress tracking. Use a ledger file instead. Add `"Do not use todo or planning tools"` to the brief to avoid the schema error.
-- OpenCode may attempt direct `cat`/`ls`/`cp` on files outside the project directory. This is blocked by the sandbox. Either disable MCP servers and inline context, or include the MCP instruction block and verify the smoke test.
-- Large multi-file briefs via headless stdin may silently truncate. For 10+ files or a full landing page, prefer Hermes `delegate_task` subagents.
-- Stale `opencode-ai` CLI / plugin versions can cause `todowrite` schema errors even with the prompt guard. Update both before headless runs.
+- OpenCode may attempt direct `cat`/`ls`/`cp` outside the project directory. Reach for the MCP servers
+  (vault, code graph) instead of shelling out, and prove they work in the smoke test before the real run.
+- Large multi-file briefs via headless stdin may silently truncate: keep one brief to 1–3 files and split the
+  rest into lanes. Which runtime executes those lanes is the user's standing engine preference — see
+  `references/opencode-vs-subagents.md` rather than deciding here.
+- A leftover v1 CLI on PATH causes schema errors and unknown-argument failures even with the prompt guard.
+  Keep only `@opencode/cli` (v2) installed, and re-link its bins after any `npm uninstall -g`.

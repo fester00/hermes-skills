@@ -1,7 +1,7 @@
 ---
 name: hermes-internal-operations
 description: Use when troubleshooting Hermes itself. Audit skill counts, token usage, profile state, or WebUI service health.
-version: 1.1.0
+version: 1.2.0
 author: Hermes Agent
 license: MIT
 metadata:
@@ -11,6 +11,10 @@ triggers:
   - "audit hermes skills"
   - "reconcile skills"
   - "profile has more skills"
+  - "two default profiles"
+  - "duplicate profile"
+  - "profile shows twice"
+  - "sync skills repo"
   - "skills count mismatch"
   - "how many skills do I have"
   - "sync skills with obsidian"
@@ -106,6 +110,68 @@ Always verify that Obsidian references still point to existing disk paths.
 - Profile isolation is real: named-profile skill directories are invisible to the default session.
 - Obsidian documentation decays; cross-check links before quoting.
 - MCP timeouts are environmental; capture the filesystem fallback recipe.
+- The WebUI and the CLI enumerate profiles with **different filters** — a stray directory can appear as a phantom card in the UI only. See below.
+- Never trust a documented `rsync --delete` mirror sync to be scoped to your change. See below.
+
+### WebUI shows a profile the CLI does not (phantom profile card)
+
+When the profile count or list disagrees between the UI and `hermes profile list`, do not assume the
+CLI is stale — the two enumerate `profiles/` with different rules:
+
+| Path | Filter applied |
+|------|----------------|
+| CLI `hermes_cli.profiles._iter_named_profile_dirs()` | skips the reserved name `default`, requires an identity marker (`named_profile_has_identity`), respects tombstones |
+| WebUI `hermes-webui/api/profiles.py::_build_profile_rows_fast()` | keeps **every** dir matching `hermes_constants.PROFILE_ID_RE` (`^[a-z0-9][a-z0-9_-]{0,63}$` — `default` matches it), and does **no** dedup afterwards |
+
+The common phantom is a **duplicate `default`**: an empty leftover `profiles/default/` is added as a
+second row (`is_default=false`, no model/provider meta) next to the real base-home row. Other stray or
+marker-less dirs can surface the same way.
+
+Diagnose without the UI — `GET /api/profiles` requires auth and answers `{"error":"Authentication required"}`, so
+call the same builder the UI calls, with the **agent venv** python (the `tools/` python may lack `yaml`):
+
+```python
+~/.hermes/hermes-agent/venv/bin/python - <<'PY'
+import sys
+sys.path[:0] = ['/mnt/data/natan-storage/hermes-webui', '/mnt/data/natan-storage/.hermes/hermes-agent']
+from api.profiles import _build_profile_rows_fast
+for r in _build_profile_rows_fast():
+    print(r['name'], r['is_default'], r['model'], r['path'])
+PY
+```
+
+Fix — a stray empty profile dir is dead weight (`default` is a reserved name and the base home IS the
+default profile, so nothing references `profiles/default/`):
+
+```bash
+# 1. prove it is empty before touching it
+test "$(find "$HERMES_HOME/profiles/<name>" -mindepth 1 | wc -l)" -eq 0
+# 2. move it out REVERSIBLY; do not delete
+mv "$HERMES_HOME/profiles/<name>" "$HERMES_HOME/backups/ghost-profiles-<name>-$(date +%Y%m%d-%H%M%S)"
+# 3. re-run the builder above — the row count must drop, and `hermes profile list` must agree
+```
+
+The WebUI caches this list on a short TTL; tell the user to reopen the Profiles panel.
+
+### Mirroring the skill library to its git repo (scope the sync)
+
+The skill-library mirror repo (e.g. `hermes-skills`) can drift from the live `$HERMES_HOME/skills/`
+tree in **both** directions. The `rsync -av --delete` recipe its README documents will therefore
+replicate the whole divergence, including deleting a large set of skills from the repo. Before any
+`--delete` sync:
+
+1. Run the sync, then `git status --short` and **review the deletion list** before staging anything.
+2. If the scope exceeds your change, `git restore <path>` and copy only the paths you touched
+   (`cp` the changed `SKILL.md` / `references/*.md`), then `git add <those exact paths>`.
+3. Commit, verify `git status` is clean and `HEAD == origin/<branch>`, and report the drift you found
+   instead of silently reconciling it.
+
+Pitfalls:
+- Keep backup copies of patched files **outside** any tracked git checkout. A stray `*.bak` inside a
+git-installed tree (e.g. `hermes-agent/` or the skills repo) shows up in `git status` and can block
+`hermes update`.
+- Mirror repos may track runtime junk (`.locks/`) and untracked content from earlier partial syncs;
+leave both alone unless reconciling the whole library is the actual task.
 
 See `references/session-2026-06-03-skills-reconciliation.md` for a concrete case study.
 
