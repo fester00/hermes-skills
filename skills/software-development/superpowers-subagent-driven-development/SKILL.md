@@ -1,249 +1,254 @@
 ---
-name: subagent-driven-development
-description: Use when executing implementation plans with independent tasks in the current session
+name: superpowers-subagent-driven-development
+description: Use when executing an approved multi-task plan with Hermes subagents. Ledger-tracked task loop, independent per-task review, controller-run verification.
+version: 2.0.0
+author: Master Ugwai
+license: MIT
+category: software-development
+metadata:
+  hermes:
+    tags: [subagents, delegation, execution, review, verification, ledger]
+    related_skills: [superpowers-workflow, superpowers-writing-plans, superpowers-executing-plans, code-quality-gates, superpowers-dispatching-parallel-agents, superpowers-finishing-a-development-branch, superpowers-verification-before-completion]
 ---
 
-# OpenCode-Driven Development
+# Hermes Subagent-Driven Development
 
-Execute plan by running a fresh OpenCode agent per task, a task review (spec compliance + code quality) after each, and a broad whole-branch review at the end.
+Execute an approved plan by dispatching **one fresh Hermes subagent per task**, reviewing every task with an
+independent reviewer subagent, and finishing with a whole-branch review. The controller (you) owns the
+ledger, the git baseline, and every verification command.
 
-**Why OpenCode agents:** OpenCode runs in isolated sessions with full project context, git diff awareness, and optional MCP access. It is our preferred execution engine for multi-file/multi-task work. Hermes `delegate_task` subagents are reserved only for browser/profile research.
+**This is the default execution path in Hermes.** OpenCode runs only when the user explicitly asks for it —
+the rule and its rationale live in `superpowers-workflow` (Phase 4) and
+`superpowers-workflow/references/opencode-vs-subagents.md`.
 
-**Core principle:** Fresh OpenCode agent per task + task review (spec + quality) + broad final review = high quality, fast iteration
+**Core principle:** fresh child per task + independent review + controller-run verification = quality
+without context pollution.
 
-**Prerequisites (must be done first):**
-1. The project must be a git repository with a usable baseline. **If it is not — ask the user first:**
-   do not run `git init` / `git commit` on your own. The upstream superpowers flow creates a
-   worktree instead (`superpowers-using-git-worktrees`) so the user's working copy stays untouched.
-   Baseline commits in an unprepared directory are a side effect the user has not approved.
-2. Start an OpenCode server in the project directory: `opencode serve --port 4096 --hostname 127.0.0.1`.
-3. Execute with: `opencode run --auto --attach http://127.0.0.1:4096 --dir <project> --title '<task>' < brief.md`.
-4. Capture output to a log file for review.
+**Why a fresh child per task:** no context pollution across tasks; a child that fails is replaced without
+inheriting its confusion; the reviewer sees the diff, not the implementer's reasoning.
 
-**Narration:** between tool calls, narrate at most one short line — the
-ledger and the tool results carry the record.
+**Narration:** between tool calls, narrate at most one short line — the ledger and the tool results carry the
+record.
 
-**Continuous execution:** Do not pause to check in with your human partner between tasks. Execute all tasks from the plan without stopping. The only reasons to stop are: BLOCKED status you cannot resolve, ambiguity that genuinely prevents progress, or all tasks complete.
+**Continuous execution:** do not check in with the user between tasks. Stop only for: BLOCKED you cannot
+resolve, ambiguity that genuinely prevents progress, or all tasks complete.
 
-## When to Use
+## Prerequisites (all of them, in order)
 
-```dot
-digraph when_to_use {
-    "Have implementation plan?" [shape=diamond];
-    "Tasks mostly independent?" [shape=diamond];
-    "Stay in this session?" [shape=diamond];
-    "subagent-driven-development" [shape=box];
-    "executing-plans" [shape=box];
-    "Manual execution or brainstorm first" [shape=box];
+1. **A written plan the user explicitly approved.** Hard gate — see `superpowers-workflow` Phase 2. A
+   detailed verbal request is not approval. No approved plan → no dispatch.
+2. **A git workspace.** If the project is not a repository, **ask the user first** — do not run `git init`
+   on your own; baseline commits are a side effect the user has not approved.
+3. **Workspace and ledger resolved** (Step 0 below).
+4. **`BASE` recorded before each task** (`git rev-parse HEAD`).
 
-    "Have implementation plan?" -> "Tasks mostly independent?" [label="yes"];
-    "Have implementation plan?" -> "Manual execution or brainstorm first" [label="no"];
-    "Tasks mostly independent?" -> "Stay in this session?" [label="yes"];
-    "Tasks mostly independent?" -> "Manual execution or brainstorm first" [label="no - tightly coupled"];
-    "Stay in this session?" -> "subagent-driven-development" [label="yes"];
-    "Stay in this session?" -> "executing-plans" [label="no - parallel session"];
-}
+## Step 0: Setup
+
+1. Resolve the plan's workspace and print it:
+   ```bash
+   bash scripts/sdd-workspace PLAN_FILE      # → <repo-root>/.superpowers/sdd/<plan-basename>/
+   ```
+   One directory per plan, in the working tree (not under `.git/`, which agents cannot write), with a
+   self-ignoring `.gitignore`, so a stale ledger can never be mistaken for the current plan's progress.
+2. Read `<workspace>/progress.md` if it exists. First line names **this** plan → resume at the first task
+   without a `complete` line. Names another plan → start a fresh ledger.
+3. Create the ledger with the header line (format below).
+4. Read the plan once, create a todo per task, scan for contradictions before dispatching Task 1.
+
+## The two documents, and who writes what
+
+| | Plan file | Ledger `progress.md` |
+|---|---|---|
+| Written by | you, at Phase 2, approved by the user | **only the controller (you)** |
+| Contents | intent: tasks, exact paths, verification commands | progress: dispatch and outcome lines |
+| Changes | never edited by a child | appended after each dispatch and each verified review |
+
+Ledger format — the first line is a binding contract:
+
+```
+# SDD ledger — plan: /abs/path/to/plan.md
+Task 1: dispatched sa-0-1a2b3c4d
+Task 1: complete (commits 9f8e7d6..1a2b3c4, review clean)
+Task 2: dispatched sa-1-9f8e7d6a
+Task 2: complete (commits 1a2b3c4..77aa11b, 2 parked: flaky test in cart.spec.ts; unused export in pricing.ts)
+Task 3: blocked (needs the TMF API schema) — re-dispatched as sa-2-3c4d5e6f
+Task 4: failed (child stopped mid-run; landed files up to src/api/client.ts)
 ```
 
-**vs. Executing Plans (parallel session):**
-- Same session (no context switch)
-- Fresh subagent per task (no context pollution)
-- Review after each task (spec compliance + code quality), broad review at the end
-- Faster iteration (no human-in-loop between tasks)
+**Why the controller owns the ledger:** only the controller sees the review verdict and the real git state.
+A child that dies mid-task must never leave a `complete` line behind. Children write exactly one thing:
+their own report file.
 
-## The Process
+The ledger stays out of `git status` and survives context compaction — that is its whole point. Never
+reconstruct progress from memory when the ledger exists.
 
-```dot
-digraph process {
-    rankdir=TB;
+## The task loop
 
-    subgraph cluster_per_task {
-        label="Per Task";
-        "Dispatch implementer subagent (./implementer-prompt.md)" [shape=box];
-        "Implementer asks questions?" [shape=diamond];
-        "Answer questions, provide context" [shape=box];
-        "Implementer implements, tests, commits, self-reviews" [shape=box];
-        "Generate review package, dispatch task reviewer (./task-reviewer-prompt.md)" [shape=box];
-        "Spec ✅ and quality approved?" [shape=diamond];
-        "Finding conflicts with plan text?" [shape=diamond];
-        "Ask human partner which governs" [shape=box];
-        "Fix round R of 5: R≤3 resume implementer; R≥4 fresh implementer, more capable model" [shape=box];
-        "Dispatch scoped re-review (./re-review-prompt.md)" [shape=box];
-        "All findings addressed?" [shape=diamond];
-        "R = 5?" [shape=diamond];
-        "Adjudicate each open finding" [shape=box];
-        "Any load-bearing finding?" [shape=diamond];
-        "STOP: report BLOCKED to human partner" [shape=box];
-        "Park findings in ledger with rulings" [shape=box];
-        "Append completion to ledger, mark todo complete" [shape=box];
-    }
+### 1. Prepare the brief and the context
 
-    "Setup: worktree, ledger check, read plan, pre-flight review" [shape=box];
-    "More tasks remain?" [shape=diamond];
-    "Dispatch final code reviewer (../requesting-code-review/code-reviewer.md)" [shape=box];
-    "Final findings? ONE fix dispatch, one scoped re-review, adjudicate residuals" [shape=box];
-    "Final review clean: delete this plan's workspace" [shape=box];
-    "Use superpowers:finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
-
-    "Setup: worktree, ledger check, read plan, pre-flight review" -> "Dispatch implementer subagent (./implementer-prompt.md)";
-    "Dispatch implementer subagent (./implementer-prompt.md)" -> "Implementer asks questions?";
-    "Implementer asks questions?" -> "Answer questions, provide context" [label="yes"];
-    "Answer questions, provide context" -> "Implementer implements, tests, commits, self-reviews";
-    "Implementer asks questions?" -> "Implementer implements, tests, commits, self-reviews" [label="no"];
-    "Implementer implements, tests, commits, self-reviews" -> "Generate review package, dispatch task reviewer (./task-reviewer-prompt.md)";
-    "Generate review package, dispatch task reviewer (./task-reviewer-prompt.md)" -> "Spec ✅ and quality approved?";
-    "Spec ✅ and quality approved?" -> "Append completion to ledger, mark todo complete" [label="yes"];
-    "Spec ✅ and quality approved?" -> "Finding conflicts with plan text?" [label="no"];
-    "Finding conflicts with plan text?" -> "Ask human partner which governs" [label="yes"];
-    "Ask human partner which governs" -> "Fix round R of 5: R≤3 resume implementer; R≥4 fresh implementer, more capable model";
-    "Finding conflicts with plan text?" -> "Fix round R of 5: R≤3 resume implementer; R≥4 fresh implementer, more capable model" [label="no"];
-    "Fix round R of 5: R≤3 resume implementer; R≥4 fresh implementer, more capable model" -> "Dispatch scoped re-review (./re-review-prompt.md)";
-    "Dispatch scoped re-review (./re-review-prompt.md)" -> "All findings addressed?";
-    "All findings addressed?" -> "Append completion to ledger, mark todo complete" [label="yes"];
-    "All findings addressed?" -> "R = 5?" [label="no"];
-    "R = 5?" -> "Fix round R of 5: R≤3 resume implementer; R≥4 fresh implementer, more capable model" [label="no - next round"];
-    "R = 5?" -> "Adjudicate each open finding" [label="yes - breaker trips"];
-    "Adjudicate each open finding" -> "Any load-bearing finding?";
-    "Any load-bearing finding?" -> "STOP: report BLOCKED to human partner" [label="yes"];
-    "Any load-bearing finding?" -> "Park findings in ledger with rulings" [label="no"];
-    "Park findings in ledger with rulings" -> "Append completion to ledger, mark todo complete";
-    "Append completion to ledger, mark todo complete" -> "More tasks remain?";
-    "More tasks remain?" -> "Dispatch implementer subagent (./implementer-prompt.md)" [label="yes"];
-    "More tasks remain?" -> "Dispatch final code reviewer (../requesting-code-review/code-reviewer.md)" [label="no"];
-    "Dispatch final code reviewer (../requesting-code-review/code-reviewer.md)" -> "Final findings? ONE fix dispatch, one scoped re-review, adjudicate residuals";
-    "Final findings? ONE fix dispatch, one scoped re-review, adjudicate residuals" -> "Final review clean: delete this plan's workspace";
-    "Final review clean: delete this plan's workspace" -> "Use superpowers:finishing-a-development-branch";
-}
+```bash
+bash scripts/task-brief PLAN_FILE N            # → <workspace>/task-N-brief.md (prints the path)
 ```
 
-## Setup
+`task-brief` extracts the task's text (headings `## Task N: …`) so the plan never passes through your
+context. Then assemble the child's `context` — the child sees **nothing** else:
 
-Ensure the work happens in a known, stable git workspace.
+- the brief file path (**it must read that first — the brief is the single source of requirements**);
+- interfaces and decisions from earlier tasks (exact names, signatures, tokens);
+- the plan's Global Constraints, copied verbatim;
+- the working directory and its base commit;
+- the report file path it must write (`<workspace>/task-N-report.md`);
+- the rule: **you cannot ask questions — if something is missing, stop and return `NEEDS_CONTEXT` with the
+  exact missing piece instead of guessing.**
 
-1. **Git is required.** If the project directory is not a git repository, initialize it before any OpenCode task:
-   ```bash
-   cd <project-root>
-   if [ ! -d .git ]; then
-     git init
-     git add .
-     git commit -m "initial: baseline"
-   fi
-   ```
-   Never re-initialize an existing repository.
-2. **Start the OpenCode server** in the project directory:
-   ```bash
-   cd <project-root>
-   opencode serve --port 4096 --hostname 127.0.0.1
-   ```
-3. **Resolve workspace / ledger.** Each plan owns a workspace in `.superpowers/sdd/<plan-basename>/`. Run this skill's `scripts/sdd-workspace PLAN_FILE` to get the path. Check `<workspace>/progress.md` for prior state. If its first line names your plan file, resume at the first task without a `complete` line. If it names a different plan, start a fresh ledger.
-4. **Create the ledger:** first line must be `# SDD ledger — plan: <plan file path>`.
-5. **Read the plan once,** note Global Constraints, create todos per task, and scan for contradictions before dispatching Task 1.
+### 2. Dispatch
 
-If git exists, `git clean -fdx` will destroy the workspace (it's git-ignored scratch); recover from `git log` if needed. For non-git projects (which should be initialized now), preserve the workspace until the finish phase.
+Record `BASE=$(git rev-parse HEAD)` first, then dispatch with `delegate_task` following
+`implementer-prompt.md` — including the **status `output_schema`**, which is what makes the child's return
+machine-readable instead of prose.
 
-## Model Selection
+One task at a time (parallel lanes only under the disjointness rule below).
 
-For OpenCode execution, use the model configured in `~/.config/opencode/opencode.json` (default: `ollama/kimi-k2.7-code:cloud`). For reviewers, use the most capable model available in the same OpenCode server. The model is selected via `-m/--model` on `opencode run --attach` if you need to override for a specific task.
+### 3. Handle the status
 
-Turn count beats token price. For complex or judgment-heavy tasks, prefer a mid-to-capable tier even if it costs more per token. Mechanical single-file transcription can use the default model.
+The child's final answer arrives as JSON: `status`, `summary`, `commits`, `tests`, `concerns`,
+`blocked_on`, `report_file`.
 
-## The Task Loop
+- **DONE** → controller verification (step 4), then review (step 5).
+- **DONE_WITH_CONCERNS** → read the concerns. Correctness or scope → resolve before review. Observations
+  only → proceed to review.
+- **NEEDS_CONTEXT** → re-dispatch the same brief **with the missing context added**, to a **new child**
+  (there is no resume).
+- **BLOCKED** → triage in this order: (1) context problem → re-dispatch with more context; (2) needs more
+  reasoning → re-dispatch with sharper framing and a narrower task; (3) task too large → split it;
+  (4) the plan itself is wrong → escalate to the user.
 
-Everything the OpenCode agent prints back stays resident in your context for the rest of the session. Hand artifacts over as files, and capture OpenCode stdout to a log file.
+**Never ignore BLOCKED. Never accept a missing status.**
 
-### 1. Run the implementer
+### 4. Controller verification (mandatory, before any review)
 
-Record BASE (`git rev-parse HEAD`) before running.
+The child's report is a *claim*. Verify against disk:
 
-- **Task brief:** before each task, run this skill's `scripts/task-brief PLAN_FILE N` to extract the task text to a unique file. Write an OpenCode brief that:
-  1. Starts with `Do not use todo or planning tools.`
-  2. Names the task and its place in the project.
-  3. Includes an **External context sources** block ordering the agent to read `~/obsidian-memory/Operations/Coding Principles.md` via the obsidian MCP server and follow all principles there.
-  4. References the extracted task brief as the single source of requirements.
-  5. Carries interfaces and decisions from earlier tasks.
-  6. Includes a visual verification contract for UI changes.
-  7. Names the report-file path and log-file path.
-- **Report file:** name it after the brief (`task-N-brief.md` → `task-N-report.md`). The OpenCode agent writes its full report there and returns only status, commits, a one-line test summary, and concerns.
-- **Log file:** capture `opencode run` stdout/stderr to a log file in the workspace for post-run review.
-- Run one task at a time to avoid file conflicts.
-- Execute:
-  ```bash
-  opencode run --auto --attach http://127.0.0.1:4096 \
-    --dir <project-root> \
-    --title 'Task N: <title>' \
-    < workspace/task-N-brief.md > workspace/task-N.log 2>&1
-  ```
-- Check the log for `DONE`, `DONE_WITH_CONCERNS`, `NEEDS_CONTEXT`, or `BLOCKED`.
+```bash
+git log --oneline BASE..HEAD
+git diff --stat BASE..HEAD
+npx tsc --noEmit && npm run build          # or the plan's exact verification commands
+```
 
-### 2. Handle the report
+…plus tests, and screenshots (desktop, mobile, modal) for UI work. If the child reported green tests and
+your fresh run says otherwise, that is a finding against the child, not a detail.
 
-OpenCode agents report one of four statuses in the report file:
+### 5. Review the task (independent child)
 
-**DONE:** Generate the review package (`scripts/review-package PLAN_FILE BASE HEAD`) and dispatch the task reviewer with the printed path.
+```bash
+bash scripts/review-package PLAN_FILE BASE HEAD     # → <workspace>/review-<base7>..<head7>.diff
+```
 
-**DONE_WITH_CONCERNS:** Read the concerns. If they are about correctness or scope, resolve before review. If observations only, proceed to review.
+Use the recorded `BASE` — never `HEAD~1`, which silently truncates multi-commit tasks. Dispatch
+`task-reviewer-prompt.md` to a **fresh child** (never the implementer — nobody verifies their own work) and
+require **both** verdicts: spec compliance *and* code quality. A report missing either one is not a review.
+Do not pre-judge findings for the reviewer.
 
-**NEEDS_CONTEXT:** Provide the missing context and re-run the same brief.
+### 6. Fix loop
 
-**BLOCKED:** Assess:
-1. Context problem → re-run with more context.
-2. Needs more reasoning → re-run with a more capable model.
-3. Task too large → break into smaller tasks.
-4. Plan itself is wrong → escalate to the human.
+- Rounds 1–3: re-dispatch with the open findings appended to `context`, instructing the child to append a
+  fix report to the same report file.
+- Rounds 4–5: a fresh child with sharper framing — "a previous agent attempted this N times; you own it
+  now; read the report file for what was tried."
+- Every round ends with a scoped re-review (`re-review-prompt.md`) of the fix diff only.
+- After five rounds: adjudicate every open finding. Load-bearing → stop and report BLOCKED to the user.
+  Otherwise park the findings in the ledger with your ruling. Silent discards are forbidden.
 
-**Never** ignore a BLOCKED status.
+### 7. Close the task
 
-### 3. Review the task
+Append the ledger line (`complete`, `parked`, `blocked`, `failed`) and mark the todo complete. Then the next
+task.
 
-- Hand the reviewer its diff as a file via `scripts/review-package PLAN_FILE BASE HEAD`. Use the BASE recorded before running the implementer — never `HEAD~1`, which silently truncates multi-commit tasks.
-- The reviewer is another OpenCode run (or a Hermes subagent if the review is browser/profile research only).
-- The task reviewer verdicts both spec compliance AND code quality. Never accept a report missing either.
-- Do not pre-judge findings for the reviewer.
+## Liveness, stalls, recovery
 
-### 4. The fix loop
+This is the answer to "the child went quiet and I have no idea where it stopped".
 
-Same as the original SDD loop, but fixes are executed via OpenCode runs, not `delegate_task`.
+- **Live transcript while it runs:** `~/.hermes/cache/delegation/live/<delegation_id>/task-N.log`
+  (append-only, human-readable). Read or `tail` it at any time — it shows the child's operations and tool
+  results, not just its final summary.
+- **Control while it runs:** `delegate_task(action='list')` shows ids/status/goals; `action='steer'` with
+  `subagent_id` + message queues a course correction into the child's next tool result — the **only**
+  mid-run communication channel; `action='stop'` ends a child and still returns its partial result.
+- **No partial result before it ends.** A hung child is silent by design; the transcript is your only window.
+- **State lives in files, not in the child.** Before re-dispatching a failed task, read three things: the
+  transcript tail (last completed operation), `git status/log` (what actually landed), and the report file
+  (what the child believed). Then dispatch a fresh child for the remainder only — "Task 3 is partially done:
+  A and B landed at commit `<sha>`, C did not; finish C only" — and write the `failed` ledger line.
+- **Children do not survive the session.** `/stop`, `/new`, or exiting Hermes kills the whole tree. Work that
+  must outlive the session belongs in `terminal(background=True, persist_on_release=True)` or a cron job.
+- **Parallelism cap:** 4 children at once (`delegation.max_concurrent_children`); extra ones do not queue.
 
-- Rounds 1–3: re-run the same brief with open findings appended.
-- Rounds 4–5: escalate to a more capable model, framing: "A prior OpenCode run attempted this task [N] times; you own it now. Read the report file for what was tried."
-- Every round ends with a scoped re-review.
-- After five rounds, adjudicate and park or stop.
+Details and the full recovery recipe: `references/hermes-subagent-mechanics.md`.
 
-### 5. Complete the task
+## Parallel lanes
 
-Append to the ledger:
-- `Task <N>: complete (commits <base7>..<head7>, review clean)`
-- `Task <N>: complete (commits <base7>..<head7>, <K> parked)` after a tripped breaker
+Follow `references/parallel-lane-pitfall.md`. Binding constraint: lanes are allowed **only when file sets
+are strictly disjoint** — children share one filesystem and one working tree, so two lanes writing the same
+file is a race, not a merge. After lanes finish: re-read every shared file, run the full verification suite,
+take after-screenshots, and only then write ledger lines.
 
-## Final Review
+## Final review
 
-Run `scripts/review-package PLAN_FILE MERGE_BASE HEAD` and dispatch the final reviewer. If findings exist, dispatch ONE OpenCode fix run with the complete findings list, then one scoped re-review. Residual load-bearing findings surface to the human partner during finishing.
+```bash
+bash scripts/review-package PLAN_FILE MERGE_BASE HEAD
+```
+
+Dispatch `final-reviewer-prompt.md` to a fresh child over the whole-branch diff. Findings → **one** fix
+dispatch with the complete findings list, then one scoped re-review, then adjudicate what remains.
+Load-bearing residuals surface to the user in the finish phase.
 
 ## Finish
 
-Use `superpowers:finishing-a-development-branch`. For git projects, delete the plan workspace (`rm -rf <workspace>`) once the branch is merged.
+Use `superpowers-finishing-a-development-branch` (merge locally / push and PR / keep / discard). Delete the
+plan workspace (`rm -rf <workspace>`) only after the branch is merged.
 
-## Common Rationalizations
+## Model selection
+
+- `delegate_task` has **no per-task model argument**. Children run on whatever `delegation.*` in
+  `~/.hermes/config.yaml` says — check it once per session instead of assuming inheritance:
+  ```bash
+  grep -A6 '^delegation' ~/.hermes/config.yaml
+  # verified on this machine: model: kimi-k2.7-code:cloud, provider: ollama-launch,
+  # base_url: http://127.0.0.1:11434/v1, inherit_mcp_toolsets: true
+  ```
+  That pin is set here, so children do **not** run on the session model — they run on the pinned one and
+  inherit the parent's MCP toolsets. Remove the block to fall back to plain inheritance.
+- Changing the pin affects **all** children for the duration — record it in the ledger. For one lane on a
+  different model, route it through OpenCode (opt-in, `references/opencode-opt-in-execution.md`).
+- Turn count beats token price: for judgment-heavy work, delegate to a fresh child rather than pushing a
+  struggling child through more rounds.
+
+## Common rationalizations
 
 | Excuse | Reality |
 |--------|---------|
 | "Close enough on spec compliance" | Reviewer found spec gaps = not done. Fix or hit the cap and adjudicate. |
-| "I'll fix it myself, dispatching is overhead" | Controller fixes pollute your context and skip review. Re-run OpenCode. |
-| "One more round will converge" | Past the cap, the failure is structural. Adjudicate and route. |
-| "The reviewer will just find something new anyway" | Scoped re-reviews verify fixes only. New findings go to the ledger. |
+| "I'll fix it myself, dispatching is overhead" | Controller fixes pollute your context and skip review. Dispatch. |
+| "The child says the build passes" | That is a claim. Run it yourself. |
+| "I'll remember where we stopped" | The ledger exists because memory does not survive compaction. |
+| "One more round will converge" | Past the cap the failure is structural. Adjudicate and route. |
 | "This finding is obviously wrong" | Adjudicate only at the cap, with a ledger entry. Silent discards are forbidden. |
 | "The fix was small, skip the re-review" | Every round ends with a scoped re-review. |
 | "Reviews slow the loop down" | Reviews are the loop's brakes and steering. |
-| "Ledger bookkeeping is overhead" | The ledger survives compaction. |
+| "The child can ask me if it's stuck" | It cannot. Say what to do instead in `context`. |
 
-## Pre-Flight Gate: Explicit Plan Approval
+## Pre-flight gate: explicit plan approval
 
-OpenCode-driven execution begins only after the human partner explicitly approves the written plan. Never run OpenCode against a vague verbal request.
+Execution begins only after the user approves the written plan. Never dispatch against a vague verbal
+request, and never let a child invent the plan.
 
-## Parallel Lane Dispatch
+## References
 
-Multiple OpenCode runs can happen concurrently **only when file sets are strictly disjoint**. Start one server; dispatch multiple `--attach` runs. After lanes finish, reconcile: re-read shared files, run full verification, capture after-screenshots.
-
-## Localhost / Internal-Address Verification
-
-Hermes `browser_navigate` blocks private/internal URLs. Use Playwright directly from the project directory. Capture at least desktop, mobile, and modal states.
+- `implementer-prompt.md` — implementer dispatch + status `output_schema`
+- `task-reviewer-prompt.md` — spec-compliance + code-quality reviewer
+- `re-review-prompt.md` — scoped re-review of a fix round
+- `final-reviewer-prompt.md` — whole-branch review before finishing
+- `references/hermes-subagent-mechanics.md` — what a Hermes child is, what it can and cannot do, liveness and recovery recipes
+- `references/parallel-lane-pitfall.md` — lane split rules and reconciliation checklist
+- `references/opencode-opt-in-execution.md` — the opt-in OpenCode path on v2
+- `scripts/sdd-workspace`, `scripts/task-brief`, `scripts/review-package`

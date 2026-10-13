@@ -1,142 +1,85 @@
-# Implementer Subagent Prompt Template
+# Implementer Subagent — `delegate_task` Dispatch
 
-Use this template when dispatching an implementer subagent.
+Dispatch one fresh Hermes child per task. Fill every `[PLACEHOLDER]`, pass the plan text as a **file
+path**, and always include the status `output_schema` so the return is machine-readable.
 
+```python
+delegate_task(tasks=[{
+  "goal": "Implement Task [N]: [task name] of the approved plan, in [PROJECT_DIR]; commit the work.",
+
+  "context": """
+You are implementing Task [N]: [task name].
+
+## Read first
+- Your task brief (single source of requirements): [BRIEF_FILE]
+- The plan's Global Constraints (copied verbatim): [GLOBAL_CONSTRAINTS]
+- Working directory: [PROJECT_DIR]  (base commit [BASE_SHA])
+
+## What earlier tasks already built
+[DECISIONS_AND_INTERFACES — exact file paths, exported names, signatures, tokens]
+
+## You cannot ask questions
+You have no channel to the user or the controller mid-run. If something is missing, ambiguous or blocking,
+do NOT guess: stop and return status NEEDS_CONTEXT (naming the exact missing piece) or BLOCKED (what you
+tried, what you need).
+
+## Your job
+1. Implement exactly what the brief specifies — nothing more (no unrequested features, no refactors
+   outside the task).
+2. Where the brief says TDD applies, write the test first: run it, watch it fail (RED), then implement
+   until it passes (GREEN), then clean up (REFACTOR).
+3. Run the focused test while iterating; run the full suite once before committing.
+4. Commit your work with a message naming the task.
+5. Self-review with fresh eyes, then fix what you find.
+
+## Code organisation
+- Follow the file structure in the plan; one clear responsibility per file.
+- If a file grows beyond the plan's intent, do not split it on your own — report it as a concern.
+- In existing codebases, follow established patterns; improve only the code you touch.
+
+## Escalate (status BLOCKED) when
+- the task needs architectural decisions that were not made in the plan;
+- you cannot find the clarity you need and the plan does not resolve it;
+- your approach may be structurally wrong;
+- you have read file after file without progress.
+Bad work is worse than no work; escalating is not penalised.
+
+## Report file: [REPORT_FILE]
+Write the full report there: what you implemented, files changed, tests plus observable output, TDD evidence
+(RED command and failing output, GREEN command and passing output) where TDD applied, self-review findings,
+and any concerns. The report file is the durable record — write it even when blocked.
+
+## Fix rounds
+If a review finds issues, you will be re-dispatched as a NEW child with the findings in context. Read the
+report file first, fix the findings, re-run the tests covering the amended code, and APPEND a fix report
+(what changed, covering tests, command, output). Reviewers do not re-run tests for you — your appended
+output is the evidence.
+""",
+
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "status": {"type": "string", "enum": ["DONE", "DONE_WITH_CONCERNS", "NEEDS_CONTEXT", "BLOCKED"]},
+      "summary": {"type": "string"},
+      "commits": {"type": "array", "items": {"type": "string"}},
+      "tests": {"type": "string"},
+      "concerns": {"type": "array", "items": {"type": "string"}},
+      "blocked_on": {"type": "string"},
+      "report_file": {"type": "string"}
+    },
+    "required": ["status", "summary", "report_file"]
+  }
+}])
 ```
-Subagent (general-purpose):
-  description: "Implement Task N: [task name]"
-  model: [MODEL — REQUIRED: choose per SKILL.md Model Selection; an omitted
-         model silently inherits the session's most expensive one]
-  prompt: |
-    You are implementing Task N: [task name]
 
-    ## Task Description
+## Notes for the controller
 
-    Read your task brief first: [BRIEF_FILE]
-    It contains the full task text from the plan.
-
-    ## Context
-
-    [Scene-setting: where this fits, dependencies, architectural context]
-
-    ## Before You Begin
-
-    If you have questions about:
-    - The requirements or acceptance criteria
-    - The approach or implementation strategy
-    - Dependencies or assumptions
-    - Anything unclear in the task description
-
-    **Ask them now.** Raise any concerns before starting work.
-
-    ## Your Job
-
-    Once you're clear on requirements:
-    1. Implement exactly what the task specifies
-    2. Write tests (following TDD if task says to)
-    3. Verify implementation works
-    4. Commit your work
-    5. Self-review (see below)
-    6. Report back
-
-    Work from: [directory]
-
-    **While you work:** If you encounter something unexpected or unclear, **ask questions**.
-    It's always OK to pause and clarify. Don't guess or make assumptions.
-
-    While iterating, run the focused test for what you're changing; run the
-    full suite once before committing, not after every edit.
-
-    ## Code Organization
-
-    You reason best about code you can hold in context at once, and your edits are more
-    reliable when files are focused. Keep this in mind:
-    - Follow the file structure defined in the plan
-    - Each file should have one clear responsibility with a well-defined interface
-    - If a file you're creating is growing beyond the plan's intent, stop and report
-      it as DONE_WITH_CONCERNS — don't split files on your own without plan guidance
-    - If an existing file you're modifying is already large or tangled, work carefully
-      and note it as a concern in your report
-    - In existing codebases, follow established patterns. Improve code you're touching
-      the way a good developer would, but don't restructure things outside your task.
-
-    ## When You're in Over Your Head
-
-    It is always OK to stop and say "this is too hard for me." Bad work is worse than
-    no work. You will not be penalized for escalating.
-
-    **STOP and escalate when:**
-    - The task requires architectural decisions with multiple valid approaches
-    - You need to understand code beyond what was provided and can't find clarity
-    - You feel uncertain about whether your approach is correct
-    - The task involves restructuring existing code in ways the plan didn't anticipate
-    - You've been reading file after file trying to understand the system without progress
-
-    **How to escalate:** Report back with status BLOCKED or NEEDS_CONTEXT. Describe
-    specifically what you're stuck on, what you've tried, and what kind of help you need.
-    The controller can provide more context, re-dispatch with a more capable model,
-    or break the task into smaller pieces.
-
-    ## Before Reporting Back: Self-Review
-
-    Review your work with fresh eyes. Ask yourself:
-
-    **Completeness:**
-    - Did I fully implement everything in the spec?
-    - Did I miss any requirements?
-    - Are there edge cases I didn't handle?
-
-    **Quality:**
-    - Is this my best work?
-    - Are names clear and accurate (match what things do, not how they work)?
-    - Is the code clean and maintainable?
-
-    **Discipline:**
-    - Did I avoid overbuilding (YAGNI)?
-    - Did I only build what was requested?
-    - Did I follow existing patterns in the codebase?
-
-    **Testing:**
-    - Do tests actually verify behavior (not just mock behavior)?
-    - Did I follow TDD if required?
-    - Are tests comprehensive?
-    - Is the test output pristine (no stray warnings or noise)?
-
-    If you find issues during self-review, fix them now before reporting.
-
-    ## After Review Findings
-
-    If the task review finds issues, you will be resumed with the findings.
-    Fix them, re-run the tests that cover the amended code, and append a fix
-    report to your report file: what you changed, the covering tests you
-    ran, the command, and the output. Reviewers will not re-run tests for
-    you — your report is the test evidence. Then reply with the same short
-    status contract as your first report.
-
-    ## Report Format
-
-    Write your full report to [REPORT_FILE]:
-    - What you implemented (or what you attempted, if blocked)
-    - What you tested and test results
-    - **TDD Evidence** (if TDD was required for this task):
-      - RED: command run, relevant failing output before implementation, and why the failure was expected
-      - GREEN: command run and relevant passing output after implementation
-    - Files changed
-    - Self-review findings (if any)
-    - Any issues or concerns
-
-    Then report back with ONLY (under 15 lines — the detail lives in the
-    report file):
-    - **Status:** DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT
-    - Commits created (short SHA + subject)
-    - One-line test summary (e.g. "14/14 passing, output pristine")
-    - Your concerns, if any
-    - The report file path
-
-    If BLOCKED or NEEDS_CONTEXT, put the specifics in the final message
-    itself — the controller acts on it directly.
-
-    Use DONE_WITH_CONCERNS if you completed the work but have doubts about correctness.
-    Use BLOCKED if you cannot complete the task. Use NEEDS_CONTEXT if you need
-    information that wasn't provided. Never silently produce work you're unsure about.
-```
+- **Goal = one sentence, context = everything.** The child sees no conversation history, no plan file, no
+  ledger, no skills from this session. If a decision matters, it must be in `context`.
+- **A brief path beats pasted text.** `scripts/task-brief PLAN N` writes it; the child reads it in one call.
+- **Verify the schema came back.** `schema_valid` false or a missing `status` → the child did not follow the
+  contract; re-dispatch with the contract restated instead of interpreting prose.
+- **Never pass `[GLOBAL_CONSTRAINTS]` as a summary.** Copy the exact values, formats and relationships.
+- **One task per child.** Bundling tasks destroys the review granularity the loop depends on.
+- **Children cannot delegate further.** Do not ask a child to spawn helpers; split the plan yourself.
+- **The child inherits the parent model** (or the pinned `delegation.model`). There is no model argument.
