@@ -51,7 +51,8 @@ configs all clean). Rollback if ever needed: `npm install -g opencode-ai@1.18.35
 Store provider-specific configs in `~/.config/opencode/profiles/` and switch with `OPENCODE_CONFIG`:
 
 ```bash
-OPENCODE_CONFIG=/home/natan/.config/opencode/profiles/opencodeai.json opencode run --standalone --auto /project "task"
+cd /path/to/project      # каталог проекта — это cwd; позиционного аргумента у `run` нет
+OPENCODE_CONFIG=/home/natan/.config/opencode/profiles/opencodeai.json opencode run --standalone --auto "task"
 ```
 
 ## Profile 1: OpenCode Go
@@ -100,9 +101,12 @@ File `~/.config/opencode/profiles/opencodeai.json` (or `opencodeai-rental.json`)
 
 Key points:
 - Use `https://opencode.ai/zen/go/v1` — not `https://api.opencode.ai/v1`.
-- In V2, MCP servers belong under `mcp.servers` with a mandatory `type` field.
+- MCP servers may be declared either **flat** (`"mcp": { "<name>": {…} }`, the shape the docs use) or
+  **nested** (`"mcp": { "servers": {…} }`). Both are accepted — what matters is the mandatory `type`
+  (`local`/`remote`). Our profiles use the flat form and their servers connect.
 - `timeout` in V2 is an object (`{ startup, catalog, execution }`), not a single number.
-- Do not set `enabled: true`; absence means enabled, use `disabled: true` to turn a server off.
+- `"enabled": true` is valid (the docs examples set it); absence also means enabled, and
+  `"disabled": true` turns a server off.
 
 ## Profile 2: Ollama
 
@@ -212,16 +216,19 @@ strings -n 6 "$BIN" | grep -oE '@opencode/ai/providers/[a-z0-9-]+' | sort -u
 - Using `api.opencode.ai/v1` for OpenCode Go → auth/balance errors.
 - Using `opencode-free` models → `FreeTierError`.
 - Expecting OpenCode agents to see Hermes skills/memory — they do not; pass context via the task prompt.
-- Putting MCP servers at the root of `mcp` instead of under `mcp.servers` → V2 ignores them or fails schema validation.
+- Forgetting the mandatory `type` (`local`/`remote`) on an MCP server, or misspelling the wrapper key →
+  the server silently does not load. The nesting itself is never the problem: flat `mcp` and `mcp.servers`
+  both work.
 - Setting a flat `timeout: 30000` for an MCP server → V2 expects `{ startup, catalog, execution }`.
 - Using `--config /path` — OpenCode CLI has no `--config` flag; use `OPENCODE_CONFIG` instead.
 
 ## Verification
 
 ```bash
+cd /tmp/opencode-smoke
 OPENCODE_GO_API_KEY=... \
 OPENCODE_CONFIG=/home/natan/.config/opencode/profiles/opencodeai.json \
-opencode run --standalone --auto /tmp/opencode-smoke "Create file done.txt with text OK"
+opencode run --standalone --auto "Create file done.txt with text OK"
 ```
 
 ## See also

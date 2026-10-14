@@ -152,6 +152,25 @@ Supported platforms: Telegram, Discord, Slack, WhatsApp, Signal, Email, SMS, Mat
 
 Platform docs: https://hermes-agent.nousresearch.com/docs/user-guide/messaging/
 
+### Answering "how does Hermes actually do X?"
+
+Read the source of the **running** process, not your memory, then confirm against live state. The design
+comments and docstrings in the gateway and session code state the invariants outright and are the most
+trustworthy answer available:
+
+```bash
+ps -eo pid,cmd | grep hermes_cli.main              # which revision is actually running
+H=~/.hermes/hermes-agent                          # or $HERMES_HOME/hermes-agent
+grep -rn "<mechanism>" $H/gateway/*.py $H/hermes_cli/*.py | head -20
+systemctl --user list-units | grep hermes ; ss -tlnp | head
+hermes sessions stats ; ls ~/.hermes/state/
+```
+
+Quote the invariant you found, name the file it lives in, then verify the live consequence — a port that is
+listening, a unit that is `active`, a row count in `state.db`. Config defaults live in the same tree
+(`hermes_cli/config.py`), so a remembered value is a guess: check it. Answer architecture questions this
+way, and cite `references/agent-parallelism-limits.md` for the concurrency model.
+
 ### Sessions
 
 ```

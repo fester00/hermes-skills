@@ -590,6 +590,36 @@ Micro-tests verify wording; they do not replace pressure scenarios for disciplin
 - Plugging holes systematically
 - Meta-testing techniques
 
+## Editing Skills in the Hermes Runtime
+
+Mechanics that decide whether an edit lands at all:
+
+- **Re-load the skill in the same turn as the edit.** The background curator rewrites skills between
+  sessions, so text read earlier in a conversation may no longer exist — a patch built on it fails with
+  "Could not find a match" and burns the turn. Call `skill_view(name)` immediately before patching, then
+  patch against what it just returned.
+- **Support files live only under `references/`, `templates/`, `scripts/`, `assets/`.** A skill's root-level
+  files — dispatch prompt templates, for example — are edited with the ordinary file tools; `skill_manage`
+  `write_file` refuses any path outside those four directories.
+- **Frontmatter `name` should match the directory.** The loader resolves by directory, and the lint reports
+  `name-dir-mismatch` for the rest — align the frontmatter, but grep for references to the old name first
+  (`grep -rln "<old-name>" $HERMES_HOME/skills`), because other skills cite it.
+- **Keep the five standing frontmatter fields** — `version`, `author`, `license`,
+  `metadata.hermes.tags`, `metadata.hermes.related_skills`. The lint warns when they are missing, and
+  `related_skills` is what keeps the cross-references navigable.
+- **After a rename, deletion, or reference rewrite, run the broken-reference check:**
+  `grep -rln "<removed-file-or-skill>" $HERMES_HOME/skills`. Dangling references are the most common rot in
+  a skill library; fix them in the same edit that caused them.
+- **Fix mislead sentences in place.** When a verified fact contradicts an existing rule, rewrite that
+  sentence — do not append "UPDATE: actually…" underneath, which leaves both statements loadable and the
+  agent free to follow the wrong one.
+- **Publish the edit:** sync the library to its public mirror and push, so the repo copy does not drift:
+  ```bash
+  rsync -a --delete --exclude='.archive' --exclude='.curator_backups' --exclude='.hub' \
+    $HERMES_HOME/skills/ /mnt/data/natan-storage/hermes-skills/skills/
+  git -C /mnt/data/natan-storage/hermes-skills add -A && git -C /mnt/data/natan-storage/hermes-skills commit -m "<skill>: <what changed>" && git -C /mnt/data/natan-storage/hermes-skills push
+  ```
+
 ## Anti-Patterns
 
 ### ❌ Narrative Example
