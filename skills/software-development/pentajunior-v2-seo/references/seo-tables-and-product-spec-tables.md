@@ -105,7 +105,7 @@ UPDATE products SET spec_table_id = 'product-slug-specs' WHERE id = 'product-slu
 
 ## 3. Визуальные SEO-блоки
 
-- Загружайте навыки дизайна (`ui-ux-pro-max`, `claude-design`) перед правками карточек/таблиц, когда пользователь просит «сделать посимпатичнее».
+- Загружайте навыки дизайна (`claude-design`) перед правками карточек/таблиц, когда пользователь просит «сделать посимпатичнее».
 - Карточки в `seo_text` используют Bootstrap: `row g-4 my-1`, `col-md-6`, `h-100 p-4 rounded-3 bg-body-tertiary`, `h6 fw-semibold mb-2`, иконки `bi-*`.
 - Для структурированного списка размеров используйте `badge text-bg-light border` для групп и `list-unstyled small` с `bi-check2`.
 

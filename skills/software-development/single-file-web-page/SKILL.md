@@ -8,7 +8,7 @@ license: MIT
 metadata:
   hermes:
     tags: [html, css, landing, parallax, single-file, visual-verification, progressive-enhancement, scroll-animation]
-    related_skills: [ui-ux-pro-max, code-quality-gates, sketch]
+    related_skills: [code-quality-gates, sketch]
 ---
 
 # Single-file web page
@@ -27,10 +27,9 @@ Not for: multi-page sites, anything with a backend, or a page a team will edit �
 
 ## Procedure
 
-1. **Brief before markup.** Load `ui-ux-pro-max`, search its database for the product type and style, and
-   read the matching vault note under `Design/UI-UX Pro Max/` (e.g. `Styles/49 — Parallax Storytelling.md`).
-   Fix the brief first: one primary colour role, at most two accents, a display + body font pairing, a
-   deliberate density, and the anti-generic checklist passing. Only then write code.
+1. **Brief before markup.** Write the brief before any markup: one primary colour role, at most two
+   accents, a display + body font pairing, a deliberate density, and the anti-generic checklist passing.
+   Only then write code.
 2. **Write one file** — tokens first, content second, effect layers last (see Build rules).
 3. **Make content independent of JavaScript** before adding any reveal animation (see Pitfalls).
 4. **Verify with real runs** — assertions from inside the page plus a screenshot you actually look at:
