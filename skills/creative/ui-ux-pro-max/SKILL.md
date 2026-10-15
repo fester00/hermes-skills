@@ -7,7 +7,7 @@ license: MIT
 metadata:
   hermes:
     tags: [design, ui, ux, design-system, color-palette, typography, style-guide, ai-skill]
-    related_skills: [claude-design, popular-web-designs, design-md]
+    related_skills: [single-file-web-page, sketch, html-analysis-reports]
 ---
 
 # UI/UX Pro Max — Design Intelligence
@@ -36,7 +36,7 @@ coding begins.
 
 1. User describes their project ("luxury art gallery", "corporate CRM", etc.)
 2. Skill searches the database → returns industry-matched design system
-3. Recommendations feed into `claude-design`, `popular-web-designs`, or the project-specific implementation skill for execution
+3. Recommendations feed into the implementation skill that produces the deliverable — `single-file-web-page` for a one-file page, `sketch` for disposable direction mockups, or the project's own design skill
 
 ## Database Contents
 
@@ -126,26 +126,21 @@ Outputs a complete design system:
 
 ## Integration with Other Skills
 
-### With `claude-design`
+### With `single-file-web-page`
 
-Use ui-ux-pro-max for the *what* (design brief),
-claude-design for the *how* (process, variants, verification).
+Use this skill for the *what* (industry-matched brief: palette with named roles, typography pairing,
+style, anti-patterns) and `single-file-web-page` for the *how* — building the one-file artefact and
+verifying it in a real browser before delivery.
 
-When both skills are loaded:
+1. Search this database first and fix the brief.
+2. Run the anti-generic checklist below against it.
+3. Hand the concrete brief over; an existing repo or brand doc always wins over these defaults.
 
-1. Run ui-ux-pro-max first to get the data-driven brief (colors, typography,
-   style, anti-patterns).
-2. Pass the brief through `claude-design`'s Prompt Enhancement Pipeline to
-   translate any remaining vague terms into concrete design language.
-3. Use the enhanced brief to drive artifact creation.
+### With the vault style notes and `sketch`
 
-Do not let ui-ux-pro-max's safe defaults override `claude-design`'s context
-from an existing repo or brand doc; repo context always wins.
-
-### With `popular-web-designs`
-
-ui-ux-pro-max gives industry-specific style direction.
-popular-web-designs gives exact CSS values from real brands.
+Exact CSS values, style descriptions and motion recipes live in `~/obsidian-memory/Design/UI-UX Pro Max/`
+(see the Obsidian Integration section below). When the direction is still open, `sketch` produces 2–3
+disposable HTML directions to choose from before committing to one.
 
 ### With external reference libraries (Refero, Mobbin, etc.)
 
@@ -226,8 +221,8 @@ question before generating code.
 
 ## Vague → Professional Terminology Map
 
-Use this map when handing a brief from this skill to `claude-design` or
-`popular-web-designs`. Translate vague aspiration words into concrete design decisions.
+Use this map when handing a brief from this skill to `single-file-web-page` or
+to a project's implementation skill. Translate vague aspiration words into concrete design decisions.
 
 | User says | Means concretely | What to specify |
 |---|---|---|
@@ -254,6 +249,9 @@ original vague words.
 - Use `next/font/google` — Next.js self-hosts fonts automatically
 - Download via `curl` and serve from `/public/fonts/`
 - Use `fontsource` npm packages (self-hosted)
+- For a one-file page, keep a system fallback stack in `font-family`
+  (`Georgia, "Times New Roman", serif`): the CDN may hang instead of failing, so the design has to hold up
+  with no network at all (`single-file-web-page`).
 
 ## File Locations
 
