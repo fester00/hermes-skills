@@ -221,7 +221,7 @@ Interacting with the TUI (typing in its window) continues to advance execution; 
 
 ### Debugging `_SlashWorker` / PTY child processes
 
-Those are Python, not Node — use the `python-debugpy` skill for them. Only Node portions (Ink UI, tui_gateway client, tsx-run tests under `ui-tui/`) use this skill.
+Those are Python, not Node — attach a Python debugger for them. Only Node portions (Ink UI, tui_gateway client, tsx-run tests under `ui-tui/`) use this skill.
 
 ## Running Vitest Tests Under the Debugger
 

@@ -10,7 +10,6 @@ metadata:
     tags: [maps, geocoding, places, routing, distance, directions, nearby, location, openstreetmap, nominatim, overpass, osrm]
     category: productivity
     requires_toolsets: [terminal]
-    supersedes: [find-nearby]
 ---
 
 # Maps Skill
@@ -20,7 +19,7 @@ categories, zero dependencies (Python stdlib only), no API key required.
 
 Data sources: OpenStreetMap/Nominatim, Overpass API, OSRM, TimeAPI.io.
 
-This skill supersedes the old `find-nearby` skill — all of find-nearby's
+This skill supersedes the earlier single-purpose nearby-search skill — all of its
 functionality is covered by the `nearby` command below, with the same
 `--near "<place>"` shortcut and multi-category support.
 

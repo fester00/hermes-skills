@@ -2,6 +2,13 @@
 name: knowledge-base-audit
 description: Use when auditing a knowledge base or skill library. Detect drift, stale facts, and mismatches across sources.
 category: devops
+version: 1.1.0
+author: Hermes Agent
+license: MIT
+metadata:
+  hermes:
+    tags: [audit, knowledge-base, skills, repair, purge]
+    related_skills: [knowledge-first-protocol, hermes-internal-operations, hermes-profile-management]
 ---
 
 # Auditing a knowledge base, a skill library and a host record
@@ -125,6 +132,28 @@ Ready-to-run recipes — the dead-link classifier, the lossless skill merge, the
 duplicate-note merge, the additive repo sync and the bulk description sweep — are in
 `references/dead-link-and-duplicate-repair.md`. A structural fix that
 silently drops content is worse than the defect it removes: absorb, never discard.
+
+## Deleting content across the trees
+
+Removing a family and every mention of it («удалим эти навыки и все упоминания со всех мест») is a
+deletion sweep, not an audit and not a merge. Always-on rules:
+
+- **Inventory first, and include the profile copies.** Live skills, every `profiles/<name>/skills/`,
+  vault registries and MOCs, derived packages, memory files, runtime state (`.usage.json`,
+  `.curator_ledger.jsonl`, `.hub/index-cache`), cron and config. Report the list before editing.
+- **Back up before the first write, and know the rollback source per tree.** Profile copies and the
+  local `.archive/` usually have no git mirror — those are the trees you can destroy irrecoverably.
+- **Never normalise whitespace on a line you edit.** Split indent from content and tidy only the content;
+  collapsing spaces rewrites frontmatter indentation and silently unparses the skill. Parse and validate
+  frontmatter after every edit and write nothing when it does not load.
+- **Prefer dropping a line to shipping a mangled one.** If the cleaned line still matches an artefact
+  pattern (`docs//`, `(, `, `non-`), delete the line or item and list it for the owner.
+- **Verify deletions by re-grepping.** A delete loop that only reports deletions leaves the tree intact
+  and the report perfect; zero hits in the live trees is the only proof.
+- **History is out of scope unless asked.** Past transcripts and git commit history keep the term forever;
+  report the counts and offer the rewrite as a separate decision.
+
+Full recipe, cleaner patterns and the verification triad — `references/bulk-purge-and-rollback.md`.
 
 ## Reporting, then fixing
 

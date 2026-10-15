@@ -8,7 +8,7 @@ platforms: [linux]
 metadata:
   hermes:
     tags: [opencode, agents, coding-agents, v2, cli, mcp]
-    related_skills: [autonomous-coding-agents, opencode]
+    related_skills: [autonomous-coding-agents]
 ---
 
 # OpenCode CLI v2

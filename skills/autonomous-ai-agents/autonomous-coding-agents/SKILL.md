@@ -8,7 +8,7 @@ platforms: [linux, macos, windows]
 metadata:
   hermes:
     tags: [agents, coding-agents, opencode, subagents, delegation, orchestration]
-    related_skills: [opencode, claude-code, codex, subagent-driven-development, dispatching-parallel-agents, code-quality-gates]
+    related_skills: [claude-code, codex, code-quality-gates]
 ---
 
 # Autonomous Coding Agents

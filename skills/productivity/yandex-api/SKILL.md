@@ -7,7 +7,7 @@ license: MIT
 metadata:
   hermes:
     tags: [yandex, disk, mail, cloud-storage, email, imap, smtp, oauth, russia]
-    related_skills: [himalaya, obsidian, russian-retail-search]
+    related_skills: [himalaya, obsidian]
 ---
 
 # Yandex API
