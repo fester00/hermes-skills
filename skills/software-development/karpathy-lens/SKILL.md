@@ -88,7 +88,7 @@ description: Use when writing, reviewing, or refactoring code to avoid wrong ass
 
 ## Интеграция с другими навыками
 
-- С : применяй как lens на фазах Design, Execute, Verify. Не заменяет workflow — добавляет четыре проверки к каждому решению.
+- С рабочим процессом: применяй как lens на фазах Design, Execute, Verify. Не заменяет процесс — добавляет четыре проверки к каждому решению.
 - С ``: `` даёт лестницу «как сделать меньше», `karpathy-lens` — правила «как не навредить». Используй вместе: сначала лестница , затем проверки karpathy-lens.
 - С `code-quality-gates`: Goal-Driven Execution перекликается с Gate 1 (TDD) и Gate 3 (pre-commit verification). Используй `code-quality-gates` для конкретных команд и циклов.
 
@@ -103,7 +103,7 @@ description: Use when writing, reviewing, or refactoring code to avoid wrong ass
 
 - Эталон: репозиторий multica-ai/andrej-karpathy-skills, навык karpathy-guidelines.
 - В нашем дереве раньше дублировался:
-  - lens-блок в (сокращённая версия 4 правил);
+  - lens-блок в рабочем процессе (сокращённая версия 4 правил);
   - полная расшифровка в `Operations/Coding Principles.md` (Obsidian, использовалась в OpenCode-брифах).
 - Этот навык — единое место применения. Правила приведены в рабочий формат с анти-примерами и интеграцией.
 

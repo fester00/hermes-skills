@@ -14,15 +14,13 @@ metadata:
 
 A collection of guardrails and practices to ensure code is correct, secure, and maintainable — from the first test through production debugging.
 
-## Mapping to obra/ skills
+## The three gates
 
-| obra/ skill | Covered here | Notes |
-|---|---|---|
-| `test-driven-development` | **Gate 1** (TDD) | Operational gate with RED-GREEN-REFACTOR and language auto-detection. |
-| `systematic-debugging` | **Gate 2** (Systematic Debugging) | Operational 4-phase process. |
-| `verification-before-completion` | **Gate 3** + | Gate 3 gives concrete verification commands; provides the "evidence before claims" discipline. |
-| `requesting-code-review` | **Gate 3** (Pre-Commit Verification) | Reviewer subagent template and self-review checklist. |
-| `receiving-code-review` | **Gate 3** (Pre-Commit Verification) | Auto-fix loop and response to feedback. |
+| Gate | What it covers |
+|---|---|
+| **Gate 1** | Test-driven development — RED-GREEN-REFACTOR with language auto-detection. |
+| **Gate 2** | Systematic debugging — the 4-phase root-cause process. |
+| **Gate 3** | Pre-commit verification — concrete verification commands, reviewer subagent template, self-review checklist, auto-fix loop, and the "evidence before claims" discipline. |
 
 ---
 
