@@ -9,7 +9,7 @@ metadata:
   hermes:
     tags: [github, gh, git, pull-requests, issues, code-review, repos, auth, ci]
     category: software-development
-    related_skills: [codebase-inspection, requesting-code-review]
+    related_skills: [codebase-inspection]
 ---
 
 # GitHub

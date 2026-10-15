@@ -185,3 +185,23 @@ or a tool reach for a name: `related_skills` / `related` / `see_also` / `superse
    (zero dead maps, zero dead `skill_view` calls) and re-validate every `SKILL.md`.
 7. Sweep the runtime registries as well (`.usage.json` keeps a key per skill, `.curator_ledger.jsonl` one per
    action): stale keys are harmless, but they make the next audit report phantom skills.
+
+### 7a. A purge by name never finishes the job
+
+A skill family survives its own deletion in four shapes. Check each before declaring zero:
+
+- **Unprefixed twins.** The same skill often sits in another profile under a plain name while the version you
+  deleted carried the brand prefix. Search for the *content markers* — attribution lines (`adapted from …`,
+  `inspired by …`), a shared workflow vocabulary (phases, plan file, brief, reviewer, ledger) — not just the
+  brand string. A brand-only grep reports zero while eight skills of the family stay active.
+- **Archive copies in every profile.** `.archive/` keeps its own `related_skills`, so it goes stale silently.
+  Clean archives too, and re-run the map fixer *after* every deletion: removing a cluster creates a fresh batch
+  of dangling maps across both the live tree and the archives.
+- **Documentation that describes the method.** Runbooks, skill cards, index rows and commissioned packages
+  (a flow document written for another tool) carry the instructions after the skills are gone. Delete them in
+  the same pass or the method keeps running through prose.
+- **Attribution stubs.** Stripping a dead name from `author: X (adapted from <dead>)` leaves `(adapted from )`.
+  Either delete those files with the cluster or repair the stub — nobody should find half a sentence.
+
+Finally, distinguish *instructions* from *records*. Audit notes naming removed skills as historical facts do not
+change behaviour: report them and let the owner decide, instead of mangling sentences to reach a cosmetic zero.
