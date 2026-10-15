@@ -23,7 +23,7 @@ Use this whenever you want to:
 - Connect to remote HTTP/StreamableHTTP MCP servers
 - Have MCP tools auto-discovered and available in every conversation
 
-For ad-hoc, one-off MCP tool calls from the terminal without configuring anything, see the `mcporter` skill instead.
+For ad-hoc, one-off MCP tool calls from the terminal without configuring anything, call the MCP server binary directly instead.
 
 ## Prerequisites
 
