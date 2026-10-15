@@ -162,7 +162,7 @@ must stand alone, the whole value stays under ~200 characters, written in Englis
 
 Run this after any deletion, or when a profile is trimmed. A «reference» is anything that makes a reader
 or a tool reach for a name: `related_skills` / `related` / `see_also` / `supersedes` in frontmatter,
-`skill_view("x")` calls, «see the `x` skill» sentences, index and registry rows, cards named after the skill.
+`skill_view("<skill-name>")` calls, «see the `<skill-name>` skill» sentences, index and registry rows, cards named after the skill.
 
 1. Resolve existence **per library**: a name is live if a directory of that name *or* a frontmatter `name:`
    holds a `SKILL.md` outside `.archive/`. Check the profile tree and the global tree separately — a name
@@ -174,8 +174,8 @@ or a tool reach for a name: `related_skills` / `related` / `see_also` / `superse
 3. `yaml.safe_load` every touched frontmatter *before* writing; refuse the write and report the file instead
    of saving something broken.
 4. Prefer a conditional rewrite over deletion when the sentence carries meaning: «supersedes the earlier
-   single-purpose nearby-search skill», «attach a debugger» instead of «use the `x` skill». Re-point a dead
-   `skill_view()` at the live equivalent (`autonomous-coding-agents`, `excalidraw`, `jupyter-live-kernel`)
+   single-purpose nearby-search skill», «attach a debugger» instead of «use the `<old-name>` skill». Re-point a
+   dead `skill_view()` at the live equivalent (`autonomous-coding-agents`, `excalidraw`, `jupyter-live-kernel`)
    rather than dropping the row.
 5. **These are not references** — leave them: MCP server names, CLI tools, category slugs, file paths,
    attribution to upstream authors (licence and credit), and historical records of a deliberate deletion
