@@ -231,6 +231,31 @@ OPENCODE_CONFIG=/home/natan/.config/opencode/profiles/opencodeai.json \
 opencode run --standalone --auto "Create file done.txt with text OK"
 ```
 
+## Plugins in the root config: phantoms, and removing one safely
+
+The root `~/.config/opencode/opencode.jsonc` carries a `"plugins": [...]` list (npm specifiers such as
+`@scope/name` or `pkg@git+https://…`). A declared entry can be a **phantom** — nobody ever installed it:
+
+```bash
+ls ~/.config/opencode/node_modules | grep -i <pkg>    # nothing → not installed
+ls ~/.config/opencode/node_modules | wc -l            # for scale: a fully installed tree is much larger
+grep -c <pkg> ~/.config/opencode/package.json         # 0 → not a dependency
+opencode plugin list                                 # "No plugins found"
+```
+
+A phantom changes no behaviour, so removing it is free — but do it as a verified config edit, not a hope:
+
+1. Copy the file into **your own** backup tree. A `.bak` beside it re-introduces the very string you are
+   deleting and the next sweep finds it.
+2. Parse the result with a **string-aware** comment stripper (the line-level rule above: `//` inside
+   `https://…` makes a naive strip report a false parse error and triggers a bogus rollback), and collapse
+   a trailing comma before `}`/`]` — `json.loads` rejects both.
+3. Prove the tool still reads what you wrote: `opencode models --standalone` must still list the configured
+   model. A config edit nobody ran the tool after is indistinguishable from a broken install.
+
+Leave `~/.config/opencode/skills/` and `agents/` alone: those are the tool's own skills and its live
+behaviour, not our documents.
+
 ## See also
 
 - `autonomous-coding-agents` skill for agent selection and briefing.

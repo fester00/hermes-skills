@@ -62,3 +62,47 @@ They over-report in both directions:
 
 A claim that survives your own greps earns a place in the plan; the rest is a hypothesis that died in
 review, and saying so — in the note and to the owner — is the deliverable, not an embarrassment.
+
+## Verifying a claimed coverage
+
+A derived skill often asserts completeness («учтены 22 правила эталона», «покрыты все пункты»). Treat that
+as an unverified claim, and re-derive it in three passes:
+
+1. **Extract both sides mechanically.** Bullet and numbered lines from the source (its `SKILL.md`, and
+   the repo `README` when the skill cites a rule count — the numbers often come from there); numbered rows
+   from our coverage table.
+2. **Map by keyword overlap, not by reading.** Words of four characters or more, ratio of shared words
+   per source item; flag everything under roughly a third as a candidate miss. This runs in seconds and
+   survives language mismatch badly, so treat a flag as a question, never as a verdict.
+3. **Read every flag by hand, and read the source's non-rules as well.** A source bullet list is not a
+   rule list: it contains example lines (a plan-format skeleton), sample instructions written for the
+   reader (a line to paste into their `AGENTS.md`), and section theses. Counting those as rules is how a
+   skill ends up with an inflated number that a later audit has to correct. Report three numbers: what the
+   source really holds, what we cover, what is genuinely missing.
+
+When items are genuinely missing, port them in the source's own words before paraphrasing; the owner can
+edit a faithful line, not a paraphrase he has to re-check against the source.
+
+## Adopt, fold, or skip
+
+The owner pays for every skill: its description sits in the context of every session, and it competes for
+the triggers of the skills it overlaps. So the default for a newly discovered upstream sibling is **fold
+it into the skill that already governs the class**, not a new file. Run this test before proposing a port:
+
+| Question | What decides it |
+|---|---|
+| What does it do? | One-shot report, persistent mode, or a scan. A one-shot display card earns almost nothing. |
+| What does it cost? | Description length (always loaded), trigger overlap with existing skills, and whether it depends on the other tool's UX (slash commands, plugin config, flag files) that does not exist here. |
+| Where else could it live? | A section in the umbrella, a mode of an existing skill, or a line in a rule the umbrella already enforces. |
+
+Folding recipe — add one section, keep it short, and make it read-only:
+
+- state the trigger phrase the owner will actually use;
+- give the exact command (and run it once to prove it works — an embedded `grep` nobody executed is a
+  guess);
+- fix the output format in one line so the next session reports the same shape;
+- end with the honest-empty case («nothing found») so an empty run is not read as a failure.
+
+Then clean up after the decision: grep the library for the sibling names you considered and for
+`/skill-name` mentions, convert the survivors into phrase triggers, and re-verify the umbrella still loads
+(YAML) after the insertion.

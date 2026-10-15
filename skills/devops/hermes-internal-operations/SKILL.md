@@ -475,6 +475,24 @@ Pitfalls:
 - `nohup`, `setsid`, or background wrappers launched from the agent still inherit enough session context that Hermes detects and blocks the restart.
 - The only reliable path is a shell outside the gateway process (SSH session, another terminal, or the user running it directly).
 
+### Inline command payloads the gateway rejects
+
+Two shapes of terminal command are refused from inside a session, and neither means the task itself is
+impossible:
+
+- **Backticks inside a double-quoted argument.** The shell reads them as command substitution, the payload
+  stops parsing, and the guard blocks the whole call. Quote patterns containing backticks with single
+  quotes, or drop inline shell for anything longer than a line or two: write the script with `write_file`
+  and run it by path (`bash /path/script.sh`). That habit also survives quoting far better than a heredoc.
+- **Oversized one-liners and heredocs.** The parser caps inline payload size. A blocked payload is saved to
+  `~/.hermes/cache/blocked-scripts/blocked-<id>.sh`; review it there and run it by path instead of retrying
+  inline — the saved copy is the recovery path the block message names.
+
+Related shell trap when writing those scripts: a pipeline's exit status belongs to its **last** command, so
+`ls dir | grep -q pattern || echo "not found"` never prints the fallback (the `echo`'s success masks the
+miss) and a missing match reads as a pass. Test existence in its own call (`test -e`, `ls -d`) or check the
+pipeline's exit code explicitly before recording a negative result.
+
 
 **Auto-restart trap:** If a system-wide unit has `Restart=always` and a stale process survived a manual kill, `systemctl stop` may appear to succeed while systemd immediately respawns a new process. The restart counter can climb into the hundreds while the port stays occupied. After stopping/disabling, always verify the port is actually free:
 ```bash
