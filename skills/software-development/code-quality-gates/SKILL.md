@@ -14,13 +14,28 @@ metadata:
 
 A collection of guardrails and practices to ensure code is correct, secure, and maintainable — from the first test through production debugging.
 
-## The three gates
+## The gates
 
 | Gate | What it covers |
 |---|---|
+| **Gate 0** | Plan before code — a written plan plus the owner's explicit go before any multi-file, destructive or library-wide change. |
 | **Gate 1** | Test-driven development — RED-GREEN-REFACTOR with language auto-detection. |
 | **Gate 2** | Systematic debugging — the 4-phase root-cause process. |
 | **Gate 3** | Pre-commit verification — concrete verification commands, reviewer subagent template, self-review checklist, auto-fix loop, and the "evidence before claims" discipline. |
+
+---
+
+## Gate 0: Plan before code (owner gate)
+
+**Core principle:** for anything wider than one file, the plan is the first deliverable — code waits for an explicit «да/ок/go».
+
+**Applies to:** multi-file edits, refactors, deletions, anything touching a shared library, config or another profile, and every bulk or scripted pass over a repo.
+**Does not apply to:** a trivial fix in a single file the owner just asked for — make it and show the diff.
+
+- Write the plan to a **file** (vault `Operations/`, or the project dir), not only into chat: steps in the order they run, each with the command that verifies it, and what is explicitly out of scope.
+- A direct instruction naming the target («delete skill X everywhere») already **is** the go — but the scope it implies still gets an inventory before the first write, and the destructive step still gets a backup plus a named rollback path.
+- **Bulk automated passes are where damage is born.** A scripted sweep runs only after the plan is approved, and its own report is never the proof: re-check structure afterwards (frontmatter parses, line counts, no headings welded into prose), and compare files *seen* against files *validated* — a guard that skips what it cannot parse reports success on exactly the broken files.
+- When two standing instructions contradict each other (a persona saying «handle everything yourself» next to a workflow saying «delegate»), the most recent explicit owner statement wins — and the stale one gets rewritten, not kept.
 
 ---
 
@@ -111,8 +126,8 @@ When a UI element animates unexpectedly during state changes (filtering, sorting
 - [ ] **Plan compliance** — diff matches approved plan, or deviations are deliberate
 - [ ] **No inline-controller bypass** — large builds/refactors/UI decisions were
       not implemented in the main Hermes session without a written plan and
-      explicit approval. If they were, route back through
-       Phase 1–2 before declaring this gate complete.
+      explicit approval. If they were, the work is unverified: write the plan, get
+      approval, then re-run this gate from the top.
 - [ ] **Security scan** — no secrets, eval/exec, shell injection, SQL injection
 - [ ] **Tests** — new behavior tested; existing tests pass
 - [ ] **Lint / typecheck** — clean
@@ -228,6 +243,7 @@ behavior.
 
 | Situation | Use this gate |
 |-----------|---------------|
+| About to touch more than one file, delete something, or run a bulk pass | **Gate 0: plan file + explicit go** |
 | About to write a feature | **Gate 1: TDD** |
 | Test fails / bug reported | **Gate 2: Systematic Debugging** |
 | Code ready, about to commit | **Gate 3: Pre-Commit Verification** |

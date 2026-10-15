@@ -83,7 +83,50 @@ For files a scripted pass cannot fix (broken frontmatter in trees with no pristi
 inference: re-indent the orphaned list key to its siblings' indent, strip a leading `[, ` and a trailing
 `, ]`, validate, and fix in place — never append an «UPDATE:» note underneath.
 
-## 6. Close out: mirror, commit, memory, history boundary
+## 6. When the pass itself collapses structure: audit the whole commit, then restore from git
+
+A whitespace regex run over the **whole document** instead of one line eats the newlines themselves:
+the frontmatter folds onto a single line, the closing `---` welds itself to the first heading, bullets and
+fences flatten into one paragraph. Nothing errors — the file still reads as text — and the damage is
+invisible to a content-only check. Two defences, both required:
+
+- **Count, do not sample.** A frontmatter guard written as «if the regex matches, parse it» reports success
+  on exactly the broken files: a collapsed file no longer matches and drops silently into the *skipped*
+  set while the valid count stays the same. Compare files **seen** against files **validated**, fail on the
+  difference, and print every skipped path.
+- **Check structure after every pass, not just content:** any line > 700 chars outside a code fence,
+  `\S +#{2,4} \S` (a heading welded into prose), or a `---` that is not alone on its line is damage.
+
+Damage is never confined to the file you meant to edit, so audit the entire pass:
+
+```bash
+git -C <mirror> show --name-only --format="" <offending-commit>     # every file it touched
+# per file: line count before vs after the pass — a collapse drops 50-75% of them
+git -C <mirror> show <rev-before>:<path> | wc -l
+git -C <mirror> show <offending-commit>:<path> | wc -l
+```
+
+A line-count collapse on any file the pass touched is proof, and the victim list is the **commit's file
+list**, never the subset your guard flagged.
+
+**Recovery: restore, then re-apply — never re-flow the flattened text.** Take each victim from the commit
+*before* the offending pass, re-run the mention strip **line by line**, re-validate the structure, then copy
+the result over the live file. Re-flowing (splitting before `##` and `- `) restores the shape but guesses at
+heading boundaries: titles come back as «# Hermes Skill» + «Library — Maintenance», which reads worse than
+the original damage and needs a second hand pass.
+
+- A file that also carries **later additions you must keep** (a new recipe section, a version bump) is
+  repaired in place instead: split only where the structure is provably welded. Dense bullets of 400–900
+  chars are this library's normal style, not damage — check the line count of the restored copy before
+  «fixing» them.
+- **Prove each flag before believing it.** `> ## Headings` inside a blockquote, upstream `llms-full.md`
+  dumps and imported book notes all trip the merged-heading regex and are content.
+- **Profile twins are not a second repair job.** A `profiles/<name>/skills/` copy of the same reference is
+  usually byte-identical to the damaged global file — compare hashes, then overwrite the twin with the
+  restored and re-cleaned file.
+- Finish by re-running the guard over every tree plus the line-count diff; only then mirror, commit and push.
+
+## 7. Close out: mirror, commit, memory, history boundary
 
 - Mirror the live tree into the skills repo **including the deletions** (here they are owner-approved),
   commit, push; same for the vault. Verify `HEAD == origin/HEAD` for both.

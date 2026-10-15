@@ -374,6 +374,26 @@ Edit with `hermes config edit` or `hermes config set section.key value`.
 
 Full config reference: https://hermes-agent.nousresearch.com/docs/user-guide/configuration
 
+### Subagent delegation (`delegation.*`)
+
+Model resolution for `delegate_task` children — the invariant lives in the shipped docs of the running
+revision, `$HERMES_HOME/hermes-agent/website/docs/user-guide/features/delegation.md`:
+
+- `delegation.base_url` wins, else `delegation.provider` (full credential bundle via the runtime provider
+  system), else children inherit the parent's provider **and credentials**. **`delegation.model` applies in
+  all cases, and when it is empty the children inherit the parent's model** — clearing the key is how you
+  put children on the parent's current model without pinning a name that goes stale when the parent changes.
+- The pin is **global**: `delegate_task` has no per-task model parameter, so every child in one batch runs
+  on the same model. Per-subtask models exist only on the kanban board.
+- Confirm the child actually resolved it: run one throwaway child and read its transcript. Reading the
+  config back only proves what was written, not what the child ran on.
+- Other keys that shape a batch: `max_concurrent_children` (extra tasks do **not** queue — plan batches),
+  `max_spawn_depth` (1 = flat parent→child), `child_timeout_seconds` (unset by default),
+  `inherit_mcp_toolsets`, `subagent_auto_approve`, `orchestrator_enabled`.
+- A child's background processes belong to the child and are terminated at delegation teardown: it must
+  wait for its own builds and tests before returning. Anything that must outlive the child is started in
+  the parent session.
+
 ### Providers
 
 20+ providers supported. Set via `hermes model` or `hermes setup`.

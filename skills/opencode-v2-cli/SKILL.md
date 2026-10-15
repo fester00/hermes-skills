@@ -55,6 +55,27 @@ cd /path/to/project      # каталог проекта — это cwd; поз�
 OPENCODE_CONFIG=/home/natan/.config/opencode/profiles/opencodeai.json opencode run --standalone --auto "task"
 ```
 
+## Planning stage: the built-in Plan and Build agents
+
+Every session runs as a primary agent, and the choice of agent *is* the planning gate:
+
+| Agent | Mode | What it can do |
+|---|---|---|
+| **Build** | `primary`, **the default** | all tools enabled — normal working mode |
+| **Plan** | `primary` | limited access, meant for planning and analysis; `file edits` and `bash` default to `ask`, so it cannot change anything without confirmation |
+
+Switch between primaries with **Tab** during a session (or invoke an agent explicitly). Three built-in **subagents** — **General**, **Explore**, **Scout** — are dispatched by a primary agent; they are not user-facing entry points.
+
+Inspect the live truth instead of the docs mirror — the command prints agent ids, modes and *resolved* permissions:
+
+```bash
+opencode debug agents
+```
+
+Our root `~/.config/opencode/opencode.jsonc` declares **no custom agents** (only `model`, `plugins`, `providers`, `mcp`), so a session gets exactly these built-ins. Read the upstream description in the local mirror: `docs/opencode-v2/ru/agents.md` (built-in agents section) and the English `en/agents.md`.
+
+Borrowing the method into Hermes: OpenCode's Plan role ≈ «plan file + explicit owner go before code», Build ≈ execution after approval, and its subagents ≈ `delegate_task`. Keep the mapping in mind when the owner asks for «the OpenCode way» here.
+
 ## Profile 1: OpenCode Go
 
 File `~/.config/opencode/profiles/opencodeai.json` (or `opencodeai-rental.json`):
@@ -403,4 +424,6 @@ Two fetch-script traps that cost a re-download (`scripts/regen-docs.sh` encodes 
   - `~/.config/opencode/agents/*.md` — agent definitions; project-level ones go in `.opencode/agents/`.
   - `~/.local/share/opencode/` — `opencode.db` (sessions), `storage/`, `tool-output/`, `shell/`, and
     `snapshot/` (file snapshots, hundreds of MB — check it before blaming npm for a full root).
-- What an agent can see versus a Hermes subagent, and which engine to run:
+- **Choosing the engine:** what an OpenCode agent can see on this machine versus a Hermes subagent,
+and which engine to run for a given task, is covered in `references/orchestration-agents-recipe.md`
+(the plan-file → approval → dispatch recipe).
