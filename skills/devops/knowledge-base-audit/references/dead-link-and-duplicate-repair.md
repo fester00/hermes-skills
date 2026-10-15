@@ -14,10 +14,10 @@ from pathlib import Path
 
 SKILL_DIRS = [Path("$HERMES_HOME/skills"), Path("$HERMES_HOME/plugins")]
 SKILLS = {d.name.lower(): d.name for base in SKILL_DIRS for d in base.rglob("*") if d.is_dir()}
-# names the indexes use that exist only with a prefix, or were renamed:
-ALIAS = {"writing-plans": "", "brainstorming": "",
-         "subagent-driven-development": "",
-         "local-tts-selection": "tts-selection"}
+# names the indexes use that exist only with a prefix, or that were renamed.
+# Keep only entries whose target really exists in the library — stale aliases make
+# later audits report phantom skills:
+ALIAS = {"local-tts-selection": "tts-selection"}
 
 files = [p for p in Path(".").rglob("*.md") if ".git" not in p.parts and ".trash" not in p.parts]
 stems = {p.stem.lower() for p in files}
@@ -157,3 +157,31 @@ must stand alone, the whole value stays under ~200 characters, written in Englis
    counts against before to prove the body survived; (d) quote five old→new pairs.
 5. Change the `description` line only. Quote the value when it contains a colon or quotes, and collapse
    block descriptions to one line so the next scanner sees them.
+
+## 7. Removing references to skills that no longer exist
+
+Run this after any deletion, or when a profile is trimmed. A «reference» is anything that makes a reader
+or a tool reach for a name: `related_skills` / `related` / `see_also` / `supersedes` in frontmatter,
+`skill_view("x")` calls, «see the `x` skill» sentences, index and registry rows, cards named after the skill.
+
+1. Resolve existence **per library**: a name is live if a directory of that name *or* a frontmatter `name:`
+   holds a `SKILL.md` outside `.archive/`. Check the profile tree and the global tree separately — a name
+   that resolves in one profile is dead in the other, and the same skill is often copied into both, so fix
+   every copy (a first pass looks clean only because the scanner read a single tree).
+2. Strip names from list values with a **line-based pass that never touches leading whitespace**. Collapsing
+   `\s{2,}` on an edited line destroys YAML indentation and silently invalidates frontmatter — the damage
+   surfaces only when the skill refuses to load. Never reformat a line you did not have to change.
+3. `yaml.safe_load` every touched frontmatter *before* writing; refuse the write and report the file instead
+   of saving something broken.
+4. Prefer a conditional rewrite over deletion when the sentence carries meaning: «supersedes the earlier
+   single-purpose nearby-search skill», «attach a debugger» instead of «use the `x` skill». Re-point a dead
+   `skill_view()` at the live equivalent (`autonomous-coding-agents`, `excalidraw`, `jupyter-live-kernel`)
+   rather than dropping the row.
+5. **These are not references** — leave them: MCP server names, CLI tools, category slugs, file paths,
+   attribution to upstream authors (licence and credit), and historical records of a deliberate deletion
+   (erasing the name destroys the record's meaning).
+6. Prove it against the pristine copy: the git mirror of the global tree holds the pre-edit state, so a diff
+   shows that only lines containing the name changed and no indentation moved. Then re-run the counter
+   (zero dead maps, zero dead `skill_view` calls) and re-validate every `SKILL.md`.
+7. Sweep the runtime registries as well (`.usage.json` keeps a key per skill, `.curator_ledger.jsonl` one per
+   action): stale keys are harmless, but they make the next audit report phantom skills.
