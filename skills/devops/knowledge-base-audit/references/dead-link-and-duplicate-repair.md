@@ -182,7 +182,8 @@ or a tool reach for a name: `related_skills` / `related` / `see_also` / `superse
    (erasing the name destroys the record's meaning).
 6. Prove it against the pristine copy: the git mirror of the global tree holds the pre-edit state, so a diff
    shows that only lines containing the name changed and no indentation moved. Then re-run the counter
-   (zero dead maps, zero dead `skill_view` calls) and re-validate every `SKILL.md`.
+   (zero dead maps, zero dead `skill_view` calls) and re-validate every `SKILL.md`. Scan and clean modes
+   are implemented in `scripts/dangling-ref-sweep.py`.
 7. Sweep the runtime registries as well (`.usage.json` keeps a key per skill, `.curator_ledger.jsonl` one per
    action): stale keys are harmless, but they make the next audit report phantom skills.
 
@@ -205,3 +206,43 @@ A skill family survives its own deletion in four shapes. Check each before decla
 
 Finally, distinguish *instructions* from *records*. Audit notes naming removed skills as historical facts do not
 change behaviour: report them and let the owner decide, instead of mangling sentences to reach a cosmetic zero.
+
+### 7b. Repairing damage your own sweep caused
+
+A reference sweep is a bulk edit that rewrites files nobody asked it to touch. Treat the pristine copy as
+part of the tool, not as a fallback:
+
+- **Know the pristine source per tree before the first write.** The git mirror of the global tree holds the
+  pre-edit state; the vault holds itself; profile copies and the local `.archive/` usually hold nothing.
+  The trees without a mirror are the ones an over-broad filter destroys irrecoverably — back them up first.
+- **A line that merely *mentions* the name is a record, not a link.** Filters that drop any line containing the
+  term delete audit findings and provenance notes. Restore those by *identifier*, never by hand: `git show
+  HEAD:<path>` returns the original lines, so find each missing line, look up its predecessor in the original,
+  and insert it after that predecessor's occurrence in the current file. Appending to the end and de-duplicating
+  afterwards is the trap — it leaves the line in the wrong section, and the stray copy usually survives.
+- **Prove the result line by line, not by eye.** Every line of the edited file must either exist verbatim in
+  the pristine version or contain the removed term. A line that differs without naming the term is damage
+  (`scripts/dangling-ref-sweep.py --mirror <repo>` prints exactly those).
+- **Run bulk edits as a script file, not as a giant inline command.** Write the script with the file-write
+  tool and run `python3 <path>`: it survives truncation, can be re-read before it is trusted, and re-runs
+  identically. Keep shell one-liners to a single purpose. Never put backticks inside a double-quoted shell
+  string — the shell executes them as command substitution, which mangles the pattern and can trip a command
+  guard; single-quote the pattern or move it into the script.
+- **Validate structured files with a parser that respects strings.** Stripping `//` comments line-wise
+  corrupts every URL (`https://…`) and then reports a healthy config as broken — keep the rollback-on-invalid
+  guard, but make the validator walk the text tracking whether it is inside a string literal.
+- **Collapse whitespace per line, never across the file.** `re.sub(r"\s{2,}", " ", text)` on a whole document
+  eats newlines and flattens every heading, bullet and code fence into one paragraph; `\s` matches `\n`. Apply
+  tidying to the *content part of a single line* (`indent, rest = m.groups()`) and write the line back with its
+  indent. A flattening pass looks successful — the token count drops to zero — and surfaces only when a parser
+  or a structure guard refuses the file.
+- **A validator must assert the block was found.** `try: yaml.safe_load(m.group(1)) if m else None` counts a
+  file with *no* matching frontmatter as valid, because the regex simply did not match and no exception was
+  raised. Fail on `m is None`, and report the count of files inspected versus files matched — otherwise the
+  «0 broken» figure excludes exactly the worst cases. The same hole exists in any `if match else pass` check:
+  require the match, then parse.
+- **Recovery, in order of preference.** Files in the global tree come back from its git mirror
+  (`git show HEAD:<rel>` per file, or restore the whole tree at the commit preceding the sweep and re-apply
+  only the intended edits); vault files come back from the vault repo; profile copies with no mirror come back
+  from the backup you took before the first write. Then re-run the sweep — the collapse is idempotent damage,
+  so a clean re-run on restored files is safe.
