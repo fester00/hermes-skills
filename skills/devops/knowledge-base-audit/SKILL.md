@@ -140,7 +140,9 @@ deletion sweep, not an audit and not a merge. Always-on rules:
 
 - **Inventory first, and include the profile copies.** Live skills, every `profiles/<name>/skills/`,
   vault registries and MOCs, derived packages, memory files, runtime state (`.usage.json`,
-  `.curator_ledger.jsonl`, `.hub/index-cache`), cron and config. Report the list before editing.
+  `.curator_ledger.jsonl`, `.hub/index-cache`), cron and config. Report the list before editing, and
+  **name the profiles you will touch**: another profile is a separate contour the owner tracks on its
+  own, so extending «everywhere» into it is something he expects to hear, not to discover afterwards.
 - **Back up before the first write, and know the rollback source per tree.** Profile copies and the
   local `.archive/` usually have no git mirror — those are the trees you can destroy irrecoverably.
 - **Never normalise whitespace on a line you edit.** Split indent from content and tidy only the content;
@@ -149,9 +151,18 @@ deletion sweep, not an audit and not a merge. Always-on rules:
 - **Prefer dropping a line to shipping a mangled one.** If the cleaned line still matches an artefact
   pattern (`docs//`, `(, `, `non-`), delete the line or item and list it for the owner.
 - **Verify deletions by re-grepping.** A delete loop that only reports deletions leaves the tree intact
-  and the report perfect; zero hits in the live trees is the only proof.
-- **History is out of scope unless asked.** Past transcripts and git commit history keep the term forever;
-  report the counts and offer the rewrite as a separate decision.
+  and the report perfect; zero hits in the live trees is the only proof. When the owner doubts a
+  deletion, print the backup archive's file listing (`tar tzf <backup> | head`) — the record of what came
+  out is more convincing than a count.
+- **Sweep the carriers, not only the skill files.** The skills tree is the first place the term lives,
+  never the last: after every skill file is gone the name survives in each profile's `memories/USER.md`,
+  in the per-profile `.skills_prompt_snapshot.json` prompt cache, in `.usage.json` keys and the curator
+  ledger. Grep the **whole profile**, not its `skills/`, before calling a purge complete — the second
+  pass is where the survivors are found, and finding them only because the owner asked costs trust.
+- **Machine state and history stay out of scope.** `state.db`, session transcripts, `state-snapshots/`,
+  `checkpoints/`, curator logs and git commit history hold the term forever; editing the state of a
+  live profile risks it. Report the counts carrier by carrier, offer the purge as an explicit next step,
+  and never read «везде» as consent to rewrite history.
 
 Full recipe, cleaner patterns and the verification triad — `references/bulk-purge-and-rollback.md`.
 

@@ -51,7 +51,6 @@ No production code without a failing test first.
 - Asserting on private state
 - Not watching the test fail first
 
-**See `references/test-driven-development.md` for full rationalization tables, exceptions checklist, and verification steps.** (Reference document; the operational checklist is in Gate 1 below.)
 
 ### TDD Regression Discovery
 A passing test suite can still hide implementation bugs. When extracting legacy
@@ -88,7 +87,6 @@ NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST
 - You've been debugging >30 min without progress
 - Multiple hypotheses rejected — need fresh eyes
 
-**See `references/systematic-debugging.md` for full red-flags table, common rationalizations, and escalation paths.** (Reference document; the operational checklist is in Gate 2 below.)
 
 ### CSS/UI Animation Bugs
 When a UI element animates unexpectedly during state changes (filtering, sorting, re-rendering), suspect `transition: all` on grid children. See `references/css-layout-transition-pitfall.md` for the exact pattern and fix.

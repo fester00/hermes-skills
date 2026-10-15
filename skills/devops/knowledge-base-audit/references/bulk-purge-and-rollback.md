@@ -12,6 +12,9 @@ Enumerate and report the places; the count is always larger than the owner expec
 - docs and packages derived from the skills (doc mirrors, workflow packages, archives);
 - memory files (`MEMORY.md`, `USER.md`) and persona/role documents;
 - runtime state: `.usage.json`, `.curator_ledger.jsonl`, `.hub/index-cache/*.json`;
+- **carriers that survive the skill deletion** — per-profile `memories/*.md`, the per-profile
+  `.skills_prompt_snapshot.json` prompt cache, `state-snapshots/`, `checkpoints/`, `logs/curator/`,
+  `state.db`. Sweep the text ones in the same pass; report the state ones (next bullet);
 - cron jobs, configs, plugin manifests — check them, they are usually clean (say so).
 
 Classify every hit before rewriting: files **about** the family (delete whole), files **mentioning** it
@@ -87,7 +90,18 @@ inference: re-indent the orphaned list key to its siblings' indent, strip a lead
 - Rebuild any archive derived from the swept files. A path carrying the family name in a deliverable
   (the family's private state directory) is renamed, not deleted — a shipped artefact must not keep the family's fingerprint.
 - Memory: remove the entries describing the removed method, then read the file back — an earlier inline
-  strip can leave a hole («workflow — :») that survives as nonsense in every future session.
+  strip can leave a hole («workflow — :») that survives as nonsense in every future session. The same
+  applies to a *profile's* memory file: grep it by whole profile, since its `skills/` is clean while its
+  `memories/USER.md` still names the family.
+- **Machine state is reported, never edited.** `state.db`, session transcripts, `state-snapshots/`,
+  `checkpoints/` and curator logs keep the term by design; a rewrite risks a live profile and destroys
+  history. Print the count per carrier in the closing report so the owner decides, and say plainly what
+  you did **not** touch.
+- **Run the sweep as a file, not as an inline one-liner.** Backticks inside a double-quoted shell string
+  are command substitution: the shell tries to execute the search term, and the runtime's guard can refuse
+  the whole command with an unrelated message (a gateway restart warning, say) — it reads as a mysterious
+  block rather than the quoting bug it is. Write the cleaner to `<workspace>/purge.py`, run it with
+  `python3 purge.py --apply`, and use quoted heredoc delimiters (`<<'PY'`) so nothing expands on the way in.
 - **History is a separate decision.** Past session transcripts and git commit history still contain the
   term and always will. Rewriting published history or deleting transcripts is destructive and never
   implied by «везде»: leave it, report the counts, offer it as an explicit next step.
