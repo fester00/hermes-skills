@@ -41,6 +41,8 @@ Break the plan into items and track them (todo toolset). Classify each item:
 
 Split parallel work **by file**, never by feature: two children editing one file overwrite each other.
 
+**Zero is a valid number of children.** When every item touches the same file or the same artifact, nothing is independent and doing it alone is compliance, not neglect — one voice also matters for the artifact's soul (a page's prose, a design's tone). Say «делить нечего: один файл» out loud so the owner sees the call was made.
+
 ## Stage 4 — Execute and verify each item
 
 One item at a time, and after every item **verify with your own hands**: run the command, read the file, check the count, look at the live state. A child's report is a claim, not a result. «Готово» is written only after the check — for each item separately, not for the batch.
@@ -76,3 +78,4 @@ The report says what was verified and with what («проверено: 460 фа�
 - Stage 2 exists for the owner's benefit: a plan he never sees is a diary.
 - A plan the owner rewrites is a plan that worked.
 - Trivial work stays trivial — the stages are a spine, not a ceremony. But every skipped stage gets named out loud.
+- **Name each skipped stage in the first reply, not in the post-mortem.** One line — «стадии 2 и 3 пропускаю: один файл, делить нечего» — buys the owner the freedom to overrule you. If he has to ask «а что говорит инструкция?», the naming was missing and the process looks forgotten.
