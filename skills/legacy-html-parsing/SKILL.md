@@ -4,7 +4,6 @@ description: Use when parsing legacy web apps or CRM panels. Modify and debug Py
 category: software-development
 related_skills:
   - code-quality-gates
-  - superpowers-workflow
 ---
 
 # Legacy HTML Parsing

@@ -24,8 +24,8 @@ metadata:
    - Obsidian-реестр `Operations/MOC — Skills.md` может отставать, поэтому `skills_list()` — единственный авторитетный источник.
    - После обнаружения релевантного навыка загрузить его через `skill_view(name="<skill_name>")`.
    - Для задач по разработке ПО дополнительно загружать:
-     - `superpowers-workflow` — полный lifecycle
-     - `superpowers-writing-plans` — если задача требует создания/изменения 2+ файлов или имеет 2+ этапа
+     - — полный lifecycle
+     - — если задача требует создания/изменения 2+ файлов или имеет 2+ этапа
      - `code-quality-gates` — для verification gates
      - доменные навыки (например, `frontend-efficiency-audit`, `frontend-css-maintenance`)
 
@@ -91,10 +91,9 @@ Different rule layers have different durability and scope. Do NOT duplicate cont
 | Layer | What belongs there | Examples |
 |---|---|---|
 | **System prompt / `~/.hermes/SOUL.md`** | Persona, tool availability, core philosophy only | "You are Master Ugwai", "Load skills before acting" |
-| **Hermes memory (`MEMORY.md`)** | Coordinates and reminders: MOC paths, critical facts, short triggers | "For software work load `superpowers-workflow`", "Full workflow in Obsidian `workflows/knowledge-first-workflow.md`" |
 | **`AGENTS.md` in vault root** | Durable agent constitution: scope, folder map, safety rules, task conventions | "Read this file first", "Check `tasks.md`", "Do not bulk-migrate without approval" |
 | **`tasks.md` in vault root** | Active work, blockers, handoff notes | "Continue VIDVIS delivery page", "Blocker: waiting for real contacts" |
-| **Skills (`~/.hermes/skills/`)** | Class-level how-to: procedures, pitfalls, execution patterns | `superpowers-workflow`, `superpowers-writing-plans` |
+| **Skills (`~/.hermes/skills/`)** | Class-level how-to: procedures, pitfalls, execution patterns |, |
 | **Obsidian runbooks / notes** | Detailed reference, project facts, research synthesis | `Hermes — Knowledge Retrieval Protocol`, project notes |
 
 ### Consequences

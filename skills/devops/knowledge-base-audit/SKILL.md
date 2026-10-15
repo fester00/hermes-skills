@@ -56,7 +56,6 @@ reaches the user or a note.
 - **Wikilinks to skills can never resolve.** A skill is not a note, so `[[browser-automation]]` is broken
   by construction no matter how many indexes use it. Classify every surviving target before reporting:
   live skill name (match case-insensitively; apply prefix maps such as `writing-plans` →
-  `superpowers-writing-plans`, `local-tts-selection` → `tts-selection`) → rewrite as plain `` `code` ``
   text; near-miss on a note stem → fix the typo; junk → ignore. Then publish the number as
   *claimed → verified* («заявлено 280, настоящих 211»), never the raw scanner total.
 - **Exit codes, not eyeballs.** A command that prints a warning and then fails still exits non-zero. Check

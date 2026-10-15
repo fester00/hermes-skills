@@ -72,4 +72,4 @@ delegate_task(
 ## References
 
 - Skill: `autonomous-coding-agents`
-- Related: `opencode`, `superpowers-workflow`, `subagent-driven-development`, `dispatching-parallel-agents`
+- Related: `opencode`, `subagent-driven-development`, `dispatching-parallel-agents`

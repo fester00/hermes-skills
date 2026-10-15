@@ -7,7 +7,7 @@ license: MIT
 metadata:
   hermes:
     tags: [kanban, multi-agent, orchestration, workflow, routing, workers]
-    related_skills: [superpowers-workflow]
+    related_skills: []
 ---
 
 # Kanban Multi-Agent Workflows

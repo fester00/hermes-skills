@@ -15,8 +15,8 @@ from pathlib import Path
 SKILL_DIRS = [Path("$HERMES_HOME/skills"), Path("$HERMES_HOME/plugins")]
 SKILLS = {d.name.lower(): d.name for base in SKILL_DIRS for d in base.rglob("*") if d.is_dir()}
 # names the indexes use that exist only with a prefix, or were renamed:
-ALIAS = {"writing-plans": "superpowers-writing-plans", "brainstorming": "superpowers-brainstorming",
-         "subagent-driven-development": "superpowers-subagent-driven-development",
+ALIAS = {"writing-plans": "", "brainstorming": "",
+         "subagent-driven-development": "",
          "local-tts-selection": "tts-selection"}
 
 files = [p for p in Path(".").rglob("*.md") if ".git" not in p.parts and ".trash" not in p.parts]

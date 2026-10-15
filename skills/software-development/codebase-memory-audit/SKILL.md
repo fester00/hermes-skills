@@ -3,9 +3,6 @@ name: codebase-memory-audit
 description: Use when exploring or modifying an existing project with more than a few files.
 category: software-development
 related_skills:
-  - superpowers-workflow
-  - superpowers-writing-plans
-  - superpowers-subagent-driven-development
 ---
 
 # codebase-memory-audit
@@ -180,7 +177,7 @@ Use the template from `references/cbm-audit-template.md`.
 
 ---
 
-## Integration with superpowers-workflow
+## Integration with
 
 This skill runs in **Phase 0: Knowledge Discovery**, before design.
 

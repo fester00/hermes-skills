@@ -13,7 +13,6 @@
 
 Пул считается только по `delegate_task`. Отдельные OS-процессы CLI-агентов (OpenCode, Codex, Claude Code)
 в него не входят, но запускать их стоит только по явной просьбе пользователя — см.
-`superpowers-workflow` → `references/opencode-vs-subagents.md`.
 
 ## 2.0 Три уровня, которые легко перепутать
 

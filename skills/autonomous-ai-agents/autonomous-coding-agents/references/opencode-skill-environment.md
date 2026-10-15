@@ -21,7 +21,6 @@ Add to `~/.config/opencode/opencode.jsonc`:
 {
   "$schema": "https://opencode.ai/config.json",
   "plugins": [
-    "superpowers@git+https://github.com/obra/superpowers.git",
     ""
   ]
 }
@@ -38,7 +37,7 @@ Expected output:
 ```
 ID           VERSION  SOURCE
      5.1.0    
-superpowers  8ca22db  superpowers@git+...
+ 8ca22db
 ```
 
 ## Installing a skill
@@ -73,7 +72,7 @@ opencode run --standalone --auto /tmp/skills-test \
 ## Pitfalls
 
 - **Claude-only skills**: skills that rely on `CLAUDE.md`, `.claude-plugin`, or Claude-specific tools do not load in OpenCode. Use only `SKILL.md`-based skills or those with explicit OpenCode support.
-- **V1 plugins in V2**: plugins written for OpenCode CLI v1 (using `plugin`/`agent`/`command` singular keys or v1 hook events) do not run in V2. Only superpowers and  currently provide v2-compatible plugins.
+- **V1 plugins in V2**: plugins written for OpenCode CLI v1 (using `plugin`/`agent`/`command` singular keys or v1 hook events) do not run in V2. Only and  currently provide v2-compatible plugins.
 - **MCP at root of `mcp`**: V2 requires `mcp.servers.<name>`. A flat `mcp: { "codebase-memory": { ... } }` block is silently ignored or rejected.
 - **Flat `timeout` for MCP**: V2 wants `{ "startup": N, "catalog": N, "execution": N }`; a single number causes schema errors.
 - **Path to plugin file**: local plugins must be a directory, not a `.js` file. For , point to `.opencode/plugins/`, not ``.

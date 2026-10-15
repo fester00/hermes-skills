@@ -159,4 +159,3 @@ Inventory → Diff (by name) → Skip common → Copy missing → Verify count �
 ## Related
 - [[hermes-ops-devops/SKILL.md]] — system health, zombie cleanup, gateway diagnostics
 - [[hermes-agent-skill-authoring/SKILL.md]] — creating and editing SKILL.md files
-- `references/superpowers-mapping.md` — adapting external skill libraries into Hermes

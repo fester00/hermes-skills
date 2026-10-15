@@ -7,7 +7,7 @@ license: MIT
 metadata:
   hermes:
     tags: [github, git, workflow, pr, issues, code-review, auth, repository]
-    related_skills: [superpowers-workflow, code-quality-gates]
+    related_skills: [code-quality-gates]
 ---
 
 # GitHub Workflows
@@ -169,12 +169,10 @@ pygount --format=summary --folders-to-skip=".git,node_modules,venv" .
 
 | Task | Primary skill | Secondary |
 |------|--------------|-----------|
-| Set up GitHub access | `github-workflows` → auth section | `superpowers-workflow` |
 | Create/fork/clone repo | `github-workflows` → repo section | — |
-| Open a PR | `github-workflows` → PR section | `superpowers-workflow` |
 | Review someone's PR | `github-workflows` → review section | — |
 | File or triage bugs | `github-workflows` → issues section | — |
-| Recover lost commits | `github-workflows` → recovery section | `superpowers-systematic-debugging` (reference) / `code-quality-gates` Gate 2 |
+| Recover lost commits | `github-workflows` → recovery section | (reference) / `code-quality-gates` Gate 2 |
 | Measure codebase size | `github-workflows` → inspection section | — |
 | Pre-commit verification | `code-quality-gates` | `github-workflows` → review section |
 

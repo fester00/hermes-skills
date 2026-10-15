@@ -8,7 +8,7 @@ platforms: [linux, macos, windows]
 metadata:
   hermes:
     tags: [agents, coding-agents, opencode, subagents, delegation, orchestration]
-    related_skills: [opencode, claude-code, codex, superpowers-workflow, subagent-driven-development, dispatching-parallel-agents, code-quality-gates]
+    related_skills: [opencode, claude-code, codex, subagent-driven-development, dispatching-parallel-agents, code-quality-gates]
 ---
 
 # Autonomous Coding Agents
@@ -22,7 +22,6 @@ Present the user with the available options and a recommendation when a task can
 | Agent | Model / environment | Best for |
 |---|---|---|
 | Hermes `delegate_task` (subagent) | Same model as orchestrator; inherits no Hermes skills/memory unless passed in context | Complex multi-step work where the orchestrator must keep control, iterate with the user, or apply Hermes-specific tooling (browser, web search, custom skills) |
-| OpenCode Go + skills | `opencode-go/deepseek-v4.1-flash` via `https://opencode.ai/zen/go/v1`; own skills (`superpowers`, ``, `karpathy-guidelines`, `tdd-workflow`, `security-review`, `verification-loop`, `api-design`) and MCP (`codebase-memory`, `obsidian`) | Autonomous coding, planning, review, audit, and document generation; runs with its own methodology and is cheaper than expanding Hermes turns |
 | OpenCode Ollama | Local `ollama/kimi-k2.7-code:cloud` | Private / offline tasks, small code changes, no API spend |
 | Codex / Claude Code | User-requested only | When the user explicitly names the tool |
 
@@ -230,5 +229,5 @@ Both should result in the expected file and content.
 - `references/opencode-skill-environment.md`
 - `opencode` skill for OpenCode-specific commands
 - `opencode-v2-cli` skill for V2 profile configuration
-- `superpowers-workflow` for project lifecycle
+- for project lifecycle
 - `dispatching-parallel-agents` for parallel workstreams

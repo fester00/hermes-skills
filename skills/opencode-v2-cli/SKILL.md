@@ -379,4 +379,3 @@ Two fetch-script traps that cost a re-download (`scripts/regen-docs.sh` encodes 
   - `~/.local/share/opencode/` — `opencode.db` (sessions), `storage/`, `tool-output/`, `shell/`, and
     `snapshot/` (file snapshots, hundreds of MB — check it before blaming npm for a full root).
 - What an agent can see versus a Hermes subagent, and which engine to run:
-  `superpowers-workflow/references/opencode-vs-subagents.md`.
