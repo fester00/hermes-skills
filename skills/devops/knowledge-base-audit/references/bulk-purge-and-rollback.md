@@ -85,7 +85,7 @@ inference: re-indent the orphaned list key to its siblings' indent, strip a lead
 - Mirror the live tree into the skills repo **including the deletions** (here they are owner-approved),
   commit, push; same for the vault. Verify `HEAD == origin/HEAD` for both.
 - Rebuild any archive derived from the swept files. A path carrying the family name in a deliverable
-  (`.superpowers/`) is renamed, not deleted — a shipped artefact must not keep the family's fingerprint.
+  (the family's private state directory) is renamed, not deleted — a shipped artefact must not keep the family's fingerprint.
 - Memory: remove the entries describing the removed method, then read the file back — an earlier inline
   strip can leave a hole («workflow — :») that survives as nonsense in every future session.
 - **History is a separate decision.** Past session transcripts and git commit history still contain the
