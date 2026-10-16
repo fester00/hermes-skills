@@ -1,9 +1,0 @@
-{
-  "last_report_path": "/mnt/data/natan-storage/.hermes/logs/curator/20261015-233942",
-  "last_run_at": "2026-10-15T23:39:42.210924+00:00",
-  "last_run_duration_seconds": 2.267672,
-  "last_run_summary": "auto: 1 archived, 1 reactivated; llm: skipped (consolidation off)",
-  "last_run_summary_shown_at": "2026-10-08T23:13:35.311830+00:00",
-  "paused": false,
-  "run_count": 25
-}

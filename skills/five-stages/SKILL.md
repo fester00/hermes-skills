@@ -25,8 +25,8 @@ no project edits, no mutating commands. Rules and craft: `references/plan-mode.m
 - **`/review [instructions]`** — spawns an independent, full-privilege background reviewer subagent over the
 recent conversation; its verdict re-enters the session as an async completion. Brief and boundaries:
 `references/review.md`.
-- **`delegate_task`** — the subagent rail: fresh context, batches of ≤4, `max_spawn_depth: 1`, children inherit
-the parent's model when `delegation.model` is empty.
+- **`delegate_task`** — the subagent rail: fresh context, a batch ceiling, `max_spawn_depth: 1`, children
+inherit the parent's model when `delegation.model` is empty.
 
 Upstream quotes with their repository paths: `opencode-v2-cli` → `references/upstream-task-flow.md`.
 
@@ -70,7 +70,8 @@ toolset and tick them off one by one, each tick *after* its verification passes.
 
 Break the plan into items and track them (todo toolset). Classify each item:
 
-- **Independent** → subagents, in one batch (up to 4 concurrent; extra children do not queue, so plan batches).
+- **Independent** → subagents, in one batch (this install runs 4 concurrent children — the built-in default is
+  10; extra children do not queue, so plan batches).
 - **Dependent or destructive** → do it yourself, sequentially.
 
 Split parallel work **by file**, never by feature: two children editing one file overwrite each other.
@@ -89,10 +90,9 @@ after the check — for each item separately, not for the batch — and only the
 
 ## Stage 5 — Review and report
 
-Run the review stage with `/review`, or hand a child the brief from `references/review.md`. The boundaries
-are the durable part: be certain before calling something a bug; review the changes, not the repository;
-investigate before flagging; invent no hypotheticals; do not be a style zealot; say «I'm not sure about X»
-rather than flagging it.
+Run the review stage with `/review`, or hand a child the brief from `references/review.md`. That file is the
+primary source for the review boundaries — do not restate them here or in a third place, or every future fix
+gets to be made three times.
 
 A review is evidence, not a verdict to paste: reproduce each finding, keep what survives, name what you could
 not reproduce. The report says what was verified and with what («проверено: 460 файлов, 0 битых»), not what
@@ -121,8 +121,9 @@ server that has to outlive it starts in the parent session.
 
 **Engine facts** (Hermes): an empty `delegation.model` makes children inherit the parent's model; `delegate_task`
 has **no** per-task model parameter (the pin is global — per-task models exist only on the kanban board);
-children inherit MCP toolsets when `delegation.inherit_mcp_toolsets: true`; default ceilings
-`max_concurrent_children: 4`, `max_spawn_depth: 1`. Upstream a child keeps its session id and can be resumed;
+children inherit MCP toolsets when `delegation.inherit_mcp_toolsets: true`; ceilings — `max_spawn_depth: 1` is the
+built-in value (`hermes_cli/config_defaults.py:1381`), while `max_concurrent_children` is **10 by default and 4
+in this install** (the override sits in `config.yaml`) — quote both numbers or neither. Upstream a child keeps its session id and can be resumed;
 a Hermes child is one-shot — only a live one can be steered. **Prove which model a child actually ran on from
 its session row, not from the batch report** — that report prints `Model: ?` and the delegation manifest
 records only `null` for an inherited pin, so the evidence lives in `state.db`:

@@ -39,21 +39,26 @@ unintentional one.
 Report: severity-ordered findings with `file:line`, what you verified vs. only read, and a verdict.
 ```
 
-## Boundaries (verbatim from upstream `review.txt`) — the durable part
+## Boundaries — verbatim from upstream `review.txt` (the durable part)
 
+> ## Before You Flag Something
+>
 > **Be certain.** If you're going to call something a bug, you need to be confident it actually is one.
 >
-> - Only review the changes — do not review pre-existing code that wasn't modified
-> - Don't flag something as a bug if you're unsure — investigate first
-> - Don't invent hypothetical problems — if an edge case matters, explain the realistic scenario where it breaks
+> - Only review the changes - do not review pre-existing code that wasn't modified
+> - Don't flag something as a bug if you're unsure - investigate first
+> - Don't invent hypothetical problems - if an edge case matters, explain the realistic scenario where it breaks
+> - If you need more context to be sure, use the tools below to get it
 >
 > **Don't be a zealot about style.** When checking code against conventions:
-> - Verify the code is *actually* in violation.
-> - Some "violations" are acceptable when they're the simplest option.
-> - Excessive nesting is a legitimate concern regardless of other style choices.
 >
-> If you're uncertain about something and can't verify it with these tools, say "I'm not sure about X" rather
-> than flagging it as a definite issue.
+> - Verify the code is *actually* in violation. Don't complain about else statements if early returns are already being used correctly.
+> - Some "violations" are acceptable when they're the simplest option. A `let` statement is fine if the alternative is convoluted.
+> - Excessive nesting is a legitimate concern regardless of other style choices.
+
+And from the same file's tool section:
+
+> If you're uncertain about something and can't verify it with these tools, say "I'm not sure about X" rather than flagging it as a definite issue.
 
 Output rules: be direct about why something is a bug; communicate severity without overstating it; state the
 scenario, environment or input required for the bug to arise; matter-of-fact tone, neither accusatory nor

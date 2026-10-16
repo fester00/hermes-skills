@@ -2,5 +2,8 @@
 .bundled_manifest
 .curator_backups/
 .curator_state
+.curator_ledger.jsonl
+.locks/
 .archive/
 .usage.json
+.skills_prompt_snapshot.json

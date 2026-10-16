@@ -70,26 +70,24 @@ skills/<category>/<skill-name>/
 
 | Метрика | Значение |
 |---------|----------|
-| Всего активных навыков | 135 |
-| Категорий | 25 |
-| В архиве | ~56 (не входят в этот репозиторий) |
+| Всего активных навыков | 119 |
+| Категорий | 35 |
+| Справочников и скриптов внутри навыков | 513 |
+| В архиве | 47 (лежат только локально, в репозиторий не попадают) |
 
 ## 🔥 Ключевые навыки
 
 | Навык | Описание | Путь |
 |---|---|---|
+| `five-stages` | Рабочий порядок: план-файл → подзадачи → проверка каждого пункта → ревью | `five-stages/` |
 | `hermes-agent` | Полное руководство по Hermes Agent | `autonomous-ai-agents/hermes-agent/` |
-| `superpowers-workflow` | Полный lifecycle разработки в Hermes | `software-development/superpowers-workflow/` |
+| `opencode-v2-cli` | OpenCode v2: CLI, агенты, методология (справочники с цитатами из апстрима) | `opencode-v2-cli/` |
 | `knowledge-first-protocol` | Порядок поиска информации | `knowledge-first-protocol/` |
+| `knowledge-base-audit` | Аудит библиотеки навыков и базы знаний | `devops/knowledge-base-audit/` |
 | `setup-zsh-oh-my-zsh` | Установка zsh + Oh My Zsh + Oh My Posh | `devops/setup-zsh-oh-my-zsh/` |
-| `opencode` | Делегирование кодинга в OpenCode CLI | `autonomous-ai-agents/opencode/` |
-| `hermes-skill-library` | Публикация и синхронизация библиотеки навыков | `software-development/hermes-skill-library/` |
 | `obsidian` | Работа с Obsidian vault | `note-taking/obsidian/` |
 | `pentajunior-v2-seo` | SEO-оптимизация pentajunior-v2 | `software-development/pentajunior-v2-seo/` |
 | `yandex-seo-optimization` | SEO для Яндекса | `marketing/yandex-seo-optimization/` |
-| `claude-design` | Дизайн-процесс + Prompt Enhancement Pipeline | `creative/claude-design/` |
-| `ui-ux-pro-max` | Design intelligence + anti-generic checklist | `creative/ui-ux-pro-max/` |
-| `popular-web-designs` | 74 реальных design system | `creative/popular-web-designs/` |
 | `selective-vpn-routing` | Маршрутизация сервисов через VPN/прокси | `devops/selective-vpn-routing/` |
 
 ## 📥 Как использовать навык
@@ -115,12 +113,20 @@ YAML frontmatter + markdown body с workflow, pitfalls и связями.
 
 ```bash
 cd ~/hermes-skills
-rsync -av --delete --exclude='.archive' --exclude='.curator_backups' --exclude='.hub' \
+rsync -a --delete \
+  --exclude='.archive' --exclude='.curator_backups' --exclude='.hub' \
+  --exclude='.locks' --exclude='.curator_ledger.jsonl' --exclude='.curator_state' \
+  --exclude='.usage.json' --exclude='.bundled_manifest' --exclude='.skills_prompt_snapshot.json' \
   ~/.hermes/skills/ skills/
 git add -A
 git commit -m "sync skills from ~/.hermes/skills"
 git push origin main
 ```
+
+Рантайм-файлы (замки, журнал куратора, кэш подсказок) в репозиторий не попадают: они перечислены и в
+`.gitignore`, и в исключениях `rsync`. Перед коммитом стоит сверить зеркало с источником:
+`comm -23 <(cd ~/.hermes/skills && find . -name SKILL.md | sed 's|/SKILL.md||' | sort) <(cd skills && find . -name SKILL.md | sed 's|/SKILL.md||' | sort)`
+— разница должна состоять только из `.archive/*`.
 
 ## 📝 Лицензия
 

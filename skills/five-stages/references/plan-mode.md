@@ -11,11 +11,16 @@ by naming the stage out loud.
 >
 > - Do not implement code.
 > - Do not edit project files except the plan markdown file itself.
-> - Do not run mutating terminal commands, commit, push, or perform external actions.
-> - You may inspect the repo or other context with read-only commands/tools when needed.
+> - Do not run mutating terminal commands, commit, push, or perform external
+>   actions.
+> - You may inspect the repo or other context with read-only commands/tools
+>   when needed.
 > - Your deliverable is a markdown plan saved inside the active workspace under
->   `.hermes/plans/YYYY-MM-DD_HHMMSS-<slug>.md` (create the directory if needed). If the runtime provides a
->   specific target path, use that exact path instead.
+>   `.hermes/plans/YYYY-MM-DD_HHMMSS-<slug>.md` (create the directory if
+>   needed; Hermes file tools are backend-aware, so this relative path keeps
+>   the plan with the workspace on local, docker, ssh, modal, and daytona
+>   backends). If the runtime provides a specific target path, use that exact
+>   path instead.
 
 The upstream reminder adds the one rule Hermes' own text leaves implicit — and it matters most when the plan
 turns out to be big:

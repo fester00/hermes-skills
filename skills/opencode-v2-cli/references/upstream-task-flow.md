@@ -25,9 +25,11 @@ Where the claims live:
    and if the user asks for implementation, refuse and tell them to switch.
    *The planning stage is a permission, not a promise; the plan is a file in a dedicated directory; only the
    owner's action ends the stage.*
-2. **Checklist** — there is no todo/checklist tool in v2. The complete tool list is Read, Glob, Grep, Edit,
-   Write, Patch, Shell, Webfetch, Websearch, Question, Skill, Subagent, Execute, Sessions, Worktrees. The
-   markdown plan file in the plan directory **is** the checklist.
+2. **Checklist** — there is no todo/checklist tool in v2. The built-in tools are Read, Glob, Grep, Edit,
+   Write, Patch, Shell, Webfetch, Websearch, Question, Skill, Subagent, Execute, Sessions, Worktrees — plus a
+   `browser` Code Mode namespace and whatever MCP servers add (`tools.mdx`, sections *Browser* and *MCP*).
+   Grep the tree for `todo` before doubting this: the only hits are a `TODO.md` in the codemode package and a
+   `todo.svg` icon. The markdown plan file in the plan directory **is** the checklist.
 3. **Build** — the default primary agent, all tools allowed; only this stage may implement.
 4. **Subagents** — the `subagent` tool opens a child session (fresh context, foreground or background) and
    returns its id so the same child conversation can be continued. The parent's `subagent` permissions decide
