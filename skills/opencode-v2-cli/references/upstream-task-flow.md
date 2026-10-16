@@ -95,3 +95,9 @@ curl -s "https://raw.githubusercontent.com/<owner>/<repo>/<branch>/<path>" -o lo
   result: it is how you learn the checklist is the plan file.
 - Print a directory listing in slices (head -30) — dumping 60+ paths into context crowds out the pages that
   matter.
+- **Before porting a mechanic, grep our own registry for a native that already exists.** The order is: search
+  `hermes_cli/commands.py` for the surface (`grep -n '"plan"\|"review"'`), then read the prompt module behind it
+  (`agent/plan_prompt.py`, `agent/review_engine.py`, `hermes_cli/init_command.py`), and only then write anything.
+  In this install both the plan mode and the reviewer were already there — `/plan` and `/review` — so the port
+  became a matter of wiring our order to them instead of inventing an equivalent. A feature that "we should have"
+  is often a feature we have and do not call.
