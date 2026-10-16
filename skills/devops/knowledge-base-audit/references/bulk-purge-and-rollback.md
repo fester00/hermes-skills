@@ -58,6 +58,7 @@ out.append(indent + new)
   (a language reference, a textbook) is content, not a mention. Keep an allowlist and report what you
   left and why.
 - Dry run first: counts, a before/after preview of a few files, and the full list of lines to be deleted.
+- **Match bytes, not your transcription of them, and abort the whole run on a miss.** Exact-match replacements fail on indentation you retyped instead of copied (four spaces where the file has two, a bullet's leading space, a line indented under a list item): `print(repr(line))`, paste from that output, and never re-type a line you have already printed. Validate *every* pair before the first write and exit non-zero when any fails — a pass that skips the pairs it could not match writes a partial clean-up and reports success.
 
 ## 4. Deletions must actually delete — verify by re-grep
 
@@ -78,6 +79,11 @@ re-run the sweep afterwards, then re-grep again.
 3. **Diff against the pristine source and explain every hunk**: collect the live lines absent from the
    pristine copy — each must have contained the term or be a deliberate, artefact-free rewrite. This is
    the check that catches indentation damage the regex gate cannot see.
+4. **Re-read each file after the *last* pass, not after each edit.** An early replacement is silently
+   reverted by a later whole-file rewrite built from text read *before* it (a section deletion that
+   rewrites the file from a snapshot taken at validation time throws the earlier substitution away).
+   Apply multi-step rewrites from the file's **current** content, and rely on the closing re-grep as the
+   check that catches the residue — it surfaces there and nowhere else.
 
 For files a scripted pass cannot fix (broken frontmatter in trees with no pristine source), repair by
 inference: re-indent the orphaned list key to its siblings' indent, strip a leading `[, ` and a trailing
@@ -145,6 +151,13 @@ the original damage and needs a second hand pass.
   the whole command with an unrelated message (a gateway restart warning, say) — it reads as a mysterious
   block rather than the quoting bug it is. Write the cleaner to `<workspace>/purge.py`, run it with
   `python3 purge.py --apply`, and use quoted heredoc delimiters (`<<'PY'`) so nothing expands on the way in.
+- **Classify the residual hits instead of hunting them to zero.** A sweep over the whole home always finds
+  the term where it is not a trace: a model-catalog entry whose *name* contains it (`<vendor>-<term>` is a
+  real model id, not a skill), an installed program's own source tree (`hermes_cli/*.py`, `apps/desktop/*`,
+  bundled optional-skill scripts), upstream reference dumps, and machine state. Bucket what is left and
+  publish the counts per bucket — our traces (must be zero), look-alikes (leave, name them in the report),
+  another program's files (leave, ask), machine state (report, never edit). Deleting a catalog entry or an
+  upstream source file to reach a literal zero is damage, not cleanliness.
 - **History is a separate decision.** Past session transcripts and git commit history still contain the
   term and always will. Rewriting published history or deleting transcripts is destructive and never
   implied by «везде»: leave it, report the counts, offer it as an explicit next step.
