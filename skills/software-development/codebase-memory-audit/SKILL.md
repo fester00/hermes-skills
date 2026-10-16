@@ -126,6 +126,20 @@ Indexing is fast — реальные замеры 2026-10-11 на 0.11.0: `/hom
 it in queries. See `references/cbm-usage-notes.md` for real examples and output
 field reference.
 
+> **Правило: индекс ставится ДО разведки, а не после.** Проверено на себе 2026-10-16:
+> `pentajunior-v2` был в индексе с прошлого раза, но редизайн и перенос 45 файлов прошли
+> на `search_files`/`read_file`/`curl`/SQLite — графом не пользовался ни разу, а проиндексировал
+> уже готовое. Порядок такой: `list_projects` → если проект есть, первый вопрос к нему
+> через `search_code`/`trace_path` вместо серии поисков по файлам; если нет — `index_repository`
+> в первые минуты (проект на 1,9 ГБ собирается за ~5 с, это дешевле одной разведки).
+>
+> **Работа в песочнице или в ветке — индексируется то дерево, где ты правишь.**
+> Индекс основного репозитория про ветку не знает. Если правки идут в копии, песочнице
+> или рабочем дереве другой ветки, собери отдельный проект с понятным именем
+> (`index_repository(repo_path=<путь>, name='pjv2-redesign-a')`) — тогда новый слой
+> ищется графом, а не глазами. Помни: песочница в `tmp/` живёт до чистки, и индекс
+> придётся пересобрать заново.
+
 ### Step 3: Query the graph
 
 Useful queries:
@@ -194,6 +208,7 @@ After the audit:
 - **Indexing node_modules/.next/.git** — CBM excludes these by default.
 - **Призрак проекта ≠ удалённый проект.** Если `index_status`/`list_projects` показывает проект без каталога (`root_exists: false`) или путь вида `/tmp/...`, **не считай его мусором и не удаляй молча** — индекс часто строился с копии в `/tmp`, которую ОС чистит, или с промежуточного пути. Прежде чем чистить: найди проект по имени по всему диску (`find /home /mnt/data /srv -maxdepth 5 -iname '*<имя>*'`), загляни в заметки хранилища и проверь git-remote. Так же проверь, нет ли рядом копий `_v2/_v3`: неверсионированная копия может быть **новее** репозитория, и тогда именно она — источник истины для пользователя.
 - **Trusting outdated index** — re-index after large changes (в 0.11.0 формат индекса изменился: после апгрейда движка индексы надо пересобрать, иначе граф пуст).
+- **Индекс построен, а им не пользуются** — самая частая потеря: проект в индексе, а разведка идёт перебором файлов. Если знаешь вопрос заранее («где используется этот компонент», «что вызывает эту функцию»), один `search_code` отвечает за 13 мс, тогда как серия поисков съедает и время, и контекст. Дисциплина: **открыл чужой проект — сначала граф, потом файлы**.
 - **Over-querying** — one good `get_architecture` call replaces many greps.
 - **Forgetting to save to Obsidian** — insights should persist across sessions.
 - **Indexing non-code knowledge bases** — CBM is built for code, not for Markdown/Obsidian vaults. A vault full of notes yields many `Section`/`File` nodes but weak edges and poor `query_graph`/`search_graph` results. Use MCP Obsidian + `search_files`/`read_file` for vaults instead.
