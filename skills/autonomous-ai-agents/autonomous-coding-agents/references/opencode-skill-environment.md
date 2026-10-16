@@ -20,9 +20,7 @@ Add to `~/.config/opencode/opencode.jsonc`:
 ```jsonc
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugins": [
-    ""
-  ]
+  "plugins": []
 }
 ```
 
@@ -35,9 +33,7 @@ opencode plugin list
 Expected output:
 
 ```
-ID           VERSION  SOURCE
-     5.1.0    
- 8ca22db
+No plugins found
 ```
 
 ## Installing a skill
@@ -57,7 +53,7 @@ Verify by asking an OpenCode session to list available skills:
 
 ```bash
 opencode run --standalone --auto /tmp/skills-test \
-  "List all available skills and report whether karpathy-guidelines, tdd-workflow, and  are loaded"
+  "List all available skills and report whether karpathy-guidelines, tdd-workflow, and security-review are loaded"
 ```
 
 ## Reusable setup steps
@@ -72,8 +68,8 @@ opencode run --standalone --auto /tmp/skills-test \
 ## Pitfalls
 
 - **Claude-only skills**: skills that rely on `CLAUDE.md`, `.claude-plugin`, or Claude-specific tools do not load in OpenCode. Use only `SKILL.md`-based skills or those with explicit OpenCode support.
-- **V1 plugins in V2**: plugins written for OpenCode CLI v1 (using `plugin`/`agent`/`command` singular keys or v1 hook events) do not run in V2. Only and  currently provide v2-compatible plugins.
+- **V1 plugins in V2**: plugins written for OpenCode CLI v1 (using `plugin`/`agent`/`command` singular keys or v1 hook events) do not run in V2 — only plugins shipped for V2 load-compatible plugins.
 - **MCP at root of `mcp`**: V2 requires `mcp.servers.<name>`. A flat `mcp: { "codebase-memory": { ... } }` block is silently ignored or rejected.
 - **Flat `timeout` for MCP**: V2 wants `{ "startup": N, "catalog": N, "execution": N }`; a single number causes schema errors.
-- **Path to plugin file**: local plugins must be a directory, not a `.js` file. For , point to `.opencode/plugins/`, not ``.
+- **Path to plugin file**: local plugins must be a directory, not a `.js` file.
 - **No `--config` flag**: use `OPENCODE_CONFIG=/path/to/profile.json` to switch profiles.

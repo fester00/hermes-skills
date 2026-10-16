@@ -256,7 +256,17 @@ Supporting notes:
 Keep the two instruction layers in step: `AGENTS.md` in the vault and this skill. A rule that a
 non-Hermes agent must follow belongs in `AGENTS.md`; a rule about Hermes tooling belongs here.
 
-- `AGENTS.md` — folder map, rules, conventions
-- `Operations/MOC — Operations.md` · `Knowledge/MOC — Index.md` — navigation
-- `references/two-tier-memory-model.md` — why the agent stores only coordinates and the vault stores knowledge
-- Related skill: `knowledge-first-protocol` (retrieval order: session search → skills → vault → project files → web)
+## Skill ↔ vault sync (both directions)
+
+A Hermes skill lives in **three** places, and the vault’s own convention (`Operations/MOC — Skills.md`)
+says it outright: creating a skill means updating the vault too.
+
+| Direction | What to touch |
+|---|---|
+| Skill exists | `$HERMES_HOME/skills/<category>/<skill>/`, the git mirror (rsync + commit + push), a card `Operations/Skills/<skill>.md` |
+| Skill removed | delete the card and its MOC row, then grep the **whole** vault for the name — notes, audits and runbooks outlive the skill |
+
+- **Card shape:** frontmatter `title: "<skill> — навык Hermes"`, `date`, `tags`, `category: operations`, `lang: ru`; body: what the skill does, a *where things live* table (skill path, persona, config keys, mirror), the procedure in brief, and the pitfalls proven on this machine.
+- **MOC row:** append to the matching section of `Operations/MOC — Skills.md` as a single line — ``| `<skill>` | one-line purpose | active |`` — in the same shape as its neighbours.
+- **The MOC is a real table: every row starts with exactly one pipe.** A repair script that normalises leading pipes must re-add the space after it (`"| " + line.lstrip("|").strip()`) and assert on the result before writing; drop the space and the first cell of every row shifts, silently changing how the whole index renders.
+- **Finish by syncing both repositories** — vault and skills mirror — and report the commit hashes: a vault edit that was never pushed is invisible to the next session.

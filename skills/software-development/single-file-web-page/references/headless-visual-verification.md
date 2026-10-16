@@ -75,6 +75,43 @@ img = zlib.decompress(idat); stride = w*3 + 1
 vals = [img[y*stride+1+x*3] for y in range(0, h, 30) for x in range(0, w, 30)]
 ```
 
+**Do not use the snippet above as-is — it lies, and quietly.** PNG rows are *filtered* before deflate, so
+`img[...]` returns per-row deltas rather than pixels, and the channel count is assumed instead of read. Used
+as written, it reported **90% bright** for a dark night page and **0%** for a page that had rendered nothing at
+all — neither number described the screen. Unfilter every row first (filter byte 1 Sub, 2 Up, 3 Average,
+4 Paeth) and take the channel count from the IHDR (`d[25]`: 2 = RGB, 6 = RGBA):
+
+```python
+def png_rows(path):
+    d = pathlib.Path(path).read_bytes()
+    w, h = struct.unpack(">II", d[16:24]); ch = {0:1, 2:3, 4:2, 6:4}[d[25]]
+    idat, pos = b"", 8
+    while pos < len(d):
+        ln, typ = struct.unpack(">I4s", d[pos:pos+8])
+        if typ == b"IDAT": idat += d[pos+8:pos+8+ln]
+        pos += 12 + ln
+    raw = zlib.decompress(idat); stride = w*ch
+    prev = bytearray(stride); rows = []; p = 0
+    for _ in range(h):
+        ft = raw[p]; p += 1
+        line = bytearray(raw[p:p+stride]); p += stride
+        for i in range(stride):
+            a = line[i-ch] if i >= ch else 0; b = prev[i]; c = prev[i-ch] if i >= ch else 0
+            if ft == 1: line[i] = (line[i]+a) & 255
+            elif ft == 2: line[i] = (line[i]+b) & 255
+            elif ft == 3: line[i] = (line[i]+((a+b) >> 1)) & 255
+            elif ft == 4:
+                pa, pb, pc = abs(b-c), abs(a-c), abs(a+b-2*c)
+                pr = a if (pa <= pb and pa <= pc) else (b if pb <= pc else c)
+                line[i] = (line[i]+pr) & 255
+        rows.append(line); prev = line
+    return w, h, ch, rows
+```
+
+**Sanity-check the reader before trusting it on the page under test:** point it at a trivial dark page (dark
+body, one light heading) and expect a mean around 10–60 with a peak near 250. A reader that calls half of that
+screen "bright" is broken — the page is not.
+
 - Uniform brightness ⇒ the page rendered nothing. Non-trivial spread ⇒ real content.
 - "Bright" pixels (channel value > ~110 on dark surfaces) approximate text coverage; compare two variants
   (real page vs a copy with the hidden state forced to `opacity:0 !important`) to prove a reveal really
@@ -123,3 +160,10 @@ whether the panels are revealed. Two artefacts to expect and not misread:
   that the text is invisible.
 - **Screenshot mode captures early.** A copy that scrolls on a timer can be captured before the scroll runs;
   for screenshots drive the scroll immediately at parse time, and keep the timer variant for dump assertions.
+- **A scroll injected at parse time can black the frame out entirely.** Copies that called
+  `window.scrollTo(0,1600)` in screenshot mode came back as one flat fill (mean 15, peak 15 — no content at all),
+  while the same copy reported correct DOM state through `--dump-dom`. To photograph the middle or the end of a
+  page, do not scroll at all: shift the content with a negative top margin on the scrolling wrapper
+  (`<style>main{margin-top:-1750px}</style>`) — fixed planes stay put, so the frame shows what a scrolled
+  viewport would. A tall `--window-size` is the other option, but `vh`-based section heights balloon with the
+  window, so a 4600 px window shows the hero and one section, not the whole document.

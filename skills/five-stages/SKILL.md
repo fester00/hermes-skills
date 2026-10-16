@@ -7,7 +7,7 @@ license: MIT
 metadata:
   hermes:
     tags: [workflow, delegation, subagents, planning, verification, orchestration]
-    related_skills: [knowledge-base-audit, hermes-agent, , code-quality-gates]
+    related_skills: [knowledge-base-audit, hermes-agent, code-quality-gates]
 ---
 
 # Five stages

@@ -9,6 +9,9 @@ metadata:
     tags: [hermes, profiles, config, providers, models, multi-agent, devops]
     related_skills: [hermes-agent, hermes-internal-operations, hermes-ops-devops]
 triggers:
+  - "port instructions to another profile"
+  - "same persona in another profile"
+  - "copy a skill into a profile"
   - "same models as in this profile"
   - "add models to another profile"
   - "mirror profile models"
@@ -62,6 +65,28 @@ Use this skill when the task is about the *configuration* of a Hermes profile ra
 6. **Verify two ways** (see below): a programmatic set comparison of both configs, plus Hermes' own view of the effective model.
 7. **Report**: which keys changed, that a **new session** is required (a running session keeps its old model list), and the backup paths for a one-command revert.
 
+## Procedure: porting instructions and persona into a profile
+
+Instructions live in **three separate carriers**, and a profile inherits none of them:
+
+| Carrier | File in the profile | Port with |
+|---|---|---|
+| Skills | `profiles/<name>/skills/<category>/<skill>/` | `cp -r $HERMES_HOME/skills/<cat>/<skill> profiles/<name>/skills/` — the global tree is *not* visible to the profile |
+| Persona | `profiles/<name>/SOUL.md` | copy the root `SOUL.md` when it is meant to be identical, then `diff -q` the two |
+| Personality overlay | `agent.personalities.<name>` in the profile config | `hermes --profile <name> config set agent.personalities.<name> '<text>' --force` |
+
+1. **Snapshot first:** `cp -a` the profile's `SOUL.md` and `config.yaml` into your own backup tree (the profile dir is `0700`, files `0600`).
+2. **Read what is already there before writing.** The profile may already carry the right setting — an empty `delegation.model`, for instance, already means "children inherit this profile's model", so there is nothing to port there. Report what needed no change instead of rewriting it.
+3. **Write the carrier that actually wins.** `available_personalities()` merges a root `personalities` block and then `agent.personalities`, the latter winning on a name clash (`hermes_cli/personality.py` docstring) — a root-level write beside an existing `agent.personalities.<name>` is silently ignored.
+4. **Config writes go through the CLI, not the file tools** (they refuse a Hermes config by design), and this nested path needs `--force`; without the flag the setter answers "Did you mean: personalities.<name>" and writes nothing.
+5. **Port instructions, leave settings alone.** Model, delegation and MCP keys belong to that contour's own tuning — verify they are untouched afterwards instead of mirroring them out of habit.
+6. **Verify with the profile's own eyes, then report:**
+   ```bash
+   hermes --profile <name> skills list | grep <skill>     # the profile sees and enables it
+   diff -q $HERMES_HOME/SOUL.md profiles/<name>/SOUL.md    # when identity was the goal
+   ```
+   Plus: the profile's YAML still parses, the rewritten value contains the new wording and not the old, and its key count is unchanged. State the backup path and that the profile's cached skill index (`.skills_prompt_snapshot.json`) refreshes on its next session.
+
 ## Verify
 
 ```bash
@@ -88,6 +113,9 @@ The script exits non-zero when the target is missing anything the source offers,
 - **Prefer a targeted key addition over copying a whole `.env`** between profiles: a full copy also drags unrelated secrets and can clobber profile-specific tokens.
 - `hermes profile list` warns when two profiles share one Telegram bot token (a bot can belong to only one profile). Surface that warning; do not fix it unasked.
 - Config and `.env` changes apply to **new** sessions; the WebUI/gateway read them at startup.
+- **A profile is a separate contour: touch it only when asked, and only the part that was asked for.** Port what was requested, report everything else you noticed as "not touched" — extending the scope of a port is the fastest way to lose trust in it.
+- **`hermes config set` without `--profile` writes to the ROOT profile.** Porting into a named profile while the flag is missing edits the wrong contour silently; pass `--profile <name>` on every setter call.
+- **A skill copied into a profile must be verified from that profile**, not from the global tree: `hermes --profile <name> skills list`. The global `skills_list` of the active session never shows another profile's skills.
 
 ## Reporting
 

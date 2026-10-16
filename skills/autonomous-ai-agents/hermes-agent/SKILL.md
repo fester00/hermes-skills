@@ -293,7 +293,15 @@ Type these during an interactive chat session.
 /cron                Manage cron jobs (CLI)
 /reload-mcp          Reload MCP servers
 /plugins             List plugins (CLI)
+/blueprint [name] [slot=value ...]  Set up a scheduled automation from a template (/bp)
+/suggestions [accept|dismiss N | catalog]  Review suggested automations (/suggest)
 ```
+
+**`/blueprint`** turns a shipped template into a live cron job, and it is the documented way to build a
+reminder: bare `/blueprint` prints the catalogue (built-ins live in `cron/blueprint_catalog.py`, plugin ones
+are keyed `<plugin>:<key>`); `/blueprint <name>` hands the agent a seed that asks for each slot one at a time
+and then calls `cronjob`; `/blueprint <name> slot=value …` fills and creates the job without conversation.
+Delivery defaults to the chat the command came from. Logic: `hermes_cli/blueprint_cmd.py`.
 
 ### Gateway
 ```

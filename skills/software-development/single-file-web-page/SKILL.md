@@ -50,8 +50,7 @@ Not for: multi-page sites, anything with a backend, or a page a team will edit â
   **static base layer** (`--f:0`, the same night gradient) under the moving planes so a gap can never show.
 - Ambient particles (fireflies, dust, snow) are created once by JS into a container inside the matching
   layer with staggered `animation-delay`; they never enter the layout flow.
-- Decorative layers: `aria-hidden="true"` on the stage, `pointer-events:none`, `will-change:transform`,
-  slightly negative `inset` so movement never exposes an edge.
+- Decorative layers: `aria-hidden="true"` on the stage, `pointer-events:none`, `will-change:transform`. Keep each plane element viewport-sized (`inset:0`) and anchor its artwork to the layer's own bottom (`bottom:0`, height in `%`) instead of growing the layer with a negative `inset` and drawing at that box's bottom edge â€” an oversized box puts bottom-anchored silhouettes far below the fold, where nobody ever sees them. Bounded travel plus the static base beneath means a vacated edge reveals the slower planes, never a hole.
 - `@media (prefers-reduced-motion: reduce)`: disable layer transforms and ambient animation with
   `!important`, and reveal all scroll-gated content.
 - Fonts: Google Fonts only as progressive enhancement, always with a system fallback stack
@@ -72,7 +71,7 @@ Not for: multi-page sites, anything with a backend, or a page a team will edit â
 - **Never make readability depend on JavaScript.** A panel that starts at `opacity:0` and waits for
   `IntersectionObserver` renders as an empty page in every state where the observer does not fire â€” a
   headless dump, an anchor jump, a blocked or failed script. Gate the hidden state behind the inline `js`
-  class and keep a timer fallback, then verify both states (script working / class removed).
+  class and keep a timer fallback, then verify both states (script working / class removed). **The class must be added by the script, never hardcoded on the element**: shipping `<html class="js">` next to the inline line that adds the same class turns every script-less visitor into a reader of a hidden page â€” exactly the failure the gate exists to prevent. Grep the markup for the literal `class="js"` before delivering.
 - **CSS that looks correct is not evidence that CSS is running.** After a programmatic scroll, read the
   *computed* transform of every layer and confirm the planes differ in the designed ratio; "it should
   translate" is not proof.

@@ -89,7 +89,6 @@ description: Use when writing, reviewing, or refactoring code to avoid wrong ass
 ## Интеграция с другими навыками
 
 - С рабочим процессом: применяй как lens на фазах Design, Execute, Verify. Не заменяет процесс — добавляет четыре проверки к каждому решению.
-- С ``: `` даёт лестницу «как сделать меньше», `karpathy-lens` — правила «как не навредить». Используй вместе: сначала лестница , затем проверки karpathy-lens.
 - С `code-quality-gates`: Goal-Driven Execution перекликается с Gate 1 (TDD) и Gate 3 (pre-commit verification). Используй `code-quality-gates` для конкретных команд и циклов.
 
 ## Как понять, что lens работает
@@ -116,7 +115,7 @@ description: Use when writing, reviewing, or refactoring code to avoid wrong ass
 | 3 | Push back when simpler approach exists | Взято с оговоркой «when warranted». |
 | 4 | Stop and ask when confused | Взято. |
 | 5 | No features beyond what was asked | Взято в «Simplicity First». |
-| 6 | No abstractions for single-use code | Взято. Дополнено ссылкой на `` (тот же принцип глубже). |
+| 6 | No abstractions for single-use code | Взято. |
 | 7 | No flexibility/configurability not requested | Взято. |
 | 8 | No error handling for impossible scenarios | Взято. |
 | 9 | If 200 lines could be 50, rewrite | Взято. |
