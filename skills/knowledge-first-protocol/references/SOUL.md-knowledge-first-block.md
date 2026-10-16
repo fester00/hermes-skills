@@ -35,6 +35,8 @@ Before answering or acting on any user request, follow this retrieval hierarchy:
    - Key MOCs: [[Knowledge/MOC — Index]], [[Projects/MOC — Projects]], [[Operations/MOC — Skills]], [[Operations/MOC — Operations]], [[Knowledge/Technical/MOC — Technical]].
    - If MCP tools time out or return ClosedResourceError, immediately fall back to reading vault files via read_file/search_files.
 5. Project files — when the request is about a specific project, inspect real files with read_file and search_files.
+   - Indexed projects answer structural questions through the codebase-memory graph: `list_projects` shows what is already indexed, and `search_code` / `trace_path` replace a series of file searches. "Where is this used" and "what does this call" are graph questions, not file questions.
+   - The index is built before the reconnaissance, not after it. Work done in a branch, a copy or a sandbox is its own index entry: the main repository's index says nothing about it.
 6. Web search — only if internal sources are insufficient.
 
 Do not skip Obsidian lookup because of MCP failure. Project and procedural details live in the vault, not in memory.

@@ -49,6 +49,12 @@ of the version actually installed. Never answer from memory what a command can p
 ask one question instead of guessing. Gathering is **read-only** — upstream the planning agent cannot write
 at all, and in a `/plan` turn the same holds here.
 
+For an existing project, gathering has an order: check the codebase-memory index first (`list_projects`), and
+ask the graph the structural questions — where a component is used, what a route renders, what a change would
+touch. File searches come after, for content. A codebase already indexed in an earlier session costs nothing
+to query; a project never indexed is worth indexing in the first minutes. Recursion in a 1.9 GB repository is
+the expensive path, and it is the one that also floods the context.
+
 ## Stage 2 — Plan
 
 The deliverable is a **file**, not a chat message. Mechanic: the owner's `/plan` (or the same rules when he
@@ -78,6 +84,16 @@ Split parallel work **by file**, never by feature: two children editing one file
 Upstream a child's write access is a permission; here it is a sentence in the brief — a reviewer stays
 read-only only because the brief says so and because the parent checks the diff afterwards.
 
+**Shared layers are written and frozen by the parent.** When several children build on one foundation — a token
+file, a base stylesheet, header/footer fragments, an exported data file — the parent makes that foundation first
+and declares it read-only; each child adds only its own page, with page-scoped styles, so two of them cannot
+disagree about a shared class. Handing one foundation to two children without freezing it is the same collision
+as two children editing one file. Make the partition **physical before dispatching**: create the empty per-part
+files (one stylesheet per page group, say) and wire their imports yourself, so each child owns a real file rather
+than a verbal share of a busy one. And the **build belongs to the parent**: children iterate against a running
+dev view, the parent rebuilds once per wave and restarts the server before measuring — several children
+rebuilding one output directory while a dev view runs produces failures that belong to nobody.
+
 **Zero is a valid number of children.** When every item touches the same file or the same artifact, nothing
 is independent and doing it alone is compliance, not neglect — one voice also matters for the artifact's soul
 (a page's prose, a design's tone). Say «делить нечего: один файл» out loud so the owner sees the call was made.
@@ -105,6 +121,11 @@ note, correct the note.
 command, what must **not** count as a result, the hard boundaries (files not to touch, and «read-only: report
 instead of editing» when the child must not write), and the language of the answer. Children know nothing of
 this conversation.
+
+**Long briefs go into a file, not into the call.** Write the brief as markdown in the scratch directory and
+pass its path in `context`. A multi-paragraph brief full of quotation marks and Cyrillic inside a JSON string
+is one escaping slip away from `tasks must be a JSON array … could not be parsed as JSON`, and the file also
+leaves the child a stable, re-readable statement of the boundaries instead of one it only saw in a prompt.
 
 **Monitoring** is live: `delegate_task` accepts `action` = `list` (who is running), `steer` (course-correct a
 running child), `stop` (end it early; partial output still returns). Results arrive **between turns** — never
@@ -142,8 +163,32 @@ owner's standing rule.
 - **A guard that skips what it cannot parse reports success on exactly the damaged files.** If the frontmatter
   check is written as «if the pattern matches, parse it», a flattened file drops into the skipped set and the
   count of valid files never moves. Compare files seen against files validated and fail on the difference.
+- **A negative finding is only as good as the method that could have shown the opposite.** Before reporting a
+  defect — and before contradicting a child's claim — re-run the check in a way that *forces* the behaviour to
+  happen: scroll the document, wait for completion, re-render the state you say is missing. Every instrument has
+  a blind spot, and an instrument reports its blind spot as a defect in the work: a capture of a tall page draws
+  unrendered images as empty frames, a counter skips what it cannot parse, a query ignores case. The specific
+  traps and the tools that avoid them live with the page-measuring skills; the rule is that «X is broken»
+  requires a method that could have shown X working. Re-measuring costs a minute — a false alarm sends a child
+  back to redo work that was already correct and tells the owner about a defect that does not exist. When your
+  check disagrees with the worker's own evidence, **print the concrete difference — the two values, the two
+  blocks — before ordering any rework**: a bare «mismatch» is usually a comparator that was never written to
+  agree, not work that is wrong. Three «divergences» in one afternoon were the checker's own fault — an
+  unfollowed redirect, a set compared as an ordered list, and a normalisation regex that matched nothing because
+  re-serialised JSON carries a space after the colon — and each was one print away from being obvious. A
+  normaliser that matches nothing is indistinguishable from a clean file: before believing «расходится», print
+  the two values and confirm the normalisation actually fired.
 - **A pass that reports success is not a verified pass.** Read one changed file in full afterwards, not only
   the diff of the lines you meant to touch.
+- **Pin the version you measured.** A child re-saves its artifact after your pass, and the numbers you reported
+then describe a file that no longer exists. Record `md5sum` and `date -r` at measurement time, compare them with
+the child's own reported hash when it gives one, and re-measure as soon as either moved — «перепроверил текущую
+версию» is a claim you can make only with a fresh measurement.
+- **An export you hand the children becomes a source of truth, so it must not be lossy.** A content dump with long
+fields sliced to a column width (`text[:220]`) looks harmless and silently drops the tail of every long
+description; children then either invent, or quietly refetch from the original source, and the divergence surfaces
+only in the delivered pages. Normalise whitespace if you must, but keep whole fields, and compare lengths against
+the origin before shipping the file.
 - **Don't confuse motion with progress.** A finished batch is not a finished task: the stages end when the
   checks pass, not when the children return.
 - **Don't delegate what you cannot verify.** If the acceptance criterion cannot be checked with a command, a
