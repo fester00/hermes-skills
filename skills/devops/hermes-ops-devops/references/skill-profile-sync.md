@@ -135,6 +135,19 @@ Sections:
 
 ---
 
+## Propagating today's edits into another profile (a profile is not a mirror)
+
+Measured 2026-10-16: of 100 skills present in both the default tree and `maximus`, **99 differed** — the profile carries an older copy of almost everything. Never rsync the tree into a profile; carry only the files this session actually changed, and only when the divergence is yours.
+
+1. List what the session changed: `git -C <mirror> log --since="30 hours ago" --name-only --format= -- skills/ | sort -u`.
+2. For each path, if the twin exists in the profile and differs, measure the divergence: `diff <ours> <theirs> | grep -c '^[<>]'`.
+3. A handful of lines (≤ ~12) is your own edit — copy it over. Tens or hundreds of lines is pre-existing drift (older version, profile-specific rewrite): **do not touch it**, and name it in the report so the owner knows the two trees are not in sync.
+4. Back the profile's copy up first (`backups/maximus-sync-<ts>/<rel>`), then verify byte parity with `cmp -s` for every file written — «перенёс» without that check is a guess.
+5. Exclude runtime files from the sweep: `.curator_ledger.jsonl`, `.curator_state`, `.usage.json`, `.skills_prompt_snapshot.json`. Each profile keeps its own, and the prompt snapshot refreshes on that profile's next session.
+6. Deletions travel too: when a skill is removed from the default tree, remove the profile copy as well — the owner reads «отовсюду» as including the profile — then prove it with `grep -rli <name>` over the profile's `skills/`, `memories/` and `SOUL.md`.
+
+---
+
 ## Key Pitfalls
 
 | Pitfall | Why it happens | Prevention |
