@@ -163,6 +163,15 @@ owner's standing rule.
   stops a live service cannot be tested in place; the copy test is what caught the case-sensitivity bug and
   proved the vacuum step (5 s on a 1 GB base). Say what you verified and on what — «проверено на копии 1 ГБ»
   beats «скрипт готов».
+- **A quote marked «verbatim» is a claim, and it is checked character by character.** Re-wrapped line breaks, a
+  « — » where the source had « - », a dropped clause inside an otherwise exact quotation — each makes the word
+  false. Either copy the block byte-for-byte and prove it with a script (compare normalised lines against the
+  source file), or mark the elisions with `[…]`. A reviewer found three such silent edits in one afternoon's
+  work; none of them changed the meaning, all of them made the reference untrustworthy.
+- **Quote the built-in default and the local override as two numbers.** `max_concurrent_children` is **10** by
+  default (`hermes_cli/config_defaults.py:1376`) and **4** in this install (`config.yaml`); «default ceilings:
+  4» is a false statement that travels to every other machine. Same class: anything read from our own config is
+  a local fact, not an upstream one — name which of the two you mean.
 - **Rewriting history changes every hash.** After a history rewrite, commit hashes cited in notes go dead —
   remap them from `.git/filter-repo/commit-map`, or cite commit messages instead of hashes. A content scrub
   does **not** rename paths: files whose *names* carry the word need a separate pass
