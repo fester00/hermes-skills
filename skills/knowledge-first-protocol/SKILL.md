@@ -24,8 +24,7 @@ metadata:
    - Obsidian-реестр `Operations/MOC — Skills.md` может отставать, поэтому `skills_list()` — единственный авторитетный источник.
    - После обнаружения релевантного навыка загрузить его через `skill_view(name="<skill_name>")`.
    - Для задач по разработке ПО дополнительно загружать:
-     - — полный lifecycle
-     - — если задача требует создания/изменения 2+ файлов или имеет 2+ этапа
+     - `five-stages` — полный цикл работы: разведка → план-файл → субагенты → проверка каждого пункта (для задач на 2+ файла или 2+ этапа)
      - `code-quality-gates` — для verification gates
      - доменные навыки (например, `frontend-efficiency-audit`, `frontend-css-maintenance`)
 
@@ -61,6 +60,7 @@ metadata:
 ## Правила:
 
 - **Knowledge-First:** проверять session search, skills и Обсидиан перед веб-поиском.
+- **При расхождении источников побеждает ближайший к оригиналу.** Копия отстаёт от первоисточника: код в репозитории и вывод самой программы (`<tool> debug …`, `--version`) — истина, страница сайта и конспект в хранилище — пересказ, который может быть на релиз старше. Нашёл расхождение — правь свои производные документы (заметку, навык), а не первоисточник, и назови в ответе, чему именно поверил.
 - **Obsidian как база навыков:** MOC — Skills, MOC — Operations, Knowledge Retrieval Protocol — первые места для поиска процедур.
 - **Никогда не дублировать** детали проектов в memory — они в Обсидиане.
 - **Никогда не дублировать** runbook'и в memory — они в `Operations/Runbooks/`.
@@ -93,7 +93,7 @@ Different rule layers have different durability and scope. Do NOT duplicate cont
 | **System prompt / `~/.hermes/SOUL.md`** | Persona, tool availability, core philosophy only | "You are Master Ugwai", "Load skills before acting" |
 | **`AGENTS.md` in vault root** | Durable agent constitution: scope, folder map, safety rules, task conventions | "Read this file first", "Check `tasks.md`", "Do not bulk-migrate without approval" |
 | **`tasks.md` in vault root** | Active work, blockers, handoff notes | "Continue VIDVIS delivery page", "Blocker: waiting for real contacts" |
-| **Skills (`~/.hermes/skills/`)** | Class-level how-to: procedures, pitfalls, execution patterns |, |
+| **Skills (`~/.hermes/skills/`)** | Class-level how-to: procedures, pitfalls, execution patterns | `five-stages`, `code-quality-gates`, `obsidian` |
 | **Obsidian runbooks / notes** | Detailed reference, project facts, research synthesis | `Hermes — Knowledge Retrieval Protocol`, project notes |
 
 ### Consequences

@@ -15,6 +15,13 @@ metadata:
 
 Configure and troubleshoot OpenCode CLI v2 (`@opencode/cli`) as a standalone coding agent.
 
+## When to use
+
+- Configuring, running or debugging `opencode` v2 on this machine: profiles, providers, MCP servers, plugins.
+- Answering "how does OpenCode do X" — its built-in agents, the planning stage, subagents, review.
+- Deciding whether a task belongs in OpenCode at all or in a Hermes subagent:
+  `references/orchestration-agents-recipe.md`.
+
 ## Migration from v1
 
 - v1 package: `opencode-ai` (binary `opencode` 1.x)
@@ -62,9 +69,9 @@ Every session runs as a primary agent, and the choice of agent *is* the planning
 | Agent | Mode | What it can do |
 |---|---|---|
 | **Build** | `primary`, **the default** | all tools enabled — normal working mode |
-| **Plan** | `primary` | limited access, meant for planning and analysis; `file edits` and `bash` default to `ask`, so it cannot change anything without confirmation |
+| **Plan** | `primary` | read-only **by permission**: edits are denied for every path except the plan directory `~/.opencode/plan/`, so the planning stage cannot touch the project at all, and it ends only when the owner switches agent |
 
-Switch between primaries with **Tab** during a session (or invoke an agent explicitly). Three built-in **subagents** — **General**, **Explore**, **Scout** — are dispatched by a primary agent; they are not user-facing entry points.
+Switch between primaries with **Tab** during a session (or invoke an agent explicitly). Built-in **subagents** — **General** (research and multi-step work; it cannot spawn further subagents) and **Explore** (searches and reads, never edits) — are dispatched by a primary agent; they are not user-facing entry points. A subagent inherits the parent session's model when it has none of its own. Names beyond these two come from an older docs revision: confirm against `opencode debug agents` before repeating them.
 
 Inspect the live truth instead of the docs mirror — the command prints agent ids, modes and *resolved* permissions:
 
@@ -74,7 +81,7 @@ opencode debug agents
 
 Our root `~/.config/opencode/opencode.jsonc` declares **no custom agents** (only `model`, `plugins`, `providers`, `mcp`), so a session gets exactly these built-ins. Read the upstream description in the local mirror: `docs/opencode-v2/ru/agents.md` (built-in agents section) and the English `en/agents.md`.
 
-Borrowing the method into Hermes: OpenCode's Plan role ≈ «plan file + explicit owner go before code», Build ≈ execution after approval, and its subagents ≈ `delegate_task`. Keep the mapping in mind when the owner asks for «the OpenCode way» here.
+Borrowing the method into Hermes: OpenCode's Plan role ≈ «plan file + explicit owner go before code», Build ≈ execution after approval, and its subagents ≈ `delegate_task`. Keep the mapping in mind when the owner asks for «the OpenCode way» here. The upstream flow in full — plan mode as an enforced permission, the plan directory, the review boundaries, the subagent rules and what of it we have not adopted — is in `references/upstream-task-flow.md`.
 
 ## Profile 1: OpenCode Go
 
@@ -280,7 +287,7 @@ behaviour, not our documents.
 ## See also
 
 - `autonomous-coding-agents` skill for agent selection and briefing.
-- `references/opencode-skill-environment.md` for installing skills, plugins, and MCP servers on the agent.
+- `references/upstream-task-flow.md` for the v2 task flow quoted from the repository (plan mode, plan files, subagents, review boundaries) and the deltas from our own five stages.
 - Hermes provider config in `~/.hermes/config.yaml` for available `opencode-go` model IDs.
 
 ## MCP profile check — do this FIRST

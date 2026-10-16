@@ -776,7 +776,8 @@ This requires no sudo — user-level systemd overrides live in `~/.config/system
 - `references/gateway-connectivity-diagnostic.md` — Gateway connectivity diagnostic
 - `references/pm2-multiversion-cwd-pitfall.md` — Detecting and fixing stale `cwd` in multi-version PM2 configs (copied ecosystem.config.js pointing to wrong project directory)
 - `references/telegram-fallback-ip-fix.md` — Full runbook: diagnosing Telegram Bot API blocks, selecting working fallback IPs, systemd env persistence, and SOCKS5 setup
-- `references/skill-profile-sync.md` — Syncing skills between Hermes profiles (e.g., shifu → default): inventory, diff, skip-common, copy-missing, verify, update Obsidian registry
+- `scripts/sync-edits-to-profile.py` — carry this session's skill/reference edits into another profile (e.g. `maximus`): lists recent files, measures each divergence, copies only your own small diffs, backs up first and verifies byte parity. Dry-run by default; deletions are handled by hand (see `references/skill-profile-sync.md`).
+- `references/skill-profile-sync.md` — Syncing skills between Hermes profiles (e.g., shifu → default): inventory, diff, skip-common, copy-missing, verify, update Obsidian registry; and why a profile is not a mirror
 - `references/send_message_tool_patch.md` — Exact patch for `hermes_webui/tools/telegram_tools.py` to add `TelegramFallbackTransport` to the `send_message` tool
 - `references/systemd_user_override.md` — How to add `EnvironmentFile` to a user-level systemd service without sudo
 - `references/hermes-profile-creation.md` — Creating profiles, custom working directories (CLI wrapper `cd` pattern), profile anatomy, switching between CLI and WebUI
