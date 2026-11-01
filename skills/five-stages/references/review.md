@@ -39,6 +39,8 @@ unintentional one.
 Report: severity-ordered findings with `file:line`, what you verified vs. only read, and a verdict.
 ```
 
+If this brief goes to a `delegate_task` child, add one line to it: «READ-ONLY: do not create, edit or delete any project file, and do not touch <out-of-bounds list>.» The native `/review` rail is full-privilege — that mandate applies only to a child we brief by hand, and the parent re-checks the diff afterwards.
+
 ## Boundaries — verbatim from upstream `review.txt` (the durable part)
 
 > ## Before You Flag Something

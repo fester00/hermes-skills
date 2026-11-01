@@ -66,3 +66,37 @@ turns out to be big:
 
 Only the owner ends it: «да», «ок», «go» — or a direct directive that already meant it. Silence does not.
 While the stage is open, no edits outside the plan file, no writing children, no commits.
+
+## Plan file skeleton
+
+Use this skeleton inside the plan file so Stage 3 (Split) and Stage 4 (verify) become mechanical. Copy it; do not paraphrase the headings.
+
+```markdown
+# Plan: <Title>
+- **Date:** YYYY-MM-DD HH:MM:SS
+- **Target project / path:** <absolute path>
+- **Graph index / generation:** <project name & generation from codebase-memory, if applicable>
+
+## 1. Ceilings & boundaries
+- **Concurrency ceiling:** max 4 concurrent subagents (local `config.yaml` override; upstream default is 10).
+- **Shared foundations (parent-owned, frozen before Split):** <shared types, CSS tokens, config files the parent creates and freezes first>
+- **Out-of-bounds files (must NOT be touched):** <explicit list of paths>
+
+## 2. Execution steps (2–5 min each)
+
+### Step 1: <short title>
+- **Owner:** `Parent` | `Subagent (batch N)`
+- **Target files (exclusive):** `<exact/path>`
+- **Read-only refs:** `<paths>`
+- **Action & code:** <concrete instructions, copy-pasteable snippet or contract>
+- **Must NOT change:** <invariants, e.g. "do not alter export signatures or other routes">
+- **Verification command:** `<exact CLI command>`
+- **Expected output:** <exact exit code, count, or stdout pattern>
+```
+
+## Pre-split checklist (before asking for the go)
+
+1. **File-level partitioning:** no two steps assigned to the same subagent batch touch the same file.
+2. **Physical scaffolding:** if children share an interface, schema or stylesheet, make Step 1 a parent step that creates and freezes those files before any batch runs.
+3. **Verifiable criteria:** every step carries a deterministic command, diff or count check. If you cannot write the verification command, Gather (Stage 1) is not finished.
+4. **Stop and wait:** end the message with the summary of steps and wait for an explicit owner go — «да», «ок», «go». Silence or follow-up questions are not a go.

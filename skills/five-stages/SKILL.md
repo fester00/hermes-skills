@@ -1,7 +1,7 @@
 ---
 name: five-stages
 description: Use when starting a multi-step task. Run five stages.
-version: 1.1.0
+version: 1.1.1
 author: Hermes Agent + Natan
 license: MIT
 metadata:
@@ -42,12 +42,26 @@ and anything the owner calls big or asks for from scratch.
 omission: say it in one line («правка в одном файле — делаю сразу») so the owner can overrule you. Nothing
 else may be skipped silently.
 
+**A read-only audit is gathering plus a report, not a plan-gated change.** «Проверь проект / сайт / библиотеку»
+is stages 1 and 5 only: build, crawl, measure, compare against HEAD — no plan file and no wait for «go»,
+because nothing on disk changes. Name it in the first line («стадия: аудит, правок не делаю»), close with
+numbers («проверено: 145 страниц, 154 ссылки, 0 битых»), and keep a separate findings file. The moment the
+owner asks for a fix inside the same task, that item goes back through stage 2 — his «убери это» is the go
+for that item, not for the rest of the list.
+
 ## Stage 1 — Gather
 
 Collect facts before forming an opinion: read the real files, the vault note, the running process, the docs
 of the version actually installed. Never answer from memory what a command can print. If the path is unclear,
 ask one question instead of guessing. Gathering is **read-only** — upstream the planning agent cannot write
 at all, and in a `/plan` turn the same holds here.
+
+**Pin the referent before gathering around it.** When the owner points at something by pronoun — «запусти его»,
+«этот вариант», «тот дизайн» — the referent is the artifact you last put in front of him, and when several
+candidates exist (a prototype in a lab, the ported layer in the project, two design directions) name them back
+and let him choose before any building starts. A clarifying question that comes back as a *question* is not an
+answer: answer his question, then re-ask yours — substituting your own reading and starting hours of work on it
+is how a whole variant gets built for the wrong artifact.
 
 For an existing project, gathering has an order: check the codebase-memory index first (`list_projects`), and
 ask the graph the structural questions — where a component is used, what a route renders, what a change would
@@ -115,6 +129,14 @@ not reproduce. The report says what was verified and with what («провере
 was attempted. A failure gets its root cause, not a patch on top. If your own check put a wrong fact into a
 note, correct the note.
 
+**A lesson goes where it will be loaded, or it is a note to no one.** When the task teaches a rule, file it in
+the artifact read *in the situation that needs it*: a habit that applies everywhere belongs in the always-loaded
+protocol (`knowledge-first-protocol`, plus at most a one-line trigger in `SOUL.md` that loads it), a step belongs in the skill that governs that class of task,
+and only then a topical skill — the topical one helps exactly when it loads, which may be precisely the
+situation the rule was missing from. A cross-cutting rule filed inside a narrow skill leaves the next session
+repeating the mistake with the rule sitting unread on disk. Prove where it landed: name the file and the line,
+and say which places you deliberately did not write it.
+
 ## Delegation mechanics
 
 **Brief** (context field) must carry, every time: what to produce, the acceptance criterion, the verification
@@ -140,16 +162,21 @@ breakdown by class, then re-derive the number with your own script before it rea
 processes, including work from earlier turns. A child must await its own builds and tests before finishing; a
 server that has to outlive it starts in the parent session.
 
-**Engine facts** (Hermes): an empty `delegation.model` makes children inherit the parent's model; `delegate_task`
-has **no** per-task model parameter (the pin is global — per-task models exist only on the kanban board);
+**Engine facts** (Hermes): an empty `delegation.model` does not inherit on its own — the child's model is filled
+with the parent's only *after* the credential branch resolves (`tools/delegate_tool.py`: `model=model or
+parent_agent.model`), and when `delegation.provider`/`base_url` is set the child is rebuilt on that route (a bare
+`base_url` surfaces as `provider="custom"`), so the inherited name must also exist on that endpoint. A child row
+naming a different model than its parent is therefore normal: treat inheritance as a fallback, not a guarantee.
+`delegate_task` has **no** per-task model parameter (the pin is global — per-task models exist only on the kanban board);
 children inherit MCP toolsets when `delegation.inherit_mcp_toolsets: true`; ceilings — `max_spawn_depth: 1` is the
-built-in value (`hermes_cli/config_defaults.py:1381`), while `max_concurrent_children` is **10 by default and 4
+built-in value (`hermes_cli/config_defaults.py:1395`), while `max_concurrent_children` is **10 by default and 4
 in this install** (the override sits in `config.yaml`) — quote both numbers or neither. Upstream a child keeps its session id and can be resumed;
 a Hermes child is one-shot — only a live one can be steered. **Prove which model a child actually ran on from
 its session row, not from the batch report** — that report prints `Model: ?` and the delegation manifest
-records only `null` for an inherited pin, so the evidence lives in `state.db`:
-`sqlite3 $HERMES_HOME/state.db "SELECT model FROM sessions WHERE source='subagent' ORDER BY rowid DESC LIMIT 1"`
-(a row whose title carries the child's goal).
+records only `null` for an inherited pin, so the evidence lives in `state.db`. Read it with Python's `sqlite3`
+module on a read-only URI (`file:$HERMES_HOME/state.db?mode=ro`) — the `sqlite3` *binary* is not installed
+everywhere, and `mode=ro` keeps a live multi-hundred-MB base safe: `SELECT model FROM sessions WHERE
+source='subagent' ORDER BY rowid DESC LIMIT 1`, on the row whose title carries the child's goal.
 
 **Out of scope for delegation:** web search, page extraction and browser work are done by the parent — the
 owner's standing rule.
@@ -175,9 +202,13 @@ owner's standing rule.
   blocks — before ordering any rework**: a bare «mismatch» is usually a comparator that was never written to
   agree, not work that is wrong. Three «divergences» in one afternoon were the checker's own fault — an
   unfollowed redirect, a set compared as an ordered list, and a normalisation regex that matched nothing because
-  re-serialised JSON carries a space after the colon — and each was one print away from being obvious. A
-  normaliser that matches nothing is indistinguishable from a clean file: before believing «расходится», print
-  the two values and confirm the normalisation actually fired.
+  re-serialised JSON carries a space after the colon — and each was one print away from being obvious.
+  A normaliser that matches nothing is indistinguishable from a clean file: before believing «расходится»,
+  print the two values and confirm the normalisation actually fired. Build comparators so they *can* agree —
+  compare the meaning and not the spelling: link targets rather than href strings, price values rather than
+  price strings, word multisets rather than lines, parsed JSON as sets rather than ordered lists, and crawlable
+  `<a href>` rather than every `href` on the page. A comparator keyed on syntax reports a difference for every
+  difference in form, and each of those is rework ordered against work that was already correct.
 - **A pass that reports success is not a verified pass.** Read one changed file in full afterwards, not only
   the diff of the lines you meant to touch.
 - **Pin the version you measured.** A child re-saves its artifact after your pass, and the numbers you reported
@@ -199,6 +230,19 @@ the origin before shipping the file.
   whitespace may be tidied only inside the line being edited. Same class: **treating a binary file as text** —
   read the first bytes (`DIRC`, `PK`, `\x89PNG`) before any text pass; a git index rewritten as text is
   recoverable only by rebuilding it from its commit (`GIT_INDEX_FILE=... git read-tree <ref>`).
+  Same class again: **a mechanical rename rewrites the definition it introduces.** Replacing `db.prepare(`
+  with `stmt(` across a file also rewrote the body of the new `stmt` helper into `prepared = stmt(sql)` —
+  infinite recursion that only the compiler caught. Replace call sites only (or exclude the definition), then
+  re-read the helper and run the typechecker **before** measuring anything; a test suite that never calls the
+  helper will not notice.
+  And the worst variant: **a non-greedy pattern with a late anchor still spans from an earlier similar
+  opener.** `return rows\.map\(r => \(\{.*?price_tiers…` under DOTALL began matching at the *categories*
+  mapper and deleted every function between the two — six functions and every export that needed them. Count
+  the matches before writing and refuse unless the number equals the expected one (`s.count(old)` /
+  `len(re.findall(...))`), then assert the file still holds the same number of `export function` after. When
+  it has already happened, the last build is the backup: `.next/**/*.js.map` carries `sourcesContent` with
+  the pre-build TypeScript, so `json.load(map)['sourcesContent'][i]` restores the file in seconds — check the
+  export count and the typechecker, then redo the edit with address-specific patches instead of a sweep.
 - **In SQLite `LIKE` ignores case while `replace()` does not.** A scrub written as
   `UPDATE ... WHERE col LIKE '%word%'` counts rows as cleaned and leaves every capitalised variant in place.
   Read the rows and rewrite them in Python with a case-insensitive regex instead; then rebuild the search

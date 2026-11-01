@@ -1,16 +1,19 @@
 ---
 name: knowledge-first-protocol
 description: "Use when starting any user request. Decide what to search and where: skills, memory, projects, then external sources."
-version: 1.2.0
+version: 1.3.0
 author: Master Ugwai
 metadata:
   hermes:
     tags: [workflow, protocol, memory, obsidian, search]
 ---
 > **Version:** 1.3.0  
-> **Date:** 2026-06-29
+> **Date:** 2026-11-01
 
-## При КАЖДОМ запросе пользователя
+## При запросах пользователя
+
+**Исключение для тривиальных запросов (Fast-Path):**
+Если запрос — однострочная правка, опечатка, простая математика/логика или одиночный read-only вопрос, ответ на который уже очевиден из текущего контекста: НЕ вызывать `session_search` и `skills_list`. Выполнить сразу, сказав в первой строке: *«Тривиальный запрос — `session_search` и `skills_list` (Шаги 1–2 протокола) не вызываю, стадии five-stages 2–4 пропускаю»*. Во всех остальных случаях — идти по шагам ниже.
 
 **Шаг 0 — Оценить и уточнить запрос (5-15 сек):**
 - Если запрос неясен, амбициозен или требует материалов — задать 1-2 уточняющих вопроса.
@@ -19,14 +22,11 @@ metadata:
 **Шаг 1 — Быстрые внутренние источники (5-15 сек):**
 1. `session_search(query="<тема запроса>")` — проверить прошлые разговоры
 2. **Skills Discovery:**
-   - Обязательно вызвать `skills_list()` (или `skills_list(category="...")`) для поиска наиболее специфичного навыка.
+   - Вызвать `skills_list()` (или `skills_list(category="...")`) для поиска наиболее специфичного навыка (кроме Fast-Path выше).
    - Системный prompt содержит только подсказку (hint); полный каталог живёт в `~/.hermes/skills/`.
    - Obsidian-реестр `Operations/MOC — Skills.md` может отставать, поэтому `skills_list()` — единственный авторитетный источник.
    - После обнаружения релевантного навыка загрузить его через `skill_view(name="<skill_name>")`.
-   - Для задач по разработке ПО дополнительно загружать:
-     - `five-stages` — полный цикл работы: разведка → план-файл → субагенты → проверка каждого пункта (для задач на 2+ файла или 2+ этапа)
-     - `code-quality-gates` — для verification gates
-     - доменные навыки (например, `frontend-efficiency-audit`, `frontend-css-maintenance`)
+   - Для задач по разработке ПО (на 2+ файла или 2+ этапа) дополнительно загружать: `five-stages` (полный цикл: разведка → план-файл → субагенты → проверка каждого пункта), `code-quality-gates` (verification gates) и профильные доменные навыки — их точные имена брать из `skills_list()`, а не по памяти.
 
 **Шаг 2 — Обсидиан — основная база знаний и навыков (если шаг 1 недостаточно):**
 3. `mcp_obsidian_search_vault(vault="obsidian-memory", query="<тема>")` — поиск по базе знаний
@@ -71,7 +71,7 @@ metadata:
 - **MCP fallback:** при timeout/ClosedResourceError сразу читать `~/obsidian-memory/` через `read_file`/`search_files`.
 - **Если в Обсидиане нет** — добавить найденное туда после решения, обновив соответствующий MOC.
 - **Не прыгать к execution** без уточнения неясных запросов.
-- **Системный промпт:** если пользователь просит "внести в системный промпт" инструкцию/протокол, целевой файл — `~/.hermes/SOUL.md`. Добавлять туда рядом с персоной, чтобы каждая новая сессия видела его автоматически. См. `references/SOUL.md-knowledge-first-block.md` и `references/SOUL.md-edit-verification.md` для проверки результата.
+- **Системный промпт:** если пользователь просит "внести в системный промпт" инструкцию/протокол — в `~/.hermes/SOUL.md` кладётся только **триггер-указатель**: 1–3 строки, которые обязывают загрузить скилл, плюс имя скилла. Полная процедура живёт в скилле (`~/.hermes/skills/<name>/SKILL.md`), а не в SOUL.md — иначе одна и та же норма окажется в двух местах и начнёт расходиться (см. таблицу anti-duplication ниже). См. `references/SOUL.md-knowledge-first-block.md` и `references/SOUL.md-edit-verification.md` для проверки результата.
 
 ## Obsidian как persistent agent memory
 
@@ -145,9 +145,9 @@ When the same agent workflow or mechanical transformation appears **2 or more ti
 
 ## Web research under blocks
 
-When external search engines or sites block automated access during research:
+Per `SOUL.md` and `five-stages`, web search, page extraction and browser work are NEVER delegated to subagents. When external search engines or sites block automated access during research, work in the parent session:
 1. Prefer direct URLs of known authoritative sources over search engines.
-2. Dispatch parallel subagents by source category (official, expert, technical, trends).
+2. Group queries by source category (official docs, expert analysis, technical benchmarks, trends) and fetch them in sequential batches with your own web/browser tools.
 3. Do NOT solve CAPTCHA or Cloudflare challenges; switch to direct site URLs.
 4. DuckDuckGo main site (`duckduckgo.com/?q=...&t=h_&ia=web`) works better than `html`/`lite` endpoints.
 5. For 404 on direct article URLs, browse the site's analytics/blog section or use its internal search.

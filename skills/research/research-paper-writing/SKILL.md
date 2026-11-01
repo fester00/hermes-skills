@@ -2,7 +2,7 @@
 name: research-paper-writing
 title: Research Paper Writing Pipeline
 description: Use when writing, revising, or submitting an ML/AI research paper to a major venue.
-version: 1.1.0
+version: 1.1.1
 author: Orchestra Research
 license: MIT
 dependencies: [semanticscholar, arxiv, habanero, requests, scipy, numpy, matplotlib, SciencePlots]
@@ -1418,8 +1418,9 @@ delegate_task("Draft the Methods section based on these experiment scripts and c
   Include: pseudocode, all hyperparameters, architectural details sufficient for 
   reproduction. Write in LaTeX using the neurips2025 template conventions.")
 
-delegate_task("Draft the Related Work section. Use web_search and web_extract to 
-  find papers. Verify every citation via Semantic Scholar. Group by methodology.")
+delegate_task("Draft the Related Work section from the sources the parent 
+  gathered (web search stays in the parent session). Verify every citation via 
+  Semantic Scholar. Group by methodology.")
 
 delegate_task("Draft the Experiments section. Read all result files in results/. 
   State which claim each experiment supports. Include error bars and significance.")
