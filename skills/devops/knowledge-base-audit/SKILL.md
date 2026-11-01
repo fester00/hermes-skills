@@ -2,7 +2,7 @@
 name: knowledge-base-audit
 description: Use when auditing a knowledge base or skill library. Detect drift, stale facts, and mismatches across sources.
 category: devops
-version: 1.2.0
+version: 1.2.2
 author: Hermes Agent
 license: MIT
 metadata:
@@ -75,6 +75,35 @@ A skill library accumulates derivatives of outside repositories. When the owner 
 
 Full recipe — briefing the per-source agents, verifying a claimed coverage, and the adopt/fold/skip test — `references/upstream-provenance-audit.md`.
 
+## Verifying an audit you were handed
+
+When the owner forwards someone else's audit (a report from another agent, another model, a stranger's review) and asks «проверь», the deliverable is a **verdict per claim** — never a summary, and never a fix.
+
+- **Open every cited `file:line` yourself.** An audit that cites line numbers is not thereby correct: it can cite a line that says something else, carry a stale number, or quote a paraphrase. A claim you did not open is a claim you cannot grade.
+- **Grade each claim explicitly** — confirmed / partly (right outcome, wrong mechanism) / false / unverifiable — with the address you checked. One blanket «в целом аудит верный» is worthless: the owner will carry the false third of it into his own plan.
+- **Each claim class needs a different proof.** A text contradiction is settled by reading both lines. An engine-mechanism claim («an empty key X makes children inherit Y») is settled by reading the source and tracing **which branch actually fires on this host**. A proposed config diff is settled by checking the real schema shape and the value lists it would write into. A claim about model behaviour («the model reads EVERY literally») has no local proof at all — label it unverifiable, and say separately whether the proposed fix is cheap hygiene worth doing anyway.
+- **Trace the mechanism, not the outcome.** A claim can be right about the result and wrong about the path; publishing the wrong mechanism leaves a rule that breaks silently the next time the referenced key changes.
+- **Test empirical claims against the live record.** Where an audit asserts a universal («children always run on the parent's model»), query the state database for the last N cases with their parents. One contradicting row turns the rule into a caveat. Report the anomaly as an open question with its evidence — do not burn the session chasing its cause, and check the cheap explanations (profile, model-switch history) before theorising.
+- **Check the audited document against its own rules.** The root cause of a duplication finding is usually a line in the same file that *instructs* the duplication; fixing the copy while leaving that line guarantees the defect returns. Name root cause and symptom separately.
+- **Refuse the dangerous part in writing.** A proposed YAML/diff is often structurally invalid for the real file (a mapping replaced by a scalar) or names a value that exists nowhere in the config. Publish «не применяем» with the check that proves it, instead of dropping it silently.
+- **Look for the instances the audit missed.** An auditor who found one contradiction of a shape usually left siblings elsewhere in the library; grep the whole tree for that shape before closing, and say what you found.
+- **Close with a plan file and the gate.** Verified findings, then a fix plan with a verification command per item, then wait for the owner's explicit go. Applying fixes is not part of «проверь аудит».
+
+Claim-by-claim recipe, verdict vocabulary, and the Hermes delegation facts re-derived from source: `references/verifying-third-party-audits.md`.
+
+## Verifying a proposed rewrite before applying it
+
+When the handoff is not findings but **rewritten files** («вот исправленные версии, проверь»), the failure mode shifts from wrong claims to silent loss. Grade each proposed file separately — accept / accept-with-amendments / reject-as-replacement / merge-only:
+
+- **Replacing a file that quotes its upstream source is a regression.** Keep the grounded file and merge the new sections in: the verbatim quote is the only detector of upstream drift, and a paraphrase reads identically right up to the moment the source changes.
+- **Trim checks are greps.** Before accepting «compress the always-loaded file», grep the skill that should now own each deleted detail, and report where each one lives afterwards.
+- **Validate the markdown mechanically:** fence parity (`grep -c '^\`\`\`'` must be even), heading numbering, and vocabulary — a sentence mixing two documents' step labels reads two ways, so spell both out.
+- **Check every name the patch adds or removes** (`find`/`ls` for the skill it drops, `grep` for the file a defensive line invokes) and **run each new rule against the rail it governs** — a read-only mandate binds only the child you brief by hand, never a full-privilege engine whose prompt comes from elsewhere.
+- **Apply, then prove:** one timestamped backup loop, a version bump per changed skill, frontmatter parse, greps clean in the *live* files only, a line count on anything you shrank — and the derivative documents (vault runbook, MOC, profile copies) named in the report as the next defect. When the owner then answers «синхронизируй» across every carrier, the surfaces are live tree → profile mirrors → vault derivatives → skills git mirror, each one proven byte-identical with `diff -q`; the procedure is in `hermes-profile-management`.
+- **A push that printed a range has not landed until the remote agrees.** Close a sync by comparing `git ls-remote origin <branch>` against `git rev-parse HEAD` and requiring an empty `git status --porcelain` on both repos — the local HEAD is a claim, the remote SHA is the fact.
+
+Grading table per proposal class and the apply/verify sequence: `references/verifying-third-party-audits.md` §9–10.
+
 ## Repair recipes
 
 Ready-to-run recipes — the dead-link classifier, the lossless skill merge, the registry recount, the duplicate-note merge, the additive repo sync and the bulk description sweep — are in `references/dead-link-and-duplicate-repair.md`. A structural fix that silently drops content is worse than the defect it removes: absorb, never discard.
@@ -89,6 +118,8 @@ Removing a family and every mention of it («удалим эти навыки и
 - **A validator must assert its match.** A check shaped `try: yaml.safe_load(m.group(1)) if m else None` reports «0 broken» while quietly skipping every file whose frontmatter block did not match — that is the worst case, not a clean one. Fail when the match is missing, and report inspected versus matched counts.
 - **Prefer dropping a line to shipping a mangled one.** If the cleaned line still matches an artefact pattern (`docs//`, `(, `, `non-`), delete the line or item and list it for the owner.
 - **Verify deletions by re-grepping.** A delete loop that only reports deletions leaves the tree intact and the report perfect; zero hits in the live trees is the only proof. When the owner doubts a deletion, print the backup archive's file listing (`tar tzf <backup> | head`) — the record of what came out is more convincing than a count.
+- **Build the carrier list with `grep -rl <stem>`, never from memory of «the registry».** One deleted note leaves debris in three shapes: backlinks inside unrelated notes (a sibling card's «Связи» list), one row in *each* index that carried it (`Operations/MOC — Skills` and `Knowledge/MOC — Index` are different files), and the folder that emptied. Remove the empty directory explicitly — `git status` reports the file, never the directory, so nothing will remind you.
+- **Name the expected survivors before the closing grep, or your own pass reads as a failure.** Three classes legitimately keep the term: the timestamped `.bak*` copies the pass itself just wrote, dated snapshot notes (an audit report titled with a date describes the past — it is evidence, not a registry), and the note that documents the removal on purpose. Exclude `*.bak*` by pattern, list the rest in the report with a one-line reason, and delete the backups only when the owner asks. An unqualified «zero hits» that quietly skipped its own backups is worth less than an honest list.
 - **Sweep the carriers, not only the skill files.** The skills tree is the first place the term lives, never the last: after every skill file is gone the name survives in each profile's `memories/USER.md`, in the per-profile `.skills_prompt_snapshot.json` prompt cache, in `.usage.json` keys and the curator ledger. Grep the **whole profile**, not its `skills/`, before calling a purge complete — the second pass is where the survivors are found, and finding them only because the owner asked costs trust.
 - **Machine state and history stay out of scope.** `state.db`, session transcripts, `state-snapshots/`, `checkpoints/`, curator logs and git commit history hold the term forever; editing the state of a live profile risks it. Report the counts carrier by carrier, offer the purge as an explicit next step, and never read «везде» as consent to rewrite history.
 - **Another tool's own installation is out of scope until the owner says so.** A purge of our notes and skills does not extend to a program's own directory — its `skills/`, agents, plugins, config. Those files *are* the live behaviour of a tool he uses, so report what you found and ask. Read the config before answering: an entry can be a phantom (declared, never installed), which is exactly the finding that decides the question for him.

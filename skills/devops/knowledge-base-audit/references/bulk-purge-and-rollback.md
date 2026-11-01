@@ -72,6 +72,12 @@ grep -rli "<term>" <each tree> --exclude-dir=.git | wc -l     # expect 0 in live
 Non-zero means the unlink loop never ran. Removing a dedicated file also leaves referrers behind —
 re-run the sweep afterwards, then re-grep again.
 
+Two artefacts survive a correct unlink and read as failures if you do not expect them: **the folder that
+held the only note** (remove it explicitly — `git status` shows the file, never the directory) and **the
+timestamped `.bak*` copies the pass itself created**, which still contain the term by definition. Exclude
+`*.bak*` from the closing grep, and state in the report that dated snapshot notes (an audit report titled
+with a date) keep the term on purpose: they describe the past and are evidence, not registries.
+
 ## 5. Prove nothing else was damaged
 
 1. `grep` → zero in the live trees (allowlist aside).
