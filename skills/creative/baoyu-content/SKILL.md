@@ -7,7 +7,7 @@ license: MIT
 metadata:
   hermes:
     tags: [baoyu, comic, infographic, content, education, visualization]
-    related_skills: [claude-design, sketch]
+    related_skills: [sketch]
 ---
 
 # BaoYu Content Generation

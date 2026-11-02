@@ -8,7 +8,7 @@ platforms: [linux, macos, windows]
 metadata:
   hermes:
     tags: [sketch, mockup, design, ui, prototype, html, variants, exploration, wireframe, comparison]
-    related_skills: [claude-design, popular-web-designs, excalidraw]
+    related_skills: [single-file-web-page, excalidraw]
 ---
 
 # Sketch
@@ -19,8 +19,8 @@ Load this when the user says things like "sketch this screen", "show me what X c
 
 ## When NOT to use this
 
-- User wants a production component — use `claude-design` or build it properly
-- User wants a polished one-off HTML artifact (landing page, deck) — `claude-design`
+- User wants a production component — build it properly in the project
+- User wants a polished one-off HTML artifact (landing page, deck) — `single-file-web-page`
 - User wants a diagram — `excalidraw`, `architecture-diagram`
 - The design is already locked — just build it
 
@@ -152,6 +152,62 @@ After all variants are built, present them as a comparison. Don't just list — 
 ```
 
 Let the user pick a winner, or combine two into a hybrid, or ask for another round.
+
+## Redesigning a live site: variants that can actually be shipped
+
+A sketch for an existing production site stops being disposable — it is the candidate the owner will judge the
+real site against. Six rules change the method:
+
+1. **Export the real content before drawing anything.** Pull the page's own data (categories, products, prices,
+copy, statistics) and its assets out of the source system into one JSON file that every variant reads. Prototypes
+built on invented numbers teach the owner nothing, and the mismatch surfaces only after the rebuild starts.
+2. **Audit the “before” with numbers first.** Screenshot the live page at desktop and phone widths, measure it,
+and write a short audit note: structure, palette, typography, the defects you can actually see (a stray band under
+the header, a navigation item breaking into three lines, a muted subtitle on a dark hero). That note is what
+makes the variants comparable. **Identify the element behind every oddity before writing it down as a defect:**
+the “stray light band” under the header was a real utility strip rendered at near-zero contrast, so the variants
+fixed it by giving that strip a proper bar — delete the element without looking and real content goes with it.
+3. **System before directions.** Fix the tokens — type scale, vertical rhythm, grid, radii, shadows, motion,
+media aspect ratios, and palette *slots* — in one file, then let each direction fill the palette slots with its
+own colours. Three variants built on unrelated scales can only be preferred, never compared.
+4. **One direction per file, one agent per file, in parallel.** Same content JSON and same invariants in every
+brief; what differs is the stance — mood, density, typographic register — not two shades of the same page. Never
+let two agents write the same file. Each brief carries the content JSON path, the token file, the boundaries
+(which project not to touch), and the measurer command; each agent must **return its own JSON measurement lines
+and screenshot paths** — a prose “looks good” is not evidence, and the parent re-measures anyway.
+5. **Measure each variant before showing it.** Overflow zero, no console errors, no 404s at 1440 / 768 / 375, and
+look at the screenshots yourself (`single-file-web-page` → `scripts/check-page.cjs`). A variant the owner cannot
+open is not a variant.
+6. **Fact-check the variants against the source page.** Grep each file for claim-bearing text — years (“с 1997 г.”),
+statistics, prices, certifications, “собственное производство” — and confirm every one exists in the source HTML
+(`curl -s http://localhost:PORT/ | grep -c '<phrase>'`). A variant that invents a fact or a number is a liability
+the owner may ship by accident, and the check costs one command.
+
+**Invariants while redesigning a live site:** copy, headings, prices, meta tags and structured data move over
+unchanged — a redesign changes arrangement, not the words; photos of mixed origin go into one fixed frame
+(`aspect-ratio` + `object-fit: cover`) instead of being resized one by one; long navigation labels and wrong
+plurals are defects to fix, not content to preserve.
+
+**After the pick:** the chosen direction becomes the reference pages (catalogue with filters, product card, price
+list, contacts, phone widths), and the transfer into the real project happens page by page behind that project's
+build gate — never as one wholesale rewrite of its stylesheet.
+
+**Build the reference pages on a frozen kit, not by copy-paste.** Pull what the approved variant already contains —
+its stylesheet, its header and footer markup — into a small per-direction layer (`directions/<name>/base.css` plus
+`partials/`), then one agent per page group copies the partials in, links the base and adds only page-scoped styles
+under a prefix (`.cat-`, `.prd-`). The base is read-only: several agents sharing a stylesheet they may all edit
+diverge in the header faster than a single agent produces pages.
+
+**Owners keep what they like: develop every direction they named to the same page set, and park the runner-up
+whole.** The page set must be the same and the data identical, or the comparison is not honest, and a direction
+that merely stopped being drawn can never be picked up later. Say where it is parked and what finishing it would
+cost — a half-built variant is worse than a shelved one.
+
+**Handing the variants over:** the files stay self-contained, but their photos are reached through paths relative
+to the project — a copy saved on its own shows broken images, so send the served URL
+(`http://localhost:8130/directions/01-*.html`) together with the screenshots. Tall pages photograph badly when
+scaled down to a chat preview: send the full-height desktop shot, and slice it (crop the original at full
+resolution) when a section has to be judged closely.
 
 ## Single-file variant gallery (quick A/B in one scroll)
 
